@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "336085087312",
+    "project_id": "misproyectos-a55f2",
+    "storage_bucket": "misproyectos-a55f2.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:336085087312:android:3ead00ece65d024788cd55",
+        "android_client_info": {
+          "package_name": "com.example.contrupro3"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "336085087312-0cbdpuehfrjtnc5ufnojbh6vvvckf4qf.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.contrupro3",
+            "certificate_hash": "1065cf1e1e99973ad4b803622927ca2a720e92e8"
+          }
+        },
+        {
+          "client_id": "336085087312-2oddqea30q56i8uh3q43f75b81u3m80a.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAG-qquuAlHrw-c1XdwcJzaY_lG0qKdU2g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "336085087312-2oddqea30q56i8uh3q43f75b81u3m80a.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
