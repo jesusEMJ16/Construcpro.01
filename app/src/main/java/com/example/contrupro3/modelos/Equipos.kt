@@ -3,6 +3,7 @@ package com.example.contrupro3.modelos
 import android.os.Parcel
 import android.os.Parcelable
 // texto de prueba
+// para probar git
 
 data class Equipos(
     val id: String? = null,
