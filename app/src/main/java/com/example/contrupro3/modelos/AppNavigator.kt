@@ -1,6 +1,7 @@
 package com.example.contrupro3.modelos
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
@@ -8,6 +9,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.contrupro3.ui.theme.CardViewTeam
+import com.example.contrupro3.ui.theme.CardView_Documents
 import com.example.contrupro3.ui.theme.Cardview
 import com.example.contrupro3.ui.theme.DocumentsScreen
 import com.example.contrupro3.ui.theme.LoginPage
@@ -67,6 +69,14 @@ fun AppNavigator(auth: FirebaseAuth, navController: NavHostController, authRepos
             val userID = arguments?.getString("userID")
             if (userID != null) {
                 DocumentsScreen(navController = navController, authRepository = authRepository, userID)
+            }
+        }
+        composable("cardDocument_screen/{userId}/{documentId}") { backStackEntry ->
+            val arguments = backStackEntry.arguments
+            val userID = arguments?.getString("userId")
+            val documentId = arguments?.getString("documentId")
+            if (userID != null && documentId != null) {
+                CardView_Documents(navController = navController, authRepository = authRepository, userID, documentId)
             }
         }
 

@@ -88,6 +88,31 @@ class AuthRepository(private val auth: FirebaseAuth) {
         }
     }
 
+    fun loadDocument(documentoId: String, documento: MutableState<DocumentModel?>) {
+        val firestore = FirebaseFirestore.getInstance()
+        val user = getCurrentUser()
+
+        if (user != null) {
+            val docDocument = firestore.collection("Usuarios")
+                .document(user.uid)
+                .collection("Documentos")
+                .document(documentoId)
+
+            docDocument.get()
+                .addOnSuccessListener { document ->
+                    if (document.exists()) {
+                        val loadedDocument = document.toObject(DocumentModel::class.java)
+                        documento.value = loadedDocument
+                    } else {
+                        documento.value = null
+                    }
+                }
+                .addOnFailureListener { exception ->
+                    documento.value = null
+                }
+        }
+    }
+
     fun loadDocumentsFromFirebase(documentsList: MutableState<List<DocumentModel>>) {
         val firestore = FirebaseFirestore.getInstance()
         val user = getCurrentUser()

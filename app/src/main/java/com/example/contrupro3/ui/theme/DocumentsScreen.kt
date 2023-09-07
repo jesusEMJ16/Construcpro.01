@@ -6,7 +6,13 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.indication
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +25,10 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -31,8 +41,6 @@ import androidx.compose.material.Icon
 import androidx.compose.material.LocalContentColor
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.TextFieldDefaults
-import androidx.compose.material.TextFieldDefaults.outlinedTextFieldColors
-import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
@@ -42,6 +50,7 @@ import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -49,7 +58,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.currentCompositionLocalContext
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -58,27 +66,22 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.window.Dialog
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.navigation.NavHostController
 import com.example.contrupro3.R
 import com.example.contrupro3.modelos.AuthRepository
 import com.example.contrupro3.modelos.DocumentModel
-import com.example.contrupro3.modelos.Equipos
-import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
-import java.util.Locale
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
@@ -99,21 +102,27 @@ fun DocumentsScreen(
     val documentsList = remember { mutableStateOf(emptyList<DocumentModel>()) }
     authRepository.loadDocumentsFromFirebase(documentsList)
 
-    val filteredDocuments = remember(documentsList, selectedFilter, isFilterAscending, searchQuery) {
-        derivedStateOf {
-            var filteredList = documentsList.value.filter { it.docName?.contains(searchQuery, ignoreCase = true) == true }
-            when (selectedFilter) {
-                "Nombre" -> {
-                    filteredList = if (isFilterAscending) {
-                        filteredList.sortedBy { it.docName }
-                    } else {
-                        filteredList.sortedByDescending { it.docName }
+    val filteredDocuments =
+        remember(documentsList, selectedFilter, isFilterAscending, searchQuery) {
+            derivedStateOf {
+                var filteredList = documentsList.value.filter {
+                    it.docName?.contains(
+                        searchQuery,
+                        ignoreCase = true
+                    ) == true
+                }
+                when (selectedFilter) {
+                    "Nombre" -> {
+                        filteredList = if (isFilterAscending) {
+                            filteredList.sortedBy { it.docName }
+                        } else {
+                            filteredList.sortedByDescending { it.docName }
+                        }
                     }
                 }
+                filteredList
             }
-            filteredList
         }
-    }
 
     Scaffold(
         floatingActionButton = {
@@ -184,12 +193,14 @@ fun DocumentsScreen(
         content = {
             Box(
                 modifier = Modifier
-                    .fillMaxSize(),
+                    .fillMaxSize()
+                    .padding(5.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Column(
                     verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.offset(y = 15.dp)
                 ) {
                     Spacer(modifier = Modifier.height(5.dp))
                     Text(
@@ -199,6 +210,31 @@ fun DocumentsScreen(
                     Spacer(modifier = Modifier.height(5.dp))
                     Divider(color = Color.LightGray, thickness = 1.dp)
                     Spacer(modifier = Modifier.height(5.dp))
+                    when (documentsList.value.size) {
+                        0 -> {
+                            Text(text = "No tienes documentos publicados.")
+                        }
+
+                        1 -> {
+                            Text(text = "Tienes 1 documento creado.")
+                        }
+
+                        else -> {
+                            Text(text = "Tienes ${documentsList.value.size} documentos creados.")
+                        }
+                    }
+                    LazyColumn(modifier = Modifier.weight(1f)) {
+                        items(filteredDocuments.value) { document ->
+                            DocumentCard(
+                                document = document, // Pasar el documento individual en lugar de equipos
+                                navController = navController,
+                                authRepository = authRepository,
+                                documentsList = documentsList,
+                                userID = userID
+                            )
+                            Spacer(Modifier.height(15.dp))
+                        }
+                    }
                 }
             }
         }
@@ -216,6 +252,132 @@ fun DocumentsScreen(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun DocumentCard(
+    document: DocumentModel,
+    navController: NavHostController,
+    authRepository: AuthRepository,
+    documentsList: MutableState<List<DocumentModel>>,
+    userID: String
+) {
+    val documentId = document.id
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    Spacer(Modifier.height(15.dp))
+    Box(
+        modifier = Modifier
+            .fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        androidx.compose.material3.Card(
+            colors = CardDefaults.cardColors(
+                containerColor = myOrangelow
+            ),
+            modifier = Modifier
+                .fillMaxWidth(0.7f)
+                .wrapContentSize(Alignment.Center)
+                .indication(
+                    interactionSource = MutableInteractionSource(),
+                    indication = LocalIndication.current
+                )
+                .combinedClickable(onClick = {
+                    navController.navigate("cardDocument_screen/${userID}/${documentId}")
+                }, onLongClick = { showDeleteDialog = true }),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+            shape = RoundedCornerShape(15.dp),
+        ) {
+            Column(modifier = Modifier.padding(10.dp)) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(10.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = document.docName.toString(),
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(2.dp))
+                Divider(color = Color.LightGray, thickness = 1.dp)
+                Image(
+                    painter = painterResource(id = R.drawable.no_image), contentDescription = null,
+                    alignment = Alignment.TopCenter,
+                    modifier = Modifier
+                        .fillMaxSize()
+                )
+            }
+        }
+    }
+
+    fun deleteDocument(userID: String, documentId: String) {
+        val db = FirebaseFirestore.getInstance()
+
+        db.collection("Usuarios")
+            .document(userID)
+            .collection("Documentos")
+            .document(documentId)
+            .delete()
+            .addOnSuccessListener {
+                // Actualizar la lista de equipos
+                documentsList.value = documentsList.value.filter { it.id != documentId }
+                // Cargar nuevamente la lista de equipos desde Firebase
+                authRepository.loadDocumentsFromFirebase(documentsList)
+            }
+            .addOnFailureListener { e -> }
+    }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = {
+                Text(
+                    text = "Advertencia",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                )
+            },
+            text = { Text(text = "¿Esta seguro de que desea eliminar este documento?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteDialog = false
+                        deleteDocument(userID, documentId.toString())
+                    },
+                    modifier = Modifier
+                        .width(100.dp)
+                        .padding(8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = myOrangehigh,
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text("Si")
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = {
+                        showDeleteDialog = false
+                    },
+                    modifier = Modifier
+                        .width(100.dp)
+                        .padding(8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = myOrangehigh,
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text("No")
+                }
+            }
+        )
+    }
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun RegisterCardDocument(
@@ -224,22 +386,13 @@ fun RegisterCardDocument(
     loggedInUserUID: String,
     document: MutableList<DocumentModel>
 ) {
-    fun validateDocumentInput(
-        documentName: String,
-        description: String
-    ): String {
-        if (documentName.isEmpty()) {
-            return "Se requiere un nombre para el documento."
-        }
-
-        return ""
-    }
-
     var errorDialogVisible by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     val documentName = remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var selectedFileUri by remember { mutableStateOf<Uri?>(null) }
+    var requiredVisible by remember { mutableStateOf(true) }
+    var documentUriName by remember { mutableStateOf("") }
 
     Card(
         modifier = Modifier.padding(10.dp),
@@ -272,7 +425,9 @@ fun RegisterCardDocument(
                 modifier = Modifier
                     .fillMaxWidth(0.8f)
                     .shadow(5.dp)
-                    .background(Color.White)
+                    .background(Color.White),
+                singleLine = true,
+                maxLines = 1
             )
             Spacer(modifier = Modifier.height(10.dp))
             OutlinedTextField(
@@ -294,9 +449,21 @@ fun RegisterCardDocument(
             Spacer(modifier = Modifier.height(20.dp))
 
             val contentResolver = LocalContext.current.contentResolver
-            val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri -> selectedFileUri = uri }
+            val launcher =
+                rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+                    selectedFileUri = uri
+                }
 
-            Text(text = "* Requerido", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Light), color = Color.Red, fontSize = 3.em)
+            if (requiredVisible) {
+                Text(
+                    text = "* Requerido",
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Light),
+                    color = Color.Red,
+                    fontSize = 3.em,
+                    modifier = Modifier
+                )
+            }
+
             Column(
                 modifier = Modifier.padding(start = 10.dp, top = 1.dp, end = 10.dp, bottom = 2.dp)
             ) {
@@ -307,9 +474,16 @@ fun RegisterCardDocument(
                 }
 
                 selectedFileUri?.let { uri ->
+                    requiredVisible = false
+                    val uriName = getFileName(uri, contentResolver)
+                    documentUriName = uriName
                     Text(
-                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.ExtraLight, color = Color.Gray, fontSize = 2.5.em),
-                        text = "${getFileName(uri, contentResolver)}".substring(0, 25) + "..."
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontWeight = FontWeight.ExtraLight,
+                            color = Color.Gray,
+                            fontSize = 2.5.em
+                        ),
+                        text = "$uriName".substring(0, 25) + "..."
                     )
                 }
             }
@@ -322,7 +496,7 @@ fun RegisterCardDocument(
                 Button(
                     onClick = {
                         val validationMessage =
-                            validateDocumentInput(documentName.value, description)
+                            validateDocumentInput(documentName.value, documentUriName)
                         if (validationMessage.isNotEmpty()) {
                             errorDialogVisible = true
                             errorMessage = validationMessage
@@ -331,10 +505,10 @@ fun RegisterCardDocument(
 
                         val newDoc = DocumentModel(
                             null,
-                            documentName.value.capitalize(Locale.getDefault()),
+                            documentName.value.toLowerCase().capitalize(),
                             loggedInUserName,
                             loggedInUserUID,
-                            description.capitalize(Locale.getDefault()),
+                            description,
                             emptyList(),
                             emptyList()
                         )
@@ -346,7 +520,7 @@ fun RegisterCardDocument(
                             .whereEqualTo("docName", newDoc.docName)
                             .get()
                             .addOnSuccessListener { documents ->
-                                if (documents.isEmpty()) {
+                                if (documents.isEmpty) {
                                     db.collection("Usuarios")
                                         .document(loggedInUserUID)
                                         .collection("Documentos")
@@ -389,13 +563,26 @@ fun RegisterCardDocument(
                         onDismissRequest = {
                             errorDialogVisible = false
                         },
-                        title = { Text("Error en el registro del documento") },
+                        title = {
+                            Text(
+                                text = "Error De Registro",
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                            )
+                        },
                         text = { Text(errorMessage) },
                         confirmButton = {
-                            Button(onClick = {
-                                errorDialogVisible = false
-                            }) {
-                                Text("Cerrar")
+                            Button(
+                                onClick = {
+                                    errorDialogVisible = false
+                                },
+                                modifier = Modifier
+                                    .padding(8.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = myOrangehigh,
+                                    contentColor = Color.White
+                                )
+                            ) {
+                                Text("Aceptar")
                             }
                         }
                     )
@@ -403,6 +590,21 @@ fun RegisterCardDocument(
             }
         }
     }
+}
+
+fun validateDocumentInput(
+    documentName: String,
+    uriName: String
+): String {
+    if (documentName.isEmpty()) {
+        return "Se requiere un nombre para el documento."
+    } else if (documentName.length > 30) {
+        return "El nombre del archivo no puede superar mas de 30 caracteres."
+    } else if (documentName.length < 6) {
+        return "El nombre del archivo no puede tener menos de 6 caracteres."
+    } else if (uriName.isEmpty()) return "Se requiere subir un archivo pdf."
+
+    return ""
 }
 
 /*fun addTeamToDocument(docID: String, memberId: String) {
