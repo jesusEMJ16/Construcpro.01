@@ -9,6 +9,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.contrupro3.ui.theme.CardViewTeam
 import com.example.contrupro3.ui.theme.Cardview
+import com.example.contrupro3.ui.theme.DocumentsScreen
 import com.example.contrupro3.ui.theme.LoginPage
 import com.example.contrupro3.ui.theme.ProjectView
 import com.example.contrupro3.ui.theme.RegisterPage
@@ -61,9 +62,13 @@ fun AppNavigator(auth: FirebaseAuth, navController: NavHostController, authRepos
             val equipoID = backStackEntry.arguments?.getString("equipoID") ?: ""
             CardViewTeam(navController = navController, authRepository = authRepository, equipoID)
         }
-
-
-
+        composable("documents_screen/{userID}") { backStackEntry ->
+            val arguments = backStackEntry.arguments
+            val userID = arguments?.getString("userID")
+            if (userID != null) {
+                DocumentsScreen(navController = navController, authRepository = authRepository, userID)
+            }
+        }
 
         // Definir otras rutas aquí...
     }

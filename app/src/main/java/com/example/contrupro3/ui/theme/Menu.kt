@@ -222,7 +222,7 @@ fun MenuOpciones(navController: NavController, authRepository: AuthRepository) {
 
     }
     CreateOptionButton("Planos y Documentacion", painterResource(R.drawable.documents_50px)){
-
+        navController.navigate("documents_screen/$userID")
     }
     CreateOptionButton("Soporte y Ayuda", painterResource(R.drawable.help_50px)){
 
