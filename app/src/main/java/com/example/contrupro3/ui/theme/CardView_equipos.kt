@@ -180,55 +180,69 @@ fun CardViewTeam(navController: NavHostController, authRepository: AuthRepositor
                             Text("Invitar")
                         }
                     }
+
                     if (showDialog) {
                         InvitarDialog(
                             onInvite = { email ->
                                 if (isValidEmail(email)) {
                                     val userEmail = authRepository.getCurrentUser()?.email
+                                    Log.d("Log correo", "el correo es : $userEmail")
                                     if (userEmail != null && userEmail != email) {
-                                        val invitedEmails = equipo?.members ?: emptyList()
-                                        if (email !in invitedEmails) {
-                                            val firestore = FirebaseFirestore.getInstance()
-                                            val usuarioId = authRepository.getCurrentUser()?.uid
-                                            val equipoId = equipo?.id ?: ""
+                                        val firestore = FirebaseFirestore.getInstance()
+                                        val usuarioId = authRepository.getCurrentUser()?.uid
+                                        val equipoId = equipo?.id ?: ""
 
-                                            if (usuarioId != null) {
-                                                val invitacionesCollection =
-                                                    firestore.collection("Usuarios")
-                                                        .document(usuarioId)
-                                                        .collection("Invitaciones")
+                                        if (usuarioId != null) {
+                                            val invitacionesCollection =
+                                                firestore.collection("Usuarios")
+                                                    .document(usuarioId)
+                                                    .collection("Invitaciones")
 
-                                                invitacionesCollection.add(
-                                                    mapOf(
-                                                        "equipoId" to equipoId,
-                                                        "email" to email,
-                                                        "estado" to "pendiente"
-                                                    )
-                                                ).addOnSuccessListener {
-                                                    Toast.makeText(
-                                                        context,
-                                                        "Invitación enviada",
-                                                        Toast.LENGTH_SHORT
-                                                    ).show()
+                                            Log.d("equipoID","equipo id: $equipoID")
+                                            Log.d("email","email id: $email")
+
+                                            invitacionesCollection.whereEqualTo("email", email)
+                                                .get().addOnSuccessListener { querySnapshot ->
+                                                    if (querySnapshot.documents.isEmpty()) {
+                                                        // Si no hay documentos con ese email, entonces agregamos la nueva invitación.
+                                                        invitacionesCollection.add(
+                                                            mapOf(
+                                                                "equipoId" to equipoId,
+                                                                "email" to email,
+                                                                "estado" to "pendiente"
+                                                            )
+                                                        ).addOnSuccessListener {
+                                                            Toast.makeText(
+                                                                context,
+                                                                "Invitación enviada",
+                                                                Toast.LENGTH_SHORT
+                                                            ).show()
+                                                        }.addOnFailureListener {
+                                                            Toast.makeText(
+                                                                context,
+                                                                "Error al enviar la invitación",
+                                                                Toast.LENGTH_SHORT
+                                                            ).show()
+                                                        }
+                                                    } else {
+                                                        Toast.makeText(
+                                                            context,
+                                                            "El correo ya ha sido invitado",
+                                                            Toast.LENGTH_SHORT
+                                                        ).show()
+                                                    }
                                                 }.addOnFailureListener {
                                                     Toast.makeText(
                                                         context,
-                                                        "Error al enviar la invitación",
+                                                        "Error al verificar la invitación",
                                                         Toast.LENGTH_SHORT
                                                     ).show()
                                                 }
-                                            }
-                                        } else {
-                                            Toast.makeText(
-                                                context,
-                                                "El correo ya ha sido invitado",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
                                         }
                                     } else {
                                         Toast.makeText(
                                             context,
-                                            "No puedes invitarte a ti mismo",
+                                            if (userEmail == email) "No puedes invitarte a ti mismo" else "El correo ya ha sido invitado",
                                             Toast.LENGTH_SHORT
                                         ).show()
                                     }
