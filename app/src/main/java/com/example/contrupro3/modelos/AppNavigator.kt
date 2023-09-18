@@ -13,6 +13,7 @@ import com.example.contrupro3.ui.theme.CardView_Documents
 import com.example.contrupro3.ui.theme.Cardview
 import com.example.contrupro3.ui.theme.DocumentsScreen
 import com.example.contrupro3.ui.theme.LoginPage
+import com.example.contrupro3.ui.theme.Presupuesto_y_Compras
 import com.example.contrupro3.ui.theme.ProjectView
 import com.example.contrupro3.ui.theme.RegisterPage
 import com.example.contrupro3.ui.theme.SplashScreen
@@ -79,7 +80,9 @@ fun AppNavigator(auth: FirebaseAuth, navController: NavHostController, authRepos
                 CardView_Documents(navController = navController, authRepository = authRepository, userID, documentId)
             }
         }
-
+        composable("presucom_screen") { backStackEntry ->
+            Presupuesto_y_Compras(navController, authRepository)
+        }
         // Definir otras rutas aquí...
     }
 }

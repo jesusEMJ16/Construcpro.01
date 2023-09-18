@@ -11,6 +11,7 @@ data class DocumentModel(
     val description: String? = "",
     val teamsAdded: List<String> = emptyList(),
     val usersAdded: List<String> = emptyList()
+
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
         parcel.readString(),

@@ -78,24 +78,20 @@ fun RegisterPage(navController: NavController) {
             .fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        Box(
+        Image(
+            painter = painterResource(R.drawable.logo),
+            contentDescription = "App Logo",
             modifier = Modifier
-                .size(200.dp)
+                .size(150.dp) // Ajusta el tamaño del logo si es necesario
                 .align(Alignment.TopCenter)
                 .offset(y = 20.dp)
-        ) {
-            Image(
-                painter = painterResource(R.drawable.logo),
-                contentDescription = "App Logo",
-                modifier = Modifier.fillMaxSize()
-            )
-        }
+        )
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceEvenly,
             modifier = Modifier
                 .fillMaxWidth()
-                .offset(y = 100.dp)
+                .offset(y = 80.dp)
         ) {
             OutlinedTextField(
                 value = name,
