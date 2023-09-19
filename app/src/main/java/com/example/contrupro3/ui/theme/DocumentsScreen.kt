@@ -2,8 +2,11 @@ package com.example.contrupro3.ui.theme
 
 import android.annotation.SuppressLint
 import android.content.ContentResolver
+import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -27,9 +30,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.AlertDialog
@@ -45,12 +48,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.CheckBox
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -58,22 +65,27 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.window.Dialog
@@ -82,6 +94,15 @@ import com.example.contrupro3.R
 import com.example.contrupro3.modelos.AuthRepository
 import com.example.contrupro3.modelos.DocumentModel
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.ktx.Firebase
+import com.google.firebase.storage.ktx.storage
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import java.util.Locale
+import java.util.UUID
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
@@ -98,7 +119,8 @@ fun DocumentsScreen(
     val isAddDocumentDialogOpen = remember { mutableStateOf(false) }
     val loggedInUserUID: String by authRepository.getLoggedInUserUID().observeAsState("")
     val loggedInUserName: String by authRepository.getLoggedInUserName().observeAsState("")
-    val documents = remember { mutableStateListOf<DocumentModel>() }
+    val selectedCards = remember { mutableSetOf<DocumentModel>() }
+    var showDeleteButtons by remember { mutableStateOf(false) }
     val documentsList = remember { mutableStateOf(emptyList<DocumentModel>()) }
     authRepository.loadDocumentsFromFirebase(documentsList)
 
@@ -130,62 +152,86 @@ fun DocumentsScreen(
                 LocalContentColor provides colorResource(id = R.color.white)
             ) {
                 Row {
-                    FloatingActionButton(
-                        onClick = {
-                            isSearchExpanded = !isSearchExpanded
-                            if (!isSearchExpanded) {
-                                searchQuery = ""
-                            }
-                        },
-                        containerColor = myOrangehigh
-                    ) {
-                        Icon(
-                            if (isSearchExpanded) Icons.Default.Close else Icons.Default.Search,
-                            contentDescription = "Buscar Documento",
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    FloatingActionButton(
-                        onClick = { isFilterMenuOpen = true },
-                        containerColor = myOrangehigh
-                    ) {
-                        Icon(
-                            Icons.Default.FilterAlt,
-                            contentDescription = "Filtros"
-                        )
-                    }
-
-                    DropdownMenu(
-                        expanded = isFilterMenuOpen,
-                        onDismissRequest = { isFilterMenuOpen = false }
-                    ) {
-                        DropdownMenuItem(
+                    if(showDeleteButtons) {
+                        FloatingActionButton(
                             onClick = {
-                                selectedFilter = "Nombre"
-                                isFilterMenuOpen = false
-                                isFilterAscending = !isFilterAscending
-                            }
+
+                            },
+                            containerColor = myOrangehigh
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("Nombre")
-                                Spacer(Modifier.width(10.dp))
-                                Icon(
-                                    if (selectedFilter == "Nombre" && isFilterAscending) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = "Cancelar Operación",
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
+                        FloatingActionButton(
+                            onClick = {  },
+                            containerColor = myOrangehigh
+                        ) {
+                            Icon(
+                                Icons.Default.Delete,
+                                contentDescription = "Eliminar Documentos Seleccionados"
+                            )
+                        }
+                    } else {
+                        FloatingActionButton(
+                            onClick = {
+                                isSearchExpanded = !isSearchExpanded
+                                if (!isSearchExpanded) {
+                                    searchQuery = ""
+                                }
+                            },
+                            containerColor = myOrangehigh
+                        ) {
+                            Icon(
+                                if (isSearchExpanded) Icons.Default.Close else Icons.Default.Search,
+                                contentDescription = "Buscar Documento",
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
+                        FloatingActionButton(
+                            onClick = { isFilterMenuOpen = true },
+                            containerColor = myOrangehigh
+                        ) {
+                            Icon(
+                                Icons.Default.FilterAlt,
+                                contentDescription = "Filtros"
+                            )
+                        }
+
+                        DropdownMenu(
+                            expanded = isFilterMenuOpen,
+                            onDismissRequest = { isFilterMenuOpen = false }
+                        ) {
+                            DropdownMenuItem(
+                                onClick = {
+                                    selectedFilter = "Nombre"
+                                    isFilterMenuOpen = false
+                                    isFilterAscending = !isFilterAscending
+                                }
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text("Nombre")
+                                    Spacer(Modifier.width(10.dp))
+                                    Icon(
+                                        if (selectedFilter == "Nombre" && isFilterAscending) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
                             }
                         }
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    FloatingActionButton(
-                        onClick = { isAddDocumentDialogOpen.value = true },
-                        containerColor = myOrangehigh
-                    ) {
-                        Icon(
-                            Icons.Default.Add,
-                            contentDescription = "Agregar Documento"
-                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        FloatingActionButton(
+                            onClick = { isAddDocumentDialogOpen.value = true },
+                            containerColor = myOrangehigh
+                        ) {
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = "Agregar Documento"
+                            )
+                        }
                     }
                 }
             }
@@ -226,11 +272,13 @@ fun DocumentsScreen(
                     LazyColumn(modifier = Modifier.weight(1f)) {
                         items(filteredDocuments.value) { document ->
                             DocumentCard(
-                                document = document, // Pasar el documento individual en lugar de equipos
+                                document = document,
                                 navController = navController,
                                 authRepository = authRepository,
                                 documentsList = documentsList,
-                                userID = userID
+                                userID = userID,
+                                selectedCards,
+                                showDeleteButtons
                             )
                             Spacer(Modifier.height(15.dp))
                         }
@@ -246,7 +294,7 @@ fun DocumentsScreen(
                 isAddDocumentDialogOpen,
                 loggedInUserName,
                 loggedInUserUID,
-                documents
+                filteredDocuments
             )
         }
     }
@@ -259,10 +307,14 @@ fun DocumentCard(
     navController: NavHostController,
     authRepository: AuthRepository,
     documentsList: MutableState<List<DocumentModel>>,
-    userID: String
+    userID: String,
+    selectedCards: MutableSet<DocumentModel>?,
+    showButtons: Boolean
 ) {
     val documentId = document.id
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var updatedShowButtons by remember { mutableStateOf(showButtons) }
+    val isSelected = remember { mutableStateOf<Boolean>(documentId.toString() in (selectedCards ?: emptySet<DocumentModel>()).map { it.id.toString() }) }
 
     Spacer(Modifier.height(15.dp))
     Box(
@@ -274,6 +326,8 @@ fun DocumentCard(
             colors = CardDefaults.cardColors(
                 containerColor = myOrangelow
             ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+            shape = RoundedCornerShape(15.dp),
             modifier = Modifier
                 .fillMaxWidth(0.7f)
                 .wrapContentSize(Alignment.Center)
@@ -281,27 +335,45 @@ fun DocumentCard(
                     interactionSource = MutableInteractionSource(),
                     indication = LocalIndication.current
                 )
-                .combinedClickable(onClick = {
-                    navController.navigate("cardDocument_screen/${userID}/${documentId}")
-                }, onLongClick = { showDeleteDialog = true }),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-            shape = RoundedCornerShape(15.dp),
+                .combinedClickable(
+                    onClick = {
+                        navController.navigate("cardDocument_screen/${userID}/${documentId}")
+                    },
+                    onLongClick = {
+                        isSelected.value = !isSelected.value
+
+                        if (isSelected.value) {
+                            selectedCards?.add(document)
+                        } else {
+                            selectedCards?.remove(document)
+                        }
+
+                        if(selectedCards?.size!! > 0) {
+                            updatedShowButtons = true
+                        }
+                    }
+                ),
         ) {
             Column(modifier = Modifier.padding(10.dp)) {
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(10.dp),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
                         text = document.docName.toString(),
                         style = MaterialTheme.typography.titleSmall,
                         modifier = Modifier.align(Alignment.Center)
                     )
+                    if (isSelected.value) {
+                        Icon(
+                            imageVector = Icons.Default.CheckBox,
+                            contentDescription = null,
+                            tint = myOrangehigh,
+                            modifier = Modifier.size(30.dp).offset(x = 105.dp)
+                        )
+                    }
                 }
-
-                Spacer(modifier = Modifier.height(2.dp))
+                Spacer(modifier = Modifier.height(10.dp))
                 Divider(color = Color.LightGray, thickness = 1.dp)
                 Image(
                     painter = painterResource(id = R.drawable.no_image), contentDescription = null,
@@ -322,9 +394,7 @@ fun DocumentCard(
             .document(documentId)
             .delete()
             .addOnSuccessListener {
-                // Actualizar la lista de equipos
                 documentsList.value = documentsList.value.filter { it.id != documentId }
-                // Cargar nuevamente la lista de equipos desde Firebase
                 authRepository.loadDocumentsFromFirebase(documentsList)
             }
             .addOnFailureListener { e -> }
@@ -384,15 +454,20 @@ fun RegisterCardDocument(
     isAddDocumentDialogOpen: MutableState<Boolean>,
     loggedInUserName: String,
     loggedInUserUID: String,
-    document: MutableList<DocumentModel>
+    documentsFiltered: State<List<DocumentModel>>
 ) {
     var errorDialogVisible by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     val documentName = remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
-    var selectedFileUri by remember { mutableStateOf<Uri?>(null) }
     var requiredVisible by remember { mutableStateOf(true) }
     var documentUriName by remember { mutableStateOf("") }
+    var pdfUri by remember { mutableStateOf<Uri?>(null) }
+    val context = LocalContext.current
+    var showLoadingSpinner by remember { mutableStateOf(false) }
+    var enabledSaveButton by remember { mutableStateOf(false) }
+    var nameRepliqued by remember { mutableStateOf(false) }
+    var isLoadingSpinnerActived by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier.padding(10.dp),
@@ -412,9 +487,52 @@ fun RegisterCardDocument(
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
             Spacer(modifier = Modifier.height(10.dp))
+            if (documentName.value.length <= 5) {
+                Text(
+                    text = "* Requerido",
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Light),
+                    color = Color.Red,
+                    fontSize = 3.em,
+                    modifier = Modifier
+                        .offset(x = -65.dp)
+                        .padding(bottom = 5.dp),
+                    textAlign = TextAlign.Left
+                )
+            }
+            if (documentName.value.length > 5 && nameRepliqued === true) {
+                Text(
+                    text = "El nombre ya esta en uso",
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Light),
+                    color = Color.Red,
+                    fontSize = 3.em,
+                    modifier = Modifier
+                        .offset(x = -20.dp)
+                        .padding(bottom = 5.dp),
+                    textAlign = TextAlign.Left
+                )
+            }
+            if (documentName.value.length > 30) {
+                Text(
+                    text = "Tamaño del nombre excedido",
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Light),
+                    color = Color.Red,
+                    fontSize = 3.em,
+                    modifier = Modifier
+                        .offset(x = -20.dp)
+                        .padding(bottom = 5.dp),
+                    textAlign = TextAlign.Left
+                )
+            }
             OutlinedTextField(
                 value = documentName.value,
-                onValueChange = { documentName.value = it },
+                onValueChange = {
+                    documentName.value = it
+                    if (documentsFiltered.value.find {
+                            it.docName?.trim().equals(documentName.value.trim(), ignoreCase = true)
+                        } != null) nameRepliqued = true
+                    enabledSaveButton =
+                        documentName.value.length >= 6 && documentUriName.length > 1 && nameRepliqued === false
+                },
                 label = { Text("Nombre del documento") },
                 colors = TextFieldDefaults.outlinedTextFieldColors(
                     textColor = Color.Black,
@@ -450,9 +568,12 @@ fun RegisterCardDocument(
 
             val contentResolver = LocalContext.current.contentResolver
             val launcher =
-                rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-                    selectedFileUri = uri
-                }
+                rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.GetContent(),
+                    onResult = {
+                        pdfUri = it
+                    }
+                )
 
             if (requiredVisible) {
                 Text(
@@ -468,95 +589,135 @@ fun RegisterCardDocument(
                 modifier = Modifier.padding(start = 10.dp, top = 1.dp, end = 10.dp, bottom = 2.dp)
             ) {
                 Button(
-                    onClick = { launcher.launch("application/pdf") }
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = myOrangehigh
+                    ),
+                    onClick = { launcher.launch("application/pdf") },
+                    enabled = !isLoadingSpinnerActived
                 ) {
                     Text("Seleccionar archivo")
                 }
 
-                selectedFileUri?.let { uri ->
+                pdfUri?.let { uri ->
                     requiredVisible = false
                     val uriName = getFileName(uri, contentResolver)
                     documentUriName = uriName
+                    if (documentName.value.length >= 6) enabledSaveButton = true
+
                     Text(
                         style = MaterialTheme.typography.bodySmall.copy(
                             fontWeight = FontWeight.ExtraLight,
                             color = Color.Gray,
                             fontSize = 2.5.em
                         ),
-                        text = "$uriName".substring(0, 25) + "..."
+                        text = "$uriName".substring(0, 25) + "...",
+                        modifier = Modifier.offset(x = 15.dp)
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
+            if (showLoadingSpinner) {
+                Text(
+                    text = "Subiendo Archivo...",
+                    style = MaterialTheme.typography.bodySmall.copy(color = myOrange)
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                CircularProgressIndicator(
+                    color = myOrange
+                )
+            }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                Button(
-                    onClick = {
-                        val validationMessage =
-                            validateDocumentInput(documentName.value, documentUriName)
-                        if (validationMessage.isNotEmpty()) {
-                            errorDialogVisible = true
-                            errorMessage = validationMessage
-                            return@Button
-                        }
+                val scope = rememberCoroutineScope()
 
-                        val newDoc = DocumentModel(
-                            null,
-                            documentName.value.toLowerCase().capitalize(),
-                            loggedInUserName,
-                            loggedInUserUID,
-                            description,
-                            emptyList(),
-                            emptyList()
-                        )
+                if (!isLoadingSpinnerActived) {
+                    Button(
+                        enabled = enabledSaveButton,
+                        onClick = {
+                            val validationMessage =
+                                validateDocumentInput(documentName.value, pdfUri.toString())
+                            if (validationMessage.isNotEmpty()) {
+                                errorDialogVisible = true
+                                errorMessage = validationMessage
+                                return@Button
+                            }
 
-                        val db = FirebaseFirestore.getInstance()
-                        db.collection("Usuarios")
-                            .document(loggedInUserUID)
-                            .collection("Documentos")
-                            .whereEqualTo("docName", newDoc.docName)
-                            .get()
-                            .addOnSuccessListener { documents ->
-                                if (documents.isEmpty) {
+                            isLoadingSpinnerActived = true
+                            showLoadingSpinner = true
+                            scope.launch {
+                                val docReference = uploadToStorage(pdfUri!!, context)
+                                if (docReference !== "null") {
+                                    val newDoc = DocumentModel(
+                                        null,
+                                        documentName.value.lowercase(Locale.getDefault())
+                                            .replaceFirstChar {
+                                                if (it.isLowerCase()) it.titlecase(
+                                                    Locale.getDefault()
+                                                ) else it.toString()
+                                            },
+                                        loggedInUserName,
+                                        loggedInUserUID,
+                                        description,
+                                        docReference,
+                                        emptyList(),
+                                        emptyList()
+                                    )
+
+                                    val db = FirebaseFirestore.getInstance()
                                     db.collection("Usuarios")
                                         .document(loggedInUserUID)
                                         .collection("Documentos")
-                                        .add(newDoc)
-                                        .addOnSuccessListener { documentReference ->
-                                            val docID = documentReference.id
-                                            documentName.value = ""
-                                            description = ""
+                                        .whereEqualTo("docName", newDoc.docName)
+                                        .get()
+                                        .addOnSuccessListener { documents ->
+                                            if (documents.isEmpty) {
+                                                db.collection("Usuarios")
+                                                    .document(loggedInUserUID)
+                                                    .collection("Documentos")
+                                                    .add(newDoc)
+                                                    .addOnSuccessListener { documentReference ->
+                                                        val docID = documentReference.id
+                                                        documentName.value = ""
+                                                        description = ""
+                                                        showLoadingSpinner = false
+                                                        isAddDocumentDialogOpen.value = false
 
-                                            isAddDocumentDialogOpen.value = false
+                                                        Toast.makeText(
+                                                            context,
+                                                            "Carga Completa",
+                                                            Toast.LENGTH_LONG
+                                                        ).show()
+                                                    }
+                                            } else {
+                                                errorDialogVisible = true
+                                                errorMessage =
+                                                    "Ya existe un documento con este nombre."
+                                            }
                                         }
-                                        .addOnFailureListener { e -> }
-                                } else {
-                                    errorDialogVisible = true
-                                    errorMessage = "Ya existe un documento con este nombre."
                                 }
                             }
-                    },
-                    colors = ButtonDefaults.buttonColors(myOrange, contentColor = Color.White),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text("Guardar")
-                }
+                        },
+                        colors = ButtonDefaults.buttonColors(myOrange, contentColor = Color.White),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("Guardar")
+                    }
 
-                Button(
-                    onClick = {
-                        isAddDocumentDialogOpen.value = false
-                    },
-                    colors = ButtonDefaults.buttonColors(myOrange, contentColor = Color.White),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text("Cancelar")
+                    Button(
+                        onClick = {
+                            isAddDocumentDialogOpen.value = false
+                        },
+                        colors = ButtonDefaults.buttonColors(myOrange, contentColor = Color.White),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("Cancelar")
+                    }
                 }
-
 
                 if (errorDialogVisible) {
                     AlertDialog(
@@ -607,24 +768,37 @@ fun validateDocumentInput(
     return ""
 }
 
-/*fun addTeamToDocument(docID: String, memberId: String) {
-    val db = FirebaseFirestore.getInstance()
-    val usersCollection = db.collection("Usuarios")
-    val query = usersCollection.whereEqualTo("correo", memberId)
+suspend fun uploadToStorage(
+    uri: Uri,
+    context: Context
+): String = suspendCancellableCoroutine { continuation ->
+    val storage = Firebase.storage
+    val storageRef = storage.reference
+    val uniqueImageName = UUID.randomUUID()
+    val spaceRef = storageRef.child("pdfs/$uniqueImageName.pdf")
 
-    query.get().addOnSuccessListener { querySnapshot ->
-        if (!querySnapshot.isEmpty) {
-            val docRef = db.collection("Documentos").document(docID)
+    try {
+        context.contentResolver.openInputStream(uri)?.use { inputStream ->
+            val byteArray = inputStream.readBytes()
+            val uploadTask = spaceRef.putBytes(byteArray)
 
-            docRef.update("members", FieldValue.arrayUnion(memberId))
-                .addOnSuccessListener {
-                }
-                .addOnFailureListener { e ->
-                }
-        } else {
+            uploadTask.addOnSuccessListener {
+                continuation.resume(spaceRef.toString())
+            }.addOnFailureListener { e ->
+                continuation.resume("null")
+                Toast.makeText(
+                    context,
+                    "Carga Fallida",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
         }
+    } catch (e: Exception) {
+        Log.e("errores", "$e")
+        e.printStackTrace()
+        continuation.resumeWithException(e)
     }
-}*/
+}
 
 @SuppressLint("Range")
 private fun getFileName(uri: Uri, contentResolver: ContentResolver): String {

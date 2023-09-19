@@ -9,10 +9,12 @@ data class DocumentModel(
     val creatorName: String? = "",
     val creatorUID: String? = "",
     val description: String? = "",
+    val fileRef: String? = "",
     val teamsAdded: List<String> = emptyList(),
     val usersAdded: List<String> = emptyList()
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
+        parcel.readString(),
         parcel.readString(),
         parcel.readString(),
         parcel.readString(),
@@ -28,6 +30,7 @@ data class DocumentModel(
         parcel.writeString(creatorName)
         parcel.writeString(creatorUID)
         parcel.writeString(description)
+        parcel.writeString(fileRef)
         parcel.writeStringList(teamsAdded)
         parcel.writeStringList(usersAdded)
     }

@@ -7,8 +7,9 @@ buildscript {
         classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.21'
     }
     repositories {
-            google()
-            mavenCentral()
+        google()
+        mavenCentral()
+        jcenter()
     }
 }
 plugins {
