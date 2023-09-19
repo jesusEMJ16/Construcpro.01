@@ -58,7 +58,7 @@ fun CardView_Documents(
                     Column {
                         Spacer(modifier = Modifier.width(5.dp))
                         Text(
-                            text = document?.docName ?: "",
+                            text = document?.name ?: "",
                             style = MaterialTheme.typography.titleLarge
                         )
                         Row(verticalAlignment = Alignment.CenterVertically) {

@@ -3,7 +3,10 @@ package com.example.contrupro3.ui.theme
 import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.pdf.PdfRenderer
 import android.net.Uri
+import android.os.ParcelFileDescriptor
 import android.provider.OpenableColumns
 import android.util.Log
 import android.widget.Toast
@@ -49,6 +52,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.CheckBox
+import androidx.compose.material.icons.filled.CheckBoxOutlineBlank
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
@@ -89,7 +93,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.window.Dialog
+import androidx.lifecycle.ViewModel
 import androidx.navigation.NavHostController
+import coil.compose.rememberImagePainter
 import com.example.contrupro3.R
 import com.example.contrupro3.modelos.AuthRepository
 import com.example.contrupro3.modelos.DocumentModel
@@ -98,6 +104,7 @@ import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.ktx.storage
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
+import java.io.ByteArrayOutputStream
 import java.util.Locale
 import java.util.UUID
 import kotlin.coroutines.resume
@@ -128,7 +135,7 @@ fun DocumentsScreen(
         remember(documentsList, selectedFilter, isFilterAscending, searchQuery) {
             derivedStateOf {
                 var filteredList = documentsList.value.filter {
-                    it.docName?.contains(
+                    it.name?.contains(
                         searchQuery,
                         ignoreCase = true
                     ) == true
@@ -136,10 +143,13 @@ fun DocumentsScreen(
                 when (selectedFilter) {
                     "Nombre" -> {
                         filteredList = if (isFilterAscending) {
-                            filteredList.sortedBy { it.docName }
+                            filteredList.sortedBy { it.name }
                         } else {
-                            filteredList.sortedByDescending { it.docName }
+                            filteredList.sortedByDescending { it.name }
                         }
+                    }
+                    "Proyecto" -> {
+
                     }
                 }
                 filteredList
@@ -152,7 +162,7 @@ fun DocumentsScreen(
                 LocalContentColor provides colorResource(id = R.color.white)
             ) {
                 Row {
-                    if(showDeleteButtons) {
+                    if(showDeleteButtons === true) {
                         FloatingActionButton(
                             onClick = {
 
@@ -347,8 +357,7 @@ fun DocumentCard(
                         } else {
                             selectedCards?.remove(document)
                         }
-
-                        if(selectedCards?.size!! > 0) {
+                        if(selectedCards?.size!! >= 1) {
                             updatedShowButtons = true
                         }
                     }
@@ -360,7 +369,7 @@ fun DocumentCard(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = document.docName.toString(),
+                        text = document.name.toString(),
                         style = MaterialTheme.typography.titleSmall,
                         modifier = Modifier.align(Alignment.Center)
                     )
@@ -369,17 +378,25 @@ fun DocumentCard(
                             imageVector = Icons.Default.CheckBox,
                             contentDescription = null,
                             tint = myOrangehigh,
-                            modifier = Modifier.size(30.dp).offset(x = 105.dp)
+                            modifier = Modifier
+                                .size(30.dp)
+                                .offset(x = 105.dp)
                         )
                     }
                 }
                 Spacer(modifier = Modifier.height(10.dp))
                 Divider(color = Color.LightGray, thickness = 1.dp)
                 Image(
-                    painter = painterResource(id = R.drawable.no_image), contentDescription = null,
+                    painter = rememberImagePainter(
+                        data = document.previewRef,
+                        builder = {
+                            placeholder(R.drawable.no_image)
+                            error(R.drawable.no_image)
+                        }
+                    ), contentDescription = null,
                     alignment = Alignment.TopCenter,
                     modifier = Modifier
-                        .fillMaxSize()
+                        .size(300.dp)
                 )
             }
         }
@@ -397,7 +414,6 @@ fun DocumentCard(
                 documentsList.value = documentsList.value.filter { it.id != documentId }
                 authRepository.loadDocumentsFromFirebase(documentsList)
             }
-            .addOnFailureListener { e -> }
     }
 
     if (showDeleteDialog) {
@@ -528,7 +544,7 @@ fun RegisterCardDocument(
                 onValueChange = {
                     documentName.value = it
                     if (documentsFiltered.value.find {
-                            it.docName?.trim().equals(documentName.value.trim(), ignoreCase = true)
+                            it.name?.trim().equals(documentName.value.trim(), ignoreCase = true)
                         } != null) nameRepliqued = true
                     enabledSaveButton =
                         documentName.value.length >= 6 && documentUriName.length > 1 && nameRepliqued === false
@@ -648,10 +664,10 @@ fun RegisterCardDocument(
                             isLoadingSpinnerActived = true
                             showLoadingSpinner = true
                             scope.launch {
-                                val docReference = uploadToStorage(pdfUri!!, context)
-                                if (docReference !== "null") {
+                                val docReferences = uploadToStorage(pdfUri!!, context)
+                                if (docReferences.pdfReference !== "null" && docReferences.previewReference !== "null") {
                                     val newDoc = DocumentModel(
-                                        null,
+                                        UUID.randomUUID().toString(),
                                         documentName.value.lowercase(Locale.getDefault())
                                             .replaceFirstChar {
                                                 if (it.isLowerCase()) it.titlecase(
@@ -661,7 +677,8 @@ fun RegisterCardDocument(
                                         loggedInUserName,
                                         loggedInUserUID,
                                         description,
-                                        docReference,
+                                        docReferences.pdfReference,
+                                        docReferences.previewReference,
                                         emptyList(),
                                         emptyList()
                                     )
@@ -670,7 +687,7 @@ fun RegisterCardDocument(
                                     db.collection("Usuarios")
                                         .document(loggedInUserUID)
                                         .collection("Documentos")
-                                        .whereEqualTo("docName", newDoc.docName)
+                                        .whereEqualTo("name", newDoc.name)
                                         .get()
                                         .addOnSuccessListener { documents ->
                                             if (documents.isEmpty) {
@@ -679,7 +696,6 @@ fun RegisterCardDocument(
                                                     .collection("Documentos")
                                                     .add(newDoc)
                                                     .addOnSuccessListener { documentReference ->
-                                                        val docID = documentReference.id
                                                         documentName.value = ""
                                                         description = ""
                                                         showLoadingSpinner = false
@@ -687,7 +703,7 @@ fun RegisterCardDocument(
 
                                                         Toast.makeText(
                                                             context,
-                                                            "Carga Completa",
+                                                            "Archivo agregado correctamente",
                                                             Toast.LENGTH_LONG
                                                         ).show()
                                                     }
@@ -771,21 +787,53 @@ fun validateDocumentInput(
 suspend fun uploadToStorage(
     uri: Uri,
     context: Context
-): String = suspendCancellableCoroutine { continuation ->
+): StorageReferences = suspendCancellableCoroutine { continuation ->
     val storage = Firebase.storage
     val storageRef = storage.reference
     val uniqueImageName = UUID.randomUUID()
     val spaceRef = storageRef.child("pdfs/$uniqueImageName.pdf")
+    var previewByteArray: ByteArray? = null
 
     try {
+        // Generar Preview Del PDF ========================================================================================================
+        val pdfFileDescriptor: ParcelFileDescriptor? = context.contentResolver.openFileDescriptor(uri, "r")
+
+        pdfFileDescriptor?.use { fileDescriptor ->
+            val pdfRenderer = PdfRenderer(fileDescriptor)
+
+            if (pdfRenderer.pageCount > 0) {
+                val firstPage = pdfRenderer.openPage(0)
+                val width = 400
+                val height = 600
+                val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                firstPage.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+
+                firstPage.close()
+                pdfRenderer.close()
+                previewByteArray = bitmapToByteArray(bitmap)
+            }
+        }
+        // ================================================================================================================================
+
         context.contentResolver.openInputStream(uri)?.use { inputStream ->
             val byteArray = inputStream.readBytes()
             val uploadTask = spaceRef.putBytes(byteArray)
 
             uploadTask.addOnSuccessListener {
-                continuation.resume(spaceRef.toString())
+                val previewRef = storageRef.child("previews/$uniqueImageName.pdf")
+
+                if (previewByteArray != null) {
+                    previewRef.putBytes(previewByteArray!!)
+                        .addOnSuccessListener { previewDownloadUri ->
+                            previewRef.downloadUrl.addOnSuccessListener { downloadURL ->
+                                val storageReferences = StorageReferences(spaceRef.toString(), downloadURL.toString())
+                                continuation.resume(storageReferences)
+                            }
+                        }
+                }
             }.addOnFailureListener { e ->
-                continuation.resume("null")
+                val storageReferences = StorageReferences("null", "null")
+                continuation.resume(storageReferences)
                 Toast.makeText(
                     context,
                     "Carga Fallida",
@@ -811,3 +859,11 @@ private fun getFileName(uri: Uri, contentResolver: ContentResolver): String {
     }
     return "Archivo Desconocido"
 }
+
+fun bitmapToByteArray(bitmap: Bitmap): ByteArray {
+    val stream = ByteArrayOutputStream()
+    bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
+    return stream.toByteArray()
+}
+
+data class StorageReferences(val pdfReference: String, val previewReference: String)
