@@ -59,7 +59,7 @@ import com.example.contrupro3.modelos.AuthRepository
 fun HamburgueerMenu(navController: NavController, authRepository: AuthRepository) {
 
     var isDrawerOpen by remember { mutableStateOf(false) }
-    val offsetX by animateDpAsState(if (isDrawerOpen) 0.dp else (-330).dp)
+    val offsetX by animateDpAsState(if (isDrawerOpen) 0.dp else (-330).dp, label = "")
     val loggedInUserName: String by authRepository.getLoggedInUserName().observeAsState("")
 
     LaunchedEffect(key1 = navController.currentBackStackEntry) {
@@ -95,7 +95,7 @@ fun HamburgueerMenu(navController: NavController, authRepository: AuthRepository
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.Start
                     ) {
-                        Spacer(modifier = Modifier.height(40.dp))
+                        Spacer(modifier = Modifier.height(25.dp))
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -128,7 +128,7 @@ fun HamburgueerMenu(navController: NavController, authRepository: AuthRepository
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(vertical = 8.dp)
+                                    .padding(vertical = 5.dp)
                                     .wrapContentHeight(align = Alignment.Bottom)
                             ) {
                                 Text(
@@ -140,7 +140,7 @@ fun HamburgueerMenu(navController: NavController, authRepository: AuthRepository
                                 )
                             }
                         }
-                        Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.height(5.dp))
                         Divider(color = Color.LightGray, thickness = 1.dp)
                         MenuOpciones(navController, authRepository)
                         Column(
@@ -148,13 +148,13 @@ fun HamburgueerMenu(navController: NavController, authRepository: AuthRepository
                             verticalArrangement = Arrangement.Center,
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Spacer(modifier = Modifier.height(30.dp))
+                            Spacer(modifier = Modifier.height(15.dp))
                             Image(
-                                painter = painterResource(R.drawable.logoshape), // reemplace esto con el recurso de su logo
+                                painter = painterResource(R.drawable.logoshape),
                                 contentDescription = "Logo",
                                 modifier = Modifier
-                                    .height(150.dp)
-                                    .width(150.dp)
+                                    .height(100.dp)
+                                    .width(100.dp)
                             )
                         }
                         SectionDown(navController, authRepository)
@@ -168,7 +168,7 @@ fun HamburgueerMenu(navController: NavController, authRepository: AuthRepository
                 .size(55.dp) // Ajusta el tamaño del botón
                 .padding(12.dp) // Ajusta el espacio interior del botón
         ) {
-            Crossfade(targetState = isDrawerOpen) { state ->
+            Crossfade(targetState = isDrawerOpen, label = "") { state ->
                 if (state) {
                     Icon(
                         imageVector = Icons.Filled.ArrowBack,
@@ -219,7 +219,7 @@ fun MenuOpciones(navController: NavController, authRepository: AuthRepository) {
 
     }
     CreateOptionButton("Prosupuesto y Compras", painterResource(R.drawable.profit_50px)){
-
+        navController.navigate("presucom_screen")
     }
     CreateOptionButton("Planos y Documentacion", painterResource(R.drawable.documents_50px)){
         navController.navigate("documents_screen/$userID")
@@ -228,7 +228,7 @@ fun MenuOpciones(navController: NavController, authRepository: AuthRepository) {
 
     }
 
-    Spacer(modifier = Modifier.height(10.dp))
+    Spacer(modifier = Modifier.height(5.dp))
     Divider(color = Color.LightGray, thickness = 1.dp)
 }
 
@@ -352,7 +352,7 @@ fun CreateOptionButton(text: String, icon: Painter, onClick: () -> Unit) {
             horizontalArrangement = Arrangement.Start
         ) {
             Icon(icon, contentDescription = null, tint = myOrange)
-            Spacer(modifier = Modifier.width(10.dp))
+            Spacer(modifier = Modifier.width(5.dp))
             Text(
                 text = text,
                 color = Color.Black,

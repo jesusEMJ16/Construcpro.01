@@ -70,7 +70,7 @@ fun BouncingDots() {
         targetValue = 2 * Math.PI.toFloat(),
         animationSpec = infiniteRepeatable(
             tween(durationMillis = 2000, easing = LinearEasing)
-        )
+        ), label = ""
     )
 
     Row(
@@ -95,9 +95,4 @@ fun BouncingDots() {
             )
         }
     }
-}
-
-@Composable
-@Preview fun tasnk(){
-    BouncingDots()
 }

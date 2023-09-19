@@ -265,7 +265,6 @@ fun TeamCreationScreen(navController: NavController, authRepository: AuthReposit
     }
 }
 
-
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun EquipoCard(equipo: Equipos, navController: NavController,userID: String, authRepository: AuthRepository, equiposList: MutableState<List<Equipos>>) {

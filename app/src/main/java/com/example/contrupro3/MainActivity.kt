@@ -19,6 +19,7 @@ class MainActivity : ComponentActivity() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
+        setTheme(R.style.Theme_ContruPro3)
         super.onCreate(savedInstanceState)
         setContent {
             val navController = rememberNavController()

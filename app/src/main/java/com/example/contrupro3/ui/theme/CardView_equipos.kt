@@ -22,6 +22,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.AlertDialog
@@ -42,9 +44,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,6 +61,7 @@ import androidx.navigation.NavHostController
 import com.example.contrupro3.modelos.AuthRepository
 import com.example.contrupro3.modelos.Equipos
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.O)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -67,8 +72,24 @@ fun CardViewTeam(navController: NavHostController, authRepository: AuthRepositor
     val EquipoList = remember { mutableStateOf<Equipos?>(null) }
     authRepository.loadEquipo(equipoID, EquipoList)
     var showDialog by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val integrantes = remember { mutableStateOf(listOf<String>()) }
 
     val equipo: Equipos? = EquipoList.value
+
+    LaunchedEffect(Unit) {
+        scope.launch {
+            getIntegrantesFromFirestore(
+                equipoID,
+                onSuccess = { results ->
+                    integrantes.value = results
+                },
+                onFailure = { exception ->
+                    // Maneja el error aquí si es necesario
+                }
+            )
+        }
+    }
 
     Log.d("Log descripcion", "descripcion : ${equipo?.descripcion}")
 
@@ -164,6 +185,14 @@ fun CardViewTeam(navController: NavHostController, authRepository: AuthRepositor
                         Spacer(modifier = Modifier.height(5.dp))
                         Divider(color = Color.LightGray, thickness = 1.dp)
                         Spacer(modifier = Modifier.height(5.dp))
+
+                        LazyColumn {
+                            items(integrantes.value) { integrante ->
+                                Text(text = integrante, style = MaterialTheme.typography.bodySmall)
+                                Spacer(modifier = Modifier.height(5.dp))
+                            }
+                        }
+
                         Button(
                             onClick = {
                                 showDialog = true
@@ -186,7 +215,8 @@ fun CardViewTeam(navController: NavHostController, authRepository: AuthRepositor
                             onInvite = { email ->
                                 if (isValidEmail(email)) {
                                     val userEmail = authRepository.getCurrentUser()?.email
-                                    Log.d("Log correo", "el correo es : $userEmail")
+                                    Log.d("DEBUG", "El correo obtenido es: $userEmail")
+
                                     if (userEmail != null && userEmail != email) {
                                         val firestore = FirebaseFirestore.getInstance()
                                         val usuarioId = authRepository.getCurrentUser()?.uid
@@ -198,16 +228,15 @@ fun CardViewTeam(navController: NavHostController, authRepository: AuthRepositor
                                                     .document(usuarioId)
                                                     .collection("Invitaciones")
 
-                                            Log.d("equipoID","equipo id: $equipoID")
-                                            Log.d("email","email id: $email")
-
+                                            // Chequear si el correo ya ha sido invitado al equipo específico
                                             invitacionesCollection.whereEqualTo("email", email)
+                                                .whereEqualTo("equipoId", equipoID)
                                                 .get().addOnSuccessListener { querySnapshot ->
                                                     if (querySnapshot.documents.isEmpty()) {
-                                                        // Si no hay documentos con ese email, entonces agregamos la nueva invitación.
+                                                        // Si no hay documentos con ese email y ese equipoId, entonces agregamos la nueva invitación.
                                                         invitacionesCollection.add(
                                                             mapOf(
-                                                                "equipoId" to equipoId,
+                                                                "equipoId" to equipoID,
                                                                 "email" to email,
                                                                 "estado" to "pendiente"
                                                             )
@@ -227,7 +256,7 @@ fun CardViewTeam(navController: NavHostController, authRepository: AuthRepositor
                                                     } else {
                                                         Toast.makeText(
                                                             context,
-                                                            "El correo ya ha sido invitado",
+                                                            "El correo ya ha sido invitado a este equipo",
                                                             Toast.LENGTH_SHORT
                                                         ).show()
                                                     }
@@ -264,6 +293,35 @@ fun CardViewTeam(navController: NavHostController, authRepository: AuthRepositor
             }
         }
     }
+}
+
+fun getIntegrantesFromFirestore(equipoID: String, onSuccess: (List<String>) -> Unit, onFailure: (Exception) -> Unit) {
+    val firestore = FirebaseFirestore.getInstance()
+
+    Log.d("getIntegrantes", "Función llamada con equipoID: $equipoID")
+
+    firestore.collectionGroup("Invitaciones")
+        .whereEqualTo("equipoId", equipoID)
+        .get()
+        .addOnSuccessListener { querySnapshot ->
+            Log.d("getIntegrantes", "Consulta exitosa. Documentos encontrados: ${querySnapshot.size()}")
+
+            val integrantes = querySnapshot.documents.mapNotNull { document ->
+                document.getString("email")
+            }
+
+            if (integrantes.isNotEmpty()) {
+                Log.d("getIntegrantes", "Emails encontrados: ${integrantes.joinToString(", ")}")
+            } else {
+                Log.d("getIntegrantes", "No se encontraron emails.")
+            }
+
+            onSuccess(integrantes)
+        }
+        .addOnFailureListener { exception ->
+            Log.e("getIntegrantes", "Error en la consulta: ${exception.message}", exception)
+            onFailure(exception)
+        }
 }
 
 fun isValidEmail(email: String): Boolean {
