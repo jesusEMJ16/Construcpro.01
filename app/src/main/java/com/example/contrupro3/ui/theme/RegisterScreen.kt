@@ -79,7 +79,7 @@ fun RegisterPage(navController: NavController) {
         contentAlignment = Alignment.Center
     ) {
         Image(
-            painter = painterResource(R.drawable.logo),
+            painter = painterResource(R.drawable.logo_con_nombre),
             contentDescription = "App Logo",
             modifier = Modifier
                 .size(150.dp) // Ajusta el tamaño del logo si es necesario

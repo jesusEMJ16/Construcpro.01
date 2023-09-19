@@ -39,9 +39,11 @@ fun SplashScreen(navController: NavHostController,authRepository: AuthRepository
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Image(
-                painter = painterResource(R.drawable.logo), // reemplace esto con el recurso de su logo
+                painter = painterResource(R.drawable.logo_con_nombre), // reemplace esto con el recurso de su logo
                 contentDescription = "Logo",
                 modifier = Modifier.padding(bottom = 100.dp)
+                    .size(250.dp)
+
             )
             BouncingDots()
         }

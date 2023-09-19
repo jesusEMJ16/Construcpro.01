@@ -66,12 +66,12 @@ fun LoginPage(navController: NavController, authRepository: AuthRepository) {
     ) {
         Box(
             modifier = Modifier
-                .size(200.dp)
+                .size(250.dp)
                 .align(Alignment.TopCenter)
-                .offset(y = 75.dp)
+                .offset(y = 35.dp)
         ) {
             Image(
-                painter = painterResource(R.drawable.logo),
+                painter = painterResource(R.drawable.logo_con_nombre),
                 contentDescription = "App Logo",
                 modifier = Modifier.fillMaxSize()
             )
