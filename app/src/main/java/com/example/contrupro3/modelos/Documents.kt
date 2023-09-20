@@ -10,12 +10,16 @@ data class DocumentModel(
     val creatorUID: String? = "",
     val description: String? = "",
     val fileRef: String? = "",
+    val fileUrl: String? = "",
+    val previewUrl: String? = "",
     val previewRef: String? = "",
     val teamsLinked: List<String> = emptyList(),
     val usersLinked: List<String> = emptyList()
 
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
+        parcel.readString(),
+        parcel.readString(),
         parcel.readString(),
         parcel.readString(),
         parcel.readString(),
@@ -34,6 +38,8 @@ data class DocumentModel(
         parcel.writeString(creatorUID)
         parcel.writeString(description)
         parcel.writeString(fileRef)
+        parcel.writeString(fileUrl)
+        parcel.writeString(previewUrl)
         parcel.writeString(previewRef)
         parcel.writeStringList(teamsLinked)
         parcel.writeStringList(usersLinked)
