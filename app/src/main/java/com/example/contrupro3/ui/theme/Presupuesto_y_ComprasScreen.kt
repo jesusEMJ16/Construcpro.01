@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.OutlinedTextField
@@ -19,6 +20,8 @@ import androidx.compose.material.Surface
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -64,39 +67,61 @@ fun Presupuesto_y_Compras(navController: NavController, authRepository: AuthRepo
     }
     HamburgueerMenu(navController = navController, authRepository = authRepository)
 }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProyectoSelectionHeader() {
     var isDialogVisible by remember { mutableStateOf(false) }
     var selectedProject by remember { mutableStateOf("") }
+    val proyectosMenu1 = listOf("Proyecto 1A", "Proyecto 2A", "Proyecto 3A")
+    val proyectosMenu2 = listOf("Proyecto 1B", "Proyecto 2B", "Proyecto 3B")
+    var isMenu1Expanded by remember { mutableStateOf(false) }
+    var isMenu2Expanded by remember { mutableStateOf(false) }
 
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(10.dp)
-            .background(color = Color.Transparent),
-        contentAlignment = Alignment.Center
+            .background(color = Color.Transparent)
     ) {
-        androidx.compose.material3.OutlinedTextField(
-            value = selectedProject,
-            onValueChange = { selectedProject = it },
-            label = {  Text("Selecciona un Proyecto", textAlign = TextAlign.Center) },
-            colors = TextFieldDefaults.outlinedTextFieldColors(
-                cursorColor = Color.Black,
-                focusedBorderColor = Color.Transparent,
-                unfocusedBorderColor = Color.Transparent,
-            ),
-            modifier = Modifier
-                .fillMaxWidth(0.7f)
-                .shadow(5.dp)
-                .background(Color.White)
-                .clickable {
-                    isDialogVisible = true
-                },
-        )
-    }
-    if (isDialogVisible) {
-        SelectProjectDialog(isDialogOpen = isDialogVisible, closeDialog = { isDialogVisible = false })
+        Button(onClick = { isMenu1Expanded = true }) {
+            Text("Mostrar Menú 1")
+        }
+
+        DropdownMenu(
+            expanded = isMenu1Expanded,
+            onDismissRequest = { isMenu1Expanded = false }
+        ) {
+            proyectosMenu1.forEach { proyecto ->
+                DropdownMenuItem(onClick = {
+                    // TODO: Acción al seleccionar el proyecto
+                    selectedProject = proyecto
+                    isMenu1Expanded = false
+                }) {
+                    Text(proyecto)
+                }
+            }
+        }
+
+        //Segund  o DropdownMenu
+        Button(onClick = { isMenu2Expanded = true }) {
+            Text("Mostrar Menú 2")
+        }
+
+        DropdownMenu(
+            expanded = isMenu2Expanded,
+            onDismissRequest = { isMenu2Expanded = false }
+        ) {
+            proyectosMenu2.forEach { proyecto ->
+                DropdownMenuItem(onClick = {
+                    // TODO: Acción al seleccionar el proyecto
+                    selectedProject = proyecto
+                    isMenu2Expanded = false
+                }) {
+                    Text(proyecto)
+                }
+            }
+        }
     }
 }
 
