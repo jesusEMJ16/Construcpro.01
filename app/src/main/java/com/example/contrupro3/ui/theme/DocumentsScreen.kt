@@ -104,6 +104,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.Popup
+import androidx.core.graphics.toColor
 import androidx.navigation.NavHostController
 import coil.compose.rememberImagePainter
 import com.example.contrupro3.R
@@ -233,7 +234,7 @@ fun DocumentsScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(5.dp),
+                    .padding(10.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Column(
@@ -347,7 +348,7 @@ fun DocumentCard(
                 ) {
                     Text(
                         text = document.name.toString(),
-                        style = MaterialTheme.typography.titleSmall,
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         modifier = Modifier.align(Alignment.Center)
                     )
                 }
@@ -357,13 +358,14 @@ fun DocumentCard(
                     painter = rememberImagePainter(
                         data = document.previewUrl,
                         builder = {
-                            placeholder(R.drawable.no_image)
-                            error(R.drawable.no_image)
+                            placeholder(R.drawable.pdf_image)
+                            error(R.drawable.error_document)
                         }
                     ), contentDescription = null,
-                    alignment = Alignment.TopCenter,
+                    alignment = Alignment.Center,
                     modifier = Modifier
                         .size(300.dp)
+                        .background(Color.White)
                 )
             }
         }
@@ -589,6 +591,7 @@ fun RegisterCardDocument(
                                         docReferences.previewDownloadUrl,
                                         docReferences.previewRef,
                                         emptyList(),
+                                        emptyList(),
                                         emptyList()
                                     )
 
@@ -802,9 +805,7 @@ fun PdfViewerScreen(navController: NavHostController, pdfUrl: String) {
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         launcher.launch(intent)
 
-        onDispose {
-            navController.popBackStack()
-        }
+        onDispose {}
     }
 }
 

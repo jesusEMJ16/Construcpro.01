@@ -14,6 +14,7 @@ data class DocumentModel(
     val previewUrl: String? = "",
     val previewRef: String? = "",
     val teamsLinked: List<String> = emptyList(),
+    val proyectsLinked: List<String> = emptyList(),
     val usersLinked: List<String> = emptyList()
 
 ) : Parcelable {
@@ -27,6 +28,7 @@ data class DocumentModel(
         parcel.readString(),
         parcel.readString(),
         parcel.readString(),
+        parcel.createStringArrayList() ?: emptyList(),
         parcel.createStringArrayList() ?: emptyList(),
         parcel.createStringArrayList() ?: emptyList()
     )
@@ -42,6 +44,7 @@ data class DocumentModel(
         parcel.writeString(previewUrl)
         parcel.writeString(previewRef)
         parcel.writeStringList(teamsLinked)
+        parcel.writeStringList(proyectsLinked)
         parcel.writeStringList(usersLinked)
     }
 
