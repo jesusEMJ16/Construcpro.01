@@ -8,50 +8,40 @@ data class Project(
     val projectName: String = "",
     val creatorName: String = "",
     val creatorUID: String = "",
-    val descripcion: String = "",
+    val description: String = "",
     val startDate: String = "",
     val endDate: String = "",
-    val numParticipants: Int = 0,
-    val numTask: Int = 0,
-    val numDocuments: Int = 0,
-    val estado: String = ""
-
+    val documents: List<String> = emptyList(),
+    val tasks: List<String> = emptyList(),
+    val teams: List<String> = emptyList(),
+    val members: List<String> = emptyList()
 ) : Parcelable {
-    constructor(
-        readString: String,
-        readString1: String,
-        readString2: String,
-        readString3: String,
-        readString4: String,
-        readInt: Int,
-        readInt1: Int,
-        readInt2: Int,
-        readString5: String
-    ) : this("", "", "","", "", "", "",0, 0, 0, "")
-
     constructor(parcel: Parcel) : this(
         parcel.readString()!!,
         parcel.readString()!!,
         parcel.readString()!!,
         parcel.readString()!!,
         parcel.readString()!!,
-        parcel.readInt(),
-        parcel.readInt(),
-        parcel.readInt(),
-        parcel.readString()!!
+        parcel.readString()!!,
+        parcel.readString()!!,
+        parcel.createStringArrayList() ?: emptyList(),
+        parcel.createStringArrayList() ?: emptyList(),
+        parcel.createStringArrayList() ?: emptyList(),
+        parcel.createStringArrayList() ?: emptyList()
     )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
+        parcel.writeString(id)
         parcel.writeString(projectName)
         parcel.writeString(creatorName)
         parcel.writeString(creatorUID)
-        parcel.writeString(descripcion)
+        parcel.writeString(description)
         parcel.writeString(startDate)
         parcel.writeString(endDate)
-        parcel.writeInt(numParticipants)
-        parcel.writeInt(numTask)
-        parcel.writeInt(numDocuments)
-        parcel.writeString(estado)
+        parcel.writeStringList(documents)
+        parcel.writeStringList(tasks)
+        parcel.writeStringList(teams)
+        parcel.writeStringList(members)
     }
 
     override fun describeContents(): Int {

@@ -91,7 +91,7 @@ fun CardViewTeam(navController: NavHostController, authRepository: AuthRepositor
         }
     }
 
-    Log.d("Log descripcion", "descripcion : ${equipo?.descripcion}")
+    Log.d("Log descripcion", "descripcion : ${equipo?.description}")
 
     Scaffold(
         topBar = {
@@ -100,7 +100,7 @@ fun CardViewTeam(navController: NavHostController, authRepository: AuthRepositor
                     Column {
                         Spacer(modifier = Modifier.width(5.dp))
                         Text(
-                            text = equipo?.nombreEquipo ?: "",
+                            text = equipo?.name ?: "",
                             style = MaterialTheme.typography.titleLarge
                         )
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -154,7 +154,7 @@ fun CardViewTeam(navController: NavHostController, authRepository: AuthRepositor
                         Divider(color = Color.LightGray, thickness = 1.dp)
                         Spacer(modifier = Modifier.height(5.dp))
                         Text(
-                            text = equipo?.descripcion ?: "no existe descripcion",
+                            text = equipo?.description ?: "no existe descripcion",
                             style = TextStyle(
                                 color = Color.Black,
                                 fontSize = 16.sp,

@@ -62,6 +62,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -228,65 +229,64 @@ fun DocumentsScreen(
                     }
                 }
             }
-        },
-        content = {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(10.dp),
-                contentAlignment = Alignment.Center
+        }
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(10.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.offset(y = 15.dp)
             ) {
-                Column(
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.offset(y = 15.dp)
-                ) {
-                    Spacer(modifier = Modifier.height(5.dp))
-                    Text(
-                        text = "Planos y Documentación",
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-                    )
-                    Spacer(modifier = Modifier.height(5.dp))
-                    Divider(color = Color.LightGray, thickness = 1.dp)
-                    Spacer(modifier = Modifier.height(5.dp))
-                    when (filteredDocuments.size) {
-                        0 -> {
-                            Text(
-                                text = "No tienes documentos publicados.",
-                                modifier = Modifier.padding(bottom = 10.dp)
-                            )
-                        }
-
-                        1 -> {
-                            Text(
-                                text = "Tienes 1 documento creado.",
-                                modifier = Modifier.padding(bottom = 10.dp)
-                            )
-                        }
-
-                        else -> {
-                            Text(
-                                text = "Tienes ${documentsList.value.size} documentos creados.",
-                                modifier = Modifier.padding(bottom = 10.dp)
-                            )
-                        }
+                Spacer(modifier = Modifier.height(5.dp))
+                Text(
+                    text = "Planos y Documentación",
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                )
+                Spacer(modifier = Modifier.height(5.dp))
+                Divider(color = Color.LightGray, thickness = 1.dp)
+                Spacer(modifier = Modifier.height(5.dp))
+                when (filteredDocuments.size) {
+                    0 -> {
+                        Text(
+                            text = "No tienes documentos publicados.",
+                            modifier = Modifier.padding(bottom = 10.dp)
+                        )
                     }
-                    LazyColumn(modifier = Modifier.weight(1f)) {
-                        items(filteredDocuments) { document ->
-                            DocumentCard(
-                                document = document,
-                                navController = navController,
-                                authRepository = authRepository,
-                                documentsList = documentsList,
-                                userID = userID
-                            )
-                            Spacer(Modifier.height(15.dp))
-                        }
+
+                    1 -> {
+                        Text(
+                            text = "Tienes 1 documento creado.",
+                            modifier = Modifier.padding(bottom = 10.dp)
+                        )
+                    }
+
+                    else -> {
+                        Text(
+                            text = "Tienes ${documentsList.value.size} documentos creados.",
+                            modifier = Modifier.padding(bottom = 10.dp)
+                        )
+                    }
+                }
+                LazyColumn(modifier = Modifier.weight(1f)) {
+                    items(filteredDocuments) { document ->
+                        DocumentCard(
+                            document = document,
+                            navController = navController,
+                            authRepository = authRepository,
+                            documentsList = documentsList,
+                            userID = userID
+                        )
+                        Spacer(Modifier.height(15.dp))
                     }
                 }
             }
         }
-    )
+    }
     HamburgueerMenu(navController = navController, authRepository = authRepository)
     if (isAddDocumentDialogOpen.value) {
         Dialog(onDismissRequest = { isAddDocumentDialogOpen.value = false }) {
@@ -401,76 +401,63 @@ fun RegisterCardDocument(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
+                .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Documento Nuevo",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
+                text = "Crear Documento",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = myOrange
             )
-            Spacer(modifier = Modifier.height(10.dp))
-            if (documentName.value.length <= 5) {
-                Text(
-                    text = "* Requerido",
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Light),
-                    color = Color.Red,
-                    fontSize = 3.em,
-                    modifier = Modifier
-                        .offset(x = -65.dp)
-                        .padding(bottom = 5.dp),
-                    textAlign = TextAlign.Left
-                )
-            }
-            if (documentName.value.length > 5 && nameRepliqued === true) {
-                Text(
-                    text = "El nombre ya esta en uso",
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Light),
-                    color = Color.Red,
-                    fontSize = 3.em,
-                    modifier = Modifier
-                        .offset(x = -20.dp)
-                        .padding(bottom = 5.dp),
-                    textAlign = TextAlign.Left
-                )
-            }
-            if (documentName.value.length > 30) {
-                Text(
-                    text = "Tamaño del nombre excedido.",
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Light),
-                    color = Color.Red,
-                    fontSize = 3.em,
-                    modifier = Modifier
-                        .offset(x = -20.dp)
-                        .padding(bottom = 5.dp),
-                    textAlign = TextAlign.Left
-                )
-            }
+            Spacer(modifier = Modifier.height(5.dp))
+            Divider(color = Color.Black, thickness = 1.dp)
+            Spacer(modifier = Modifier.height(15.dp))
             OutlinedTextField(
                 value = documentName.value,
                 onValueChange = {
                     documentName.value = it
                     if (documentsFiltered.find {
                             it.name?.trim().equals(documentName.value.trim(), ignoreCase = true)
-                        } != null) nameRepliqued = true
-                    enabledSaveButton =
-                        documentName.value.length >= 6 && documentUriName.length > 1 && nameRepliqued === false
+                        } != null) nameRepliqued = true else nameRepliqued = false
                 },
-                label = { Text("Nombre del documento") },
+                label = { Text(text = "Nombre del documento") },
                 colors = TextFieldDefaults.outlinedTextFieldColors(
                     textColor = Color.Black,
                     cursorColor = Color.Black,
-                    focusedBorderColor = Color.Transparent,
+                    focusedBorderColor = Color(0xA9D8D8D8),
                     unfocusedBorderColor = Color.Transparent,
+                    backgroundColor = Color(0x79D8D8D8)
                 ),
                 modifier = Modifier
-                    .fillMaxWidth(0.8f)
-                    .shadow(5.dp)
-                    .background(Color.White),
+                    .fillMaxWidth(0.9f),
                 singleLine = true,
                 maxLines = 1
             )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                if(documentName.value.length < 6) {
+                    Text(
+                        text = "* Requerido",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light, color = myOrange),
+                        modifier = Modifier.offset(x = 20.dp)
+                    )
+                } else if(nameRepliqued === true) {
+                    Text(
+                        text = "* Nombre duplicado",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light, color = myOrange),
+                        modifier = Modifier.offset(x = 20.dp)
+                    )
+                } else Text(text = " ")
+                Text(
+                    text = "${documentName.value.length}/30",
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light, color = if(documentName.value.length > 30) myOrange else Color.Black),
+                    modifier = Modifier
+                        .offset(x = -20.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(10.dp))
             Spacer(modifier = Modifier.height(10.dp))
             OutlinedTextField(
                 value = description,
@@ -479,17 +466,21 @@ fun RegisterCardDocument(
                 colors = TextFieldDefaults.outlinedTextFieldColors(
                     textColor = Color.Black,
                     cursorColor = Color.Black,
-                    focusedBorderColor = Color.Transparent,
+                    focusedBorderColor = Color(0xA9D8D8D8),
                     unfocusedBorderColor = Color.Transparent,
+                    backgroundColor = Color(0x79D8D8D8)
                 ),
                 modifier = Modifier
-                    .fillMaxWidth(0.8f)
-                    .shadow(5.dp)
-                    .height(100.dp)
-                    .background(Color.White)
+                    .fillMaxWidth(0.9f)
             )
-            Spacer(modifier = Modifier.height(20.dp))
-
+            Text(
+                text = "${description.length}/200",
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light, color = if(description.length > 200) myOrange else Color.Black),
+                modifier = Modifier
+                    .offset(x = -20.dp)
+                    .align(Alignment.End)
+            )
+            Spacer(modifier = Modifier.height(15.dp))
             val contentResolver = LocalContext.current.contentResolver
             val launcher =
                 rememberLauncherForActivityResult(
@@ -498,19 +489,8 @@ fun RegisterCardDocument(
                         pdfUri = it
                     }
                 )
-
-            if (requiredVisible) {
-                Text(
-                    text = "* Requerido",
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Light),
-                    color = Color.Red,
-                    fontSize = 3.em,
-                    modifier = Modifier
-                )
-            }
-
             Column(
-                modifier = Modifier.padding(start = 10.dp, top = 1.dp, end = 10.dp, bottom = 2.dp)
+                modifier = Modifier.padding(start = 10.dp, top = 0.dp, end = 10.dp, bottom = 2.dp)
             ) {
                 Button(
                     colors = ButtonDefaults.buttonColors(
@@ -520,6 +500,13 @@ fun RegisterCardDocument(
                     enabled = !isLoadingSpinnerActived
                 ) {
                     Text("Seleccionar archivo")
+                }
+                if (requiredVisible) {
+                    Text(
+                        text = "* Requerido",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light, color = myOrange),
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
                 }
 
                 pdfUri?.let { uri ->
@@ -559,16 +546,8 @@ fun RegisterCardDocument(
 
                 if (!isLoadingSpinnerActived) {
                     Button(
-                        enabled = enabledSaveButton,
+                        enabled = documentName.value.length >= 6 && documentName.value.length <= 30 && documentUriName.length > 1 && nameRepliqued === false && description.length <= 200,
                         onClick = {
-                            val validationMessage =
-                                validateDocumentInput(documentName.value, pdfUri.toString())
-                            if (validationMessage.isNotEmpty()) {
-                                errorDialogVisible = true
-                                errorMessage = validationMessage
-                                return@Button
-                            }
-
                             isLoadingSpinnerActived = true
                             showLoadingSpinner = true
                             scope.launch {
@@ -676,21 +655,6 @@ fun RegisterCardDocument(
             }
         }
     }
-}
-
-fun validateDocumentInput(
-    documentName: String,
-    uriName: String
-): String {
-    if (documentName.isEmpty()) {
-        return "Se requiere un nombre para el documento."
-    } else if (documentName.length > 30) {
-        return "El nombre del archivo no puede superar mas de 30 caracteres."
-    } else if (documentName.length < 6) {
-        return "El nombre del archivo no puede tener menos de 6 caracteres."
-    } else if (uriName.isEmpty()) return "Se requiere subir un archivo pdf."
-
-    return ""
 }
 
 suspend fun uploadToStorage(

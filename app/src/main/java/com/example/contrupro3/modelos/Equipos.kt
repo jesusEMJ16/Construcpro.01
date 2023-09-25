@@ -5,11 +5,11 @@ import android.os.Parcelable
 
 data class Equipos(
     val id: String? = null,
-    val nombreEquipo: String? = "",
+    val name: String? = "",
     val creatorName: String? = "",
     val creatorUID: String? = "",
-    val descripcion: String? = "",
-    val members: List<String> = emptyList() // Lista de miembros del equipo
+    val description: String? = "",
+    val members: List<String> = emptyList()
 
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
@@ -23,10 +23,10 @@ data class Equipos(
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeString(id)
-        parcel.writeString(nombreEquipo)
+        parcel.writeString(name)
         parcel.writeString(creatorName)
         parcel.writeString(creatorUID)
-        parcel.writeString(descripcion)
+        parcel.writeString(description)
         parcel.writeStringList(members)
     }
 

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import android.annotation.SuppressLint
 import android.os.Build
 import android.util.Log
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.LocalIndication
@@ -29,9 +30,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -44,6 +42,7 @@ import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Icon
 import androidx.compose.material.LocalContentColor
+import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.TextField
 import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material.icons.Icons
@@ -72,11 +71,13 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -85,37 +86,36 @@ import androidx.navigation.NavController
 import com.example.contrupro3.R
 import com.example.contrupro3.modelos.AuthRepository
 import com.example.contrupro3.modelos.Equipos
+import com.example.contrupro3.modelos.Project
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.launch
 import java.util.Locale
 @RequiresApi(Build.VERSION_CODES.O)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @ExperimentalMaterial3Api
 @Composable
-fun TeamCreationScreen(navController: NavController, authRepository: AuthRepository,userID: String) {
-
+fun TeamCreationScreen(navController: NavController, authRepository: AuthRepository, userID: String) {
     var selectedFilter by remember { mutableStateOf("Nombre") }
     var isFilterAscending by remember { mutableStateOf(false) }
     var isFilterMenuOpen by remember { mutableStateOf(false) }
     var isSearchExpanded by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     val loggedInUserUID: String by authRepository.getLoggedInUserUID().observeAsState("")
-    val equiposList = remember { mutableStateOf(emptyList<Equipos>()) }
+    val teamsList = remember { mutableStateOf(emptyList<Equipos>()) }
     val isAddTeamDialogOpen = remember { mutableStateOf(false) }
     val loggedInUserName: String by authRepository.getLoggedInUserName().observeAsState("")
-    val equipos = remember { mutableStateListOf<Equipos>() }
 
-    authRepository.loadEquiposFromFirebase(equiposList)
-
-    val filteredEquipos = remember(equiposList, selectedFilter, isFilterAscending, searchQuery) {
+    authRepository.loadEquiposFromFirebase(teamsList)
+    val filteredEquipos = remember(teamsList, selectedFilter, isFilterAscending, searchQuery) {
         derivedStateOf {
-            var filteredList = equiposList.value.filter { it.nombreEquipo?.contains(searchQuery, ignoreCase = true) == true }
+            var filteredList = teamsList.value.filter { it.name?.contains(searchQuery, ignoreCase = true) == true }
             when (selectedFilter) {
                 "Nombre" -> {
                     filteredList = if (isFilterAscending) {
-                        filteredList.sortedBy { it.nombreEquipo }
+                        filteredList.sortedBy { it.name }
                     } else {
-                        filteredList.sortedByDescending { it.nombreEquipo }
+                        filteredList.sortedByDescending { it.name }
                     }
                 }
             }
@@ -204,30 +204,44 @@ fun TeamCreationScreen(navController: NavController, authRepository: AuthReposit
                 ) {
                     Spacer(modifier = Modifier.height(5.dp))
                     Text(
-                        text = "Equipos",
+                        text = "Proyectos",
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                     )
                     Spacer(modifier = Modifier.height(5.dp))
                     Divider(color = Color.LightGray, thickness = 1.dp)
                     Spacer(modifier = Modifier.height(5.dp))
+                    when (filteredEquipos.value.size) {
+                        0 -> {
+                            Text(
+                                text = "No tienes equipos creados.",
+                                modifier = Modifier.padding(bottom = 10.dp)
+                            )
+                        }
 
-                    Column(
-                        modifier = Modifier
-                            .padding(horizontal = 15.dp)
-                            .fillMaxWidth(),
-                        verticalArrangement = Arrangement.Bottom
-                    ) {
-                        LazyColumn(modifier = Modifier.weight(1f)) {
-                            items(filteredEquipos.value) { equipo ->
-                                EquipoCard(
-                                    equipo = equipo, // Pasar el equipo individual en lugar de equipos
-                                    navController = navController,
-                                    authRepository = authRepository,
-                                    equiposList = equiposList,
-                                    userID = userID,
-                                )
-                                Spacer(Modifier.height(15.dp))
-                            }
+                        1 -> {
+                            Text(
+                                text = "Tienes 1 equipo creado.",
+                                modifier = Modifier.padding(bottom = 10.dp)
+                            )
+                        }
+
+                        else -> {
+                            Text(
+                                text = "Tienes ${filteredEquipos.value.size} equipos creados.",
+                                modifier = Modifier.padding(bottom = 10.dp)
+                            )
+                        }
+                    }
+                    LazyColumn(modifier = Modifier.weight(1f)) {
+                        items(filteredEquipos.value) { equipo ->
+                            EquipoCard(
+                                team = equipo,
+                                navController = navController,
+                                authRepository = authRepository,
+                                equiposList = teamsList,
+                                userID = userID,
+                            )
+                            Spacer(Modifier.height(15.dp))
                         }
                     }
                 }
@@ -238,38 +252,14 @@ fun TeamCreationScreen(navController: NavController, authRepository: AuthReposit
     HamburgueerMenu(navController = navController, authRepository = authRepository)
     if (isAddTeamDialogOpen.value) {
         Dialog(onDismissRequest = { isAddTeamDialogOpen.value = false }) {
-            RegisterCardTeam(isAddTeamDialogOpen,loggedInUserName, loggedInUserUID, equipos)
-        }
-    }
-    if (isSearchExpanded) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding(),
-        ) {
-            TextField(
-                value = searchQuery,
-                onValueChange = { newValue ->
-                    searchQuery = newValue
-                    if (newValue.isEmpty()) {
-                        authRepository.loadEquiposFromFirebase(equiposList)
-                    }
-                },
-                label = { Text("Buscar Equipos") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 730.dp)
-                    .navigationBarsPadding()
-            )
+            RegisterCardTeam(isAddTeamDialogOpen,loggedInUserName, loggedInUserUID, filteredEquipos.value)
         }
     }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun EquipoCard(equipo: Equipos, navController: NavController,userID: String, authRepository: AuthRepository, equiposList: MutableState<List<Equipos>>) {
-    val equipoID = equipo.id
-
+fun EquipoCard(team: Equipos, navController: NavController,userID: String, authRepository: AuthRepository, equiposList: MutableState<List<Equipos>>) {
     val showDeleteDialog = remember { mutableStateOf(false) }
     Spacer(Modifier.height(15.dp))
     Box(
@@ -289,7 +279,7 @@ fun EquipoCard(equipo: Equipos, navController: NavController,userID: String, aut
                 )
                 .combinedClickable(
                     onClick = {
-                        navController.navigate("cardteam_screen/${equipoID}")
+                        navController.navigate("cardteam_screen/${team.id}")
                     },
                     onLongClick = { showDeleteDialog.value = true }
                 ),
@@ -304,7 +294,7 @@ fun EquipoCard(equipo: Equipos, navController: NavController,userID: String, aut
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = equipo.nombreEquipo.toString(),
+                        text = team.name.toString(),
                         style = MaterialTheme.typography.titleSmall,
                         modifier = Modifier.align(Alignment.Center)
                     )
@@ -332,7 +322,7 @@ fun EquipoCard(equipo: Equipos, navController: NavController,userID: String, aut
                     }
                     Spacer(modifier = Modifier.width(5.dp))
                     Text(
-                        text = equipo.creatorName.toString(),
+                        text = team.creatorName.toString(),
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
@@ -357,7 +347,7 @@ fun EquipoCard(equipo: Equipos, navController: NavController,userID: String, aut
                     }
                     Spacer(modifier = Modifier.width(5.dp))
                     Text(
-                        text = equipo.members.size.toString(), // Cantidad de personas dentro del equipo
+                        text = team.members.size.toString(), // Cantidad de personas dentro del equipo
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
@@ -391,9 +381,9 @@ fun EquipoCard(equipo: Equipos, navController: NavController,userID: String, aut
                     confirmButton = {
                         Button(
                             onClick = {
-                                if (equipoID != null) {
+                                if (team.id != null) {
                                     // Eliminar el equipo
-                                    deleteEquipo(userID, equipoID)
+                                    deleteEquipo(userID, team.id)
                                 }
                                 showDeleteDialog.value = false
                             }
@@ -417,22 +407,15 @@ fun EquipoCard(equipo: Equipos, navController: NavController,userID: String, aut
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun RegisterCardTeam(isAddTeamDialogOpen : MutableState<Boolean>,loggedInUserName: String,
-                 loggedInUserUID: String,
-                 Equipo: MutableList<Equipos>) {
-    fun validateTeamInput(teamName: String, descripcion: String): String {
-        // Comprueba si los campos están vacíos
-        if (teamName.isEmpty() || descripcion.isEmpty()) {
-            return "Nombre de equipo y descripcion deben ser llenados."
-        }
-
-        return ""
-    }
-
-    var errorDialogVisible by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf("") }
-    val nombreEquipo = remember { mutableStateOf("") }
-    var descripcion by remember { mutableStateOf("") }
+fun RegisterCardTeam(
+    isAddTeamDialogOpen: MutableState<Boolean>, loggedInUserName: String,
+    loggedInUserUID: String,
+    teams: List<Equipos>
+) {
+    val name = remember { mutableStateOf("") }
+    val description = remember { mutableStateOf("") }
+    val nameRepliqued = remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     Card(
         modifier = Modifier.padding(16.dp),
@@ -442,114 +425,133 @@ fun RegisterCardTeam(isAddTeamDialogOpen : MutableState<Boolean>,loggedInUserNam
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
+                .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Nuevo Equipo",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
+                text = "Crear Equipo",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = myOrange
             )
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            androidx.compose.material.OutlinedTextField(
-                value = nombreEquipo.value,
-                onValueChange = { nombreEquipo.value = it },
-                label = { Text("Nombre del equipo") },
+            Spacer(modifier = Modifier.height(5.dp))
+            Divider(color = Color.Black, thickness = 1.dp)
+            Spacer(modifier = Modifier.height(15.dp))
+            OutlinedTextField(
+                value = name.value,
+                onValueChange = {
+                    name.value = it
+                    if (teams.find {
+                            it.name?.trim().equals(name.value.trim(), ignoreCase = true)
+                        } != null) nameRepliqued.value = true else nameRepliqued.value = false
+                },
+                label = { Text(text = "Nombre del equipo") },
                 colors = TextFieldDefaults.outlinedTextFieldColors(
                     textColor = Color.Black,
-                    cursorColor = Color.Black,
-                    focusedBorderColor = Color.Transparent,
+                    cursorColor = myOrange,
+                    focusedBorderColor = Color(0xA9D8D8D8),
                     unfocusedBorderColor = Color.Transparent,
+                    backgroundColor = Color(0x79D8D8D8)
                 ),
+                singleLine = true,
+                maxLines = 1,
                 modifier = Modifier
-                    .fillMaxWidth(0.8f)
-                    .shadow(5.dp)
-                    .background(Color.White)
+                    .fillMaxWidth(0.9f)
             )
-
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                if(name.value.length < 6) {
+                    Text(
+                        text = "* Requerido",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light, color = myOrange),
+                        modifier = Modifier.offset(x = 20.dp)
+                    )
+                } else if(nameRepliqued.value === true) {
+                    Text(
+                        text = "* Nombre duplicado",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light, color = myOrange),
+                        modifier = Modifier.offset(x = 20.dp)
+                    )
+                } else Text(text = " ")
+                Text(
+                    text = "${name.value.length}/30",
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light, color = if(name.value.length > 30) myOrange else Color.Black),
+                    modifier = Modifier
+                        .offset(x = -20.dp)
+                )
+            }
             Spacer(modifier = Modifier.height(10.dp))
-
-            androidx.compose.material.OutlinedTextField(
-                value = descripcion,
-                onValueChange = { descripcion = it },
-                label = { Text("Descripción") },
+            OutlinedTextField(
+                value = description.value,
+                onValueChange = { description.value = it },
+                label = { Text(text = "Descripción del equipo") },
                 colors = TextFieldDefaults.outlinedTextFieldColors(
                     textColor = Color.Black,
-                    cursorColor = Color.Black,
-                    focusedBorderColor = Color.Transparent,
+                    cursorColor = myOrange,
+                    focusedBorderColor = Color(0xA9D8D8D8),
                     unfocusedBorderColor = Color.Transparent,
+                    backgroundColor = Color(0x79D8D8D8)
                 ),
                 modifier = Modifier
-                    .fillMaxWidth(0.8f)
-                    .shadow(5.dp)
-                    .height(100.dp)
-                    .background(Color.White)
+                    .fillMaxWidth(0.9f)
             )
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            Text(text = "Agregar personal")
-
-            Spacer(modifier = Modifier.height(20.dp))
-
+            Text(
+                text = "${description.value.length}/200",
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light, color = if(description.value.length > 200) myOrange else Color.Black),
+                modifier = Modifier
+                    .offset(x = -20.dp)
+                    .align(Alignment.End)
+            )
+            Spacer(modifier = Modifier.height(15.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
+                val scope = rememberCoroutineScope()
                 Button(
+                    enabled = name.value.length > 6 && name.value.length <= 200 && nameRepliqued.value === false && description.value.length <= 200,
                     onClick = {
-                        val validationMessage =
-                            validateTeamInput(nombreEquipo.value, descripcion)
-                        if (validationMessage.isNotEmpty()) {
-                            // En caso de un mensaje de validación, actualiza los estados del diálogo de error
-                            errorDialogVisible = true
-                            errorMessage = validationMessage
-                            return@Button
-                        }
+                        scope.launch {
+                            val newDoc = Equipos(
+                                null,
+                                name.value.lowercase(Locale.getDefault())
+                                    .replaceFirstChar {
+                                        if (it.isLowerCase()) it.titlecase(
+                                            Locale.getDefault()
+                                        ) else it.toString()
+                                    },
+                                loggedInUserName,
+                                loggedInUserUID,
+                                description.value,
+                                emptyList()
+                            )
 
-                        val newTeam = Equipos(
-                            null,
-                            nombreEquipo.value.capitalize(Locale.getDefault()),
-                            loggedInUserName,
-                            loggedInUserUID,
-                            descripcion.capitalize(Locale.getDefault()),
-                            emptyList()
-                        )
+                            val db = FirebaseFirestore.getInstance()
+                            val collectionReference = db.collection("Usuarios")
+                                .document(loggedInUserUID)
+                                .collection("Equipos")
 
-                        val db = FirebaseFirestore.getInstance()
-                        db.collection("Usuarios")
-                            .document(loggedInUserUID)
-                            .collection("Equipos")
-                            .whereEqualTo("nombreEquipo", newTeam.nombreEquipo)
-                            .get()
-                            .addOnSuccessListener { documents ->
-                                if (documents.isEmpty()) {
-                                    // No existe un equipo con el mismo nombre, así que podemos crear el nuevo equipo
-                                    db.collection("Usuarios")
-                                        .document(loggedInUserUID)
-                                        .collection("Equipos")
-                                        .add(newTeam)
-                                        .addOnSuccessListener { documentReference ->
-                                            val teamID = documentReference.id
-                                            // Agregar el nuevo miembro al equipo
-                                            addMemberToTeam(teamID, loggedInUserUID)
-                                            nombreEquipo.value = ""
-                                            descripcion = ""
-
+                            collectionReference
+                                .add(newDoc)
+                                .addOnSuccessListener { documentReference ->
+                                    val docUpdated = newDoc.copy(id = documentReference.id)
+                                    collectionReference
+                                        .document(documentReference.id)
+                                        .set(docUpdated)
+                                        .addOnSuccessListener {
+                                            name.value = ""
+                                            description.value = ""
                                             isAddTeamDialogOpen.value = false
+
+                                            Toast.makeText(
+                                                context,
+                                                "Equipo creado correctamente",
+                                                Toast.LENGTH_LONG
+                                            ).show()
                                         }
-                                        .addOnFailureListener { e ->
-                                            // Error al guardar el equipo
-                                        }
-                                } else {
-                                    // Existe un equipo con el mismo nombre, muestra un mensaje de error
-                                    errorDialogVisible = true
-                                    errorMessage = "Ya existe un equipo con este nombre."
                                 }
-                            }
+                        }
                     },
                     colors = ButtonDefaults.buttonColors(myOrange, contentColor = Color.White),
                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
@@ -561,7 +563,6 @@ fun RegisterCardTeam(isAddTeamDialogOpen : MutableState<Boolean>,loggedInUserNam
                 Button(
                     onClick = {
                         isAddTeamDialogOpen.value = false
-                        Log.d("CancelarButton", "Botón 'Cancelar' presionado. Valor de isAddTeamDialogOpen: ${isAddTeamDialogOpen.value}")
                     },
                     colors = ButtonDefaults.buttonColors(myOrange, contentColor = Color.White),
                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
@@ -569,44 +570,19 @@ fun RegisterCardTeam(isAddTeamDialogOpen : MutableState<Boolean>,loggedInUserNam
                 ) {
                     Text("Cancelar")
                 }
-
-
-                if (errorDialogVisible) {
-                    AlertDialog(
-                        onDismissRequest = {
-                            errorDialogVisible = false
-                        },
-                        title = { Text("Error en el registro del equipo") },
-                        text = { Text(errorMessage) },
-                        confirmButton = {
-                            Button(onClick = {
-                                errorDialogVisible = false
-                            }) {
-                                Text("Cerrar")
-                            }
-                        }
-                    )
-                }
             }
+            Spacer(modifier = Modifier.height(10.dp))
         }
     }
 }
 
-// Función para agregar un nuevo miembro al equipo
 fun addMemberToTeam(teamId: String, memberId: String) {
     val db = FirebaseFirestore.getInstance()
-    // Primero, verifica si el correo electrónico del nuevo miembro existe en tu sistema
-    // Puedes usar Firebase Authentication para realizar esta verificación
-    // Por ejemplo, podrías tener una colección "Usuarios" donde almacenas información de usuarios
     val usersCollection = db.collection("Usuarios")
     val query = usersCollection.whereEqualTo("correo", memberId)
 
     query.get().addOnSuccessListener { querySnapshot ->
         if (!querySnapshot.isEmpty) {
-            // El correo electrónico del nuevo miembro existe en tu sistema
-            // Ahora, puedes agregar al nuevo miembro al equipo
-
-            // Primero, obtén la referencia al documento del equipo
             val teamRef = db.collection("Equipos").document(teamId)
 
             // Luego, actualiza el campo de matriz "members" del equipo con el nuevo miembro
