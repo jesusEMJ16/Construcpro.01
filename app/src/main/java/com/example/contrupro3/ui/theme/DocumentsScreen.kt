@@ -138,7 +138,6 @@ fun DocumentsScreen(
     val isAddDocumentDialogOpen = remember { mutableStateOf(false) }
     val loggedInUserUID: String by authRepository.getLoggedInUserUID().observeAsState("")
     val loggedInUserName: String by authRepository.getLoggedInUserName().observeAsState("")
-    val selectedCards = remember { mutableSetOf<DocumentModel>() }.toMutableList()
     val documentsList = remember { mutableStateOf(emptyList<DocumentModel>()) }
     authRepository.loadDocumentsFromFirebase(documentsList)
 
@@ -576,7 +575,7 @@ fun RegisterCardDocument(
                                 val docReferences = uploadToStorage(pdfUri!!, context)
                                 if (docReferences.pdfRef !== "null" && docReferences.previewRef !== "null") {
                                     val newDoc = DocumentModel(
-                                        UUID.randomUUID().toString(),
+                                        null,
                                         documentName.value.lowercase(Locale.getDefault())
                                             .replaceFirstChar {
                                                 if (it.isLowerCase()) it.titlecase(
@@ -596,34 +595,29 @@ fun RegisterCardDocument(
                                     )
 
                                     val db = FirebaseFirestore.getInstance()
-                                    db.collection("Usuarios")
+                                    val collectionReference = db.collection("Usuarios")
                                         .document(loggedInUserUID)
                                         .collection("Documentos")
-                                        .whereEqualTo("name", newDoc.name)
-                                        .get()
-                                        .addOnSuccessListener { documents ->
-                                            if (documents.isEmpty) {
-                                                db.collection("Usuarios")
-                                                    .document(loggedInUserUID)
-                                                    .collection("Documentos")
-                                                    .add(newDoc)
-                                                    .addOnSuccessListener { documentReference ->
-                                                        documentName.value = ""
-                                                        description = ""
-                                                        showLoadingSpinner = false
-                                                        isAddDocumentDialogOpen.value = false
 
-                                                        Toast.makeText(
-                                                            context,
-                                                            "Archivo agregado correctamente",
-                                                            Toast.LENGTH_LONG
-                                                        ).show()
-                                                    }
-                                            } else {
-                                                errorDialogVisible = true
-                                                errorMessage =
-                                                    "Ya existe un documento con este nombre."
-                                            }
+                                    collectionReference
+                                        .add(newDoc)
+                                        .addOnSuccessListener { documentReference ->
+                                            val docUpdated = newDoc.copy(id = documentReference.id)
+                                            collectionReference
+                                                .document(documentReference.id)
+                                                .set(docUpdated)
+                                                .addOnSuccessListener {
+                                                    documentName.value = ""
+                                                    description = ""
+                                                    showLoadingSpinner = false
+                                                    isAddDocumentDialogOpen.value = false
+
+                                                    Toast.makeText(
+                                                        context,
+                                                        "Archivo agregado correctamente",
+                                                        Toast.LENGTH_LONG
+                                                    ).show()
+                                                }
                                         }
                                 } else {
                                     isLoadingSpinnerActived = false

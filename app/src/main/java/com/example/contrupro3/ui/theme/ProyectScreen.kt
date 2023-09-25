@@ -116,6 +116,7 @@ import com.maxkeppeler.sheets.calendar.models.CalendarStyle
 import kotlinx.coroutines.delay
 import java.time.LocalDate
 import java.util.Locale
+import java.util.UUID
 
 @RequiresApi(Build.VERSION_CODES.O)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -726,10 +727,25 @@ fun RegisterCard(isAddProjectDialogOpen: MutableState<Boolean>, loggedInUserName
                         )
 
                         val db = FirebaseFirestore.getInstance()
-                        db.collection("Usuarios")
+                        val collectionReference = db.collection("Usuarios")
                             .document(loggedInUserUID)
                             .collection("Proyectos")
-                            .whereEqualTo("projectName", newProject.projectName) // Aquí, 'nombre' es el campo en Firestore que contiene el nombre del proyecto
+
+                        collectionReference
+                            .add(newProject)
+                            .addOnSuccessListener { documentReference ->
+                                val updatedProyect = newProject.copy(id = documentReference.id)
+                                collectionReference
+                                    .document(documentReference.id)
+                                    .set(updatedProyect)
+                                    .addOnSuccessListener {
+                                        projectName.value = ""
+                                        startDate.value = ""
+                                        endDate.value = ""
+                                        isAddProjectDialogOpen.value = false
+                                    }
+                            }
+                        /*documentReference
                             .get()
                             .addOnSuccessListener { documents ->
                                 if (documents.isEmpty()) { // Aquí se llama a la función isEmpty()
@@ -740,8 +756,7 @@ fun RegisterCard(isAddProjectDialogOpen: MutableState<Boolean>, loggedInUserName
                                         .add(newProject)
                                         .addOnSuccessListener { documentReference ->
                                             val projectID = documentReference.id
-                                            // Aquí, `projectID` es el ID del nuevo proyecto.
-                                            // Proyecto guardado exitosamente
+
                                             projectName.value = ""
                                             startDate.value = ""
                                             endDate.value = ""
@@ -755,7 +770,7 @@ fun RegisterCard(isAddProjectDialogOpen: MutableState<Boolean>, loggedInUserName
                                     errorDialogVisible = true
                                     errorMessage = "Ya existe un proyecto con este nombre."
                                 }
-                            }
+                            }*/
                     },
                     colors = ButtonDefaults.buttonColors(myOrange, contentColor = Color.White),
                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),

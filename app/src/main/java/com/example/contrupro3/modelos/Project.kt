@@ -4,10 +4,10 @@ import android.os.Parcel
 import android.os.Parcelable
 
 data class Project(
-    val id: String? = null, // Este es el projectID que necesitas para la función deleteProject
+    val id: String? = null,
     val projectName: String = "",
-    val creatorName: String = "", // Visible on the card
-    val creatorUID: String = "", // Used for association in the database
+    val creatorName: String = "",
+    val creatorUID: String = "",
     val descripcion: String = "",
     val startDate: String = "",
     val endDate: String = "",
