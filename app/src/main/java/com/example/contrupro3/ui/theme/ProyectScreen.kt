@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -349,7 +350,6 @@ fun ProjectCard(
     val showDeleteDialog = remember { mutableStateOf(false) }
     val showDialog = remember { mutableStateOf(false) }
     val showDatePicker = remember { mutableStateOf(false) }
-    val projectID = project.id
 
     Spacer(Modifier.height(15.dp))
     Box(
@@ -381,35 +381,17 @@ fun ProjectCard(
                     .padding(10.dp)
             ) {
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(10.dp),
-                    contentAlignment = Alignment.Center
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
                         text = project.projectName,
                         style = MaterialTheme.typography.titleSmall,
                         modifier = Modifier.align(Alignment.Center)
                     )
-
-                    IconButton(
-                        onClick = { showDialog.value = true },
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .size(20.dp),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Error,
-                            contentDescription = "Estado del proyecto",
-                            tint = Color.Black,
-                        )
-                    }
                 }
-
-                Spacer(modifier = Modifier.height(2.dp))
+                Spacer(modifier = Modifier.height(5.dp))
                 Divider(color = Color.LightGray, thickness = 1.dp)
-                Spacer(modifier = Modifier.height(2.dp))
-
+                Spacer(modifier = Modifier.height(10.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
@@ -432,9 +414,7 @@ fun ProjectCard(
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
-
                 Spacer(modifier = Modifier.height(5.dp))
-
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
@@ -598,7 +578,7 @@ fun RegisterCard(
                     textColor = Color.Black,
                     cursorColor = myOrange,
                     focusedBorderColor = Color(0xA9D8D8D8),
-                    unfocusedBorderColor = Color.Transparent,
+                    unfocusedBorderColor = Color(0xA9D8D8D8),
                     backgroundColor = Color(0x79D8D8D8)
                 ),
                 singleLine = true,
@@ -639,11 +619,12 @@ fun RegisterCard(
                     textColor = Color.Black,
                     cursorColor = myOrange,
                     focusedBorderColor = Color(0xA9D8D8D8),
-                    unfocusedBorderColor = Color.Transparent,
+                    unfocusedBorderColor = Color(0xA9D8D8D8),
                     backgroundColor = Color(0x79D8D8D8)
                 ),
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
+                    .height(100.dp)
             )
             Text(
                 text = "${description.value.length}/200",
@@ -727,7 +708,7 @@ fun RegisterCard(
                     Text("Cancelar")
                 }
             }
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(5.dp))
         }
     }
 }

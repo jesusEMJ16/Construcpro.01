@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -425,7 +426,7 @@ fun RegisterCardDocument(
                     textColor = Color.Black,
                     cursorColor = Color.Black,
                     focusedBorderColor = Color(0xA9D8D8D8),
-                    unfocusedBorderColor = Color.Transparent,
+                    unfocusedBorderColor = Color(0xA9D8D8D8),
                     backgroundColor = Color(0x79D8D8D8)
                 ),
                 modifier = Modifier
@@ -467,11 +468,12 @@ fun RegisterCardDocument(
                     textColor = Color.Black,
                     cursorColor = Color.Black,
                     focusedBorderColor = Color(0xA9D8D8D8),
-                    unfocusedBorderColor = Color.Transparent,
+                    unfocusedBorderColor = Color(0xA9D8D8D8),
                     backgroundColor = Color(0x79D8D8D8)
                 ),
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
+                    .height(100.dp)
             )
             Text(
                 text = "${description.length}/200",
@@ -622,6 +624,7 @@ fun RegisterCardDocument(
                         Text("Cancelar")
                     }
                 }
+                Spacer(modifier = Modifier.height(5.dp))
 
                 if (errorDialogVisible) {
                     AlertDialog(

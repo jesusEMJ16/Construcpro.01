@@ -449,7 +449,7 @@ fun RegisterCardTeam(
                     textColor = Color.Black,
                     cursorColor = myOrange,
                     focusedBorderColor = Color(0xA9D8D8D8),
-                    unfocusedBorderColor = Color.Transparent,
+                    unfocusedBorderColor = Color(0xA9D8D8D8),
                     backgroundColor = Color(0x79D8D8D8)
                 ),
                 singleLine = true,
@@ -490,11 +490,12 @@ fun RegisterCardTeam(
                     textColor = Color.Black,
                     cursorColor = myOrange,
                     focusedBorderColor = Color(0xA9D8D8D8),
-                    unfocusedBorderColor = Color.Transparent,
+                    unfocusedBorderColor = Color(0xA9D8D8D8),
                     backgroundColor = Color(0x79D8D8D8)
                 ),
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
+                    .height(100.dp)
             )
             Text(
                 text = "${description.value.length}/200",
@@ -510,7 +511,7 @@ fun RegisterCardTeam(
             ) {
                 val scope = rememberCoroutineScope()
                 Button(
-                    enabled = name.value.length > 6 && name.value.length <= 200 && nameRepliqued.value === false && description.value.length <= 200,
+                    enabled = name.value.length >= 6 && name.value.length <= 30 && nameRepliqued.value === false && description.value.length <= 200,
                     onClick = {
                         scope.launch {
                             val newDoc = Equipos(
@@ -571,7 +572,7 @@ fun RegisterCardTeam(
                     Text("Cancelar")
                 }
             }
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(5.dp))
         }
     }
 }

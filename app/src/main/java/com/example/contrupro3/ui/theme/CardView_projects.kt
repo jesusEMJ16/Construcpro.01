@@ -52,11 +52,7 @@ fun Cardview(navController: NavHostController, projectName: String, creatorName:
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = projectName,
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.paddingFromBaseline(top = 48.dp)
-            )
+            
         }
     }
 }
