@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -47,21 +46,26 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.CheckBox
+import androidx.compose.material.icons.filled.CheckBoxOutlineBlank
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DocumentScanner
-import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -87,6 +91,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.core.util.toRange
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.contrupro3.R
 import com.example.contrupro3.modelos.AuthRepository
@@ -115,8 +121,10 @@ fun ProjectView(navController: NavController, authRepository: AuthRepository, us
     val projectsList = remember { mutableStateOf(emptyList<Project>()) }
     val isAddProjectDialogOpen = remember { mutableStateOf(false) }
     val loggedInUserName: String by authRepository.getLoggedInUserName().observeAsState("")
-    val projects = remember { mutableStateListOf<Project>() }
     authRepository.loadProjectsFromFirebase(projectsList)
+    val viewModel: ProjectViewModel = viewModel()
+    val projectsSelectedToRemove = viewModel.projectsSelectedToRemove
+    val showRemoveProyectsDialog = viewModel.showDeleteProyectsDialog
 
     val filteredProjects = remember(projectsList, selectedFilter, isFilterAscending, searchQuery) {
         derivedStateOf {
@@ -160,91 +168,114 @@ fun ProjectView(navController: NavController, authRepository: AuthRepository, us
             CompositionLocalProvider(
                 LocalContentColor provides colorResource(id = R.color.white)
             ) {
-                Row {
-                    FloatingActionButton(
-                        onClick = {
-                            isSearchExpanded = !isSearchExpanded
-                            if (!isSearchExpanded) {
-                                searchQuery = ""
-                            }
-                        },
-                        containerColor = myOrangehigh
-                    ) {
-                        Icon(
-                            if (isSearchExpanded) Icons.Default.Close else Icons.Default.Search,
-                            contentDescription = "Buscar Proyectos",
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    FloatingActionButton(
-                        onClick = { isFilterMenuOpen = true },
-                        containerColor = myOrangehigh
-                    ) {
-                        Icon(
-                            Icons.Default.FilterAlt,
-                            contentDescription = "Filtros"
-                        )
-                    }
-
-                    DropdownMenu(
-                        expanded = isFilterMenuOpen,
-                        onDismissRequest = { isFilterMenuOpen = false }
-                    ) {
-                        DropdownMenuItem(onClick = {
-                            selectedFilter = "Nombre"
-                            isFilterMenuOpen = false
-                            isFilterAscending = !isFilterAscending
-                        }) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("Nombre")
-                                Spacer(Modifier.width(10.dp))
-                                Icon(
-                                    if (selectedFilter == "Nombre" && isFilterAscending) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
+                if(projectsSelectedToRemove.size > 0) {
+                    Row {
+                        FloatingActionButton(
+                            onClick = { projectsSelectedToRemove.clear() },
+                            containerColor = myOrangehigh
+                        ) {
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = "Cancelar",
+                            )
                         }
-                        DropdownMenuItem(onClick = {
-                            selectedFilter = "Fecha de inicio"
-                            isFilterMenuOpen = false
-                            isFilterAscending = !isFilterAscending
-                        }) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("Fecha de inicio")
-                                Spacer(Modifier.width(10.dp))
-                                Icon(
-                                    if (selectedFilter == "Fecha de inicio" && isFilterAscending) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                        }
-                        DropdownMenuItem(onClick = {
-                            selectedFilter = "Fecha de finalización"
-                            isFilterMenuOpen = false
-                            isFilterAscending = !isFilterAscending
-                        }) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("Fecha de finalización")
-                                Spacer(Modifier.width(10.dp))
-                                Icon(
-                                    if (selectedFilter == "Fecha de finalización" && isFilterAscending) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
+                        Spacer(modifier = Modifier.width(16.dp))
+                        FloatingActionButton(
+                            onClick = { viewModel.showDeleteProyectsDialog.value = true },
+                            containerColor = myOrangehigh
+                        ) {
+                            Icon(
+                                Icons.Default.Delete,
+                                contentDescription = "Remover proyectos"
+                            )
                         }
                     }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    FloatingActionButton(
-                        onClick = { isAddProjectDialogOpen.value = true },
-                        containerColor = myOrangehigh
-                    ) {
-                        Icon(
-                            Icons.Default.Add,
-                            contentDescription = "Agregar Proyecto"
-                        )
+                } else {
+                    Row {
+                        FloatingActionButton(
+                            onClick = {
+                                isSearchExpanded = !isSearchExpanded
+                                if (!isSearchExpanded) {
+                                    searchQuery = ""
+                                }
+                            },
+                            containerColor = myOrangehigh
+                        ) {
+                            Icon(
+                                if (isSearchExpanded) Icons.Default.Close else Icons.Default.Search,
+                                contentDescription = "Buscar Proyectos",
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
+                        FloatingActionButton(
+                            onClick = { isFilterMenuOpen = true },
+                            containerColor = myOrangehigh
+                        ) {
+                            Icon(
+                                Icons.Default.FilterAlt,
+                                contentDescription = "Filtros"
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = isFilterMenuOpen,
+                            onDismissRequest = { isFilterMenuOpen = false }
+                        ) {
+                            DropdownMenuItem(onClick = {
+                                selectedFilter = "Nombre"
+                                isFilterMenuOpen = false
+                                isFilterAscending = !isFilterAscending
+                            }) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text("Nombre")
+                                    Spacer(Modifier.width(10.dp))
+                                    Icon(
+                                        if (selectedFilter == "Nombre" && isFilterAscending) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+                            DropdownMenuItem(onClick = {
+                                selectedFilter = "Fecha de inicio"
+                                isFilterMenuOpen = false
+                                isFilterAscending = !isFilterAscending
+                            }) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text("Fecha de inicio")
+                                    Spacer(Modifier.width(10.dp))
+                                    Icon(
+                                        if (selectedFilter == "Fecha de inicio" && isFilterAscending) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+                            DropdownMenuItem(onClick = {
+                                selectedFilter = "Fecha de finalización"
+                                isFilterMenuOpen = false
+                                isFilterAscending = !isFilterAscending
+                            }) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text("Fecha de finalización")
+                                    Spacer(Modifier.width(10.dp))
+                                    Icon(
+                                        if (selectedFilter == "Fecha de finalización" && isFilterAscending) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
+                        FloatingActionButton(
+                            onClick = { isAddProjectDialogOpen.value = true },
+                            containerColor = myOrangehigh
+                        ) {
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = "Agregar Proyecto"
+                            )
+                        }
                     }
                 }
             }
@@ -307,6 +338,7 @@ fun ProjectView(navController: NavController, authRepository: AuthRepository, us
         }
     }
 
+    if(showRemoveProyectsDialog.value === true) RemoveProjectsSelected(userID)
     HamburgueerMenu(navController = navController, authRepository = authRepository)
     if (isAddProjectDialogOpen.value) {
         Dialog(onDismissRequest = { isAddProjectDialogOpen.value = false }) {
@@ -337,6 +369,89 @@ fun ProjectView(navController: NavController, authRepository: AuthRepository, us
     }
 }
 
+@Composable
+fun RemoveProjectsSelected(userID: String) {
+    val viewModel: ProjectViewModel = viewModel()
+    val projectsSelectedToRemove = viewModel.projectsSelectedToRemove
+    val context = LocalContext.current
+
+    if(projectsSelectedToRemove.size > 0) {
+        AlertDialog(
+            onDismissRequest = { viewModel.showDeleteProyectsDialog.value = false },
+            buttons = {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(10.dp),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    Button(
+                        onClick = {},
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = myOrangehigh,
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Text(
+                            text = "Cancelar",
+                            style = MaterialTheme.typography.titleSmall
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Button(
+                        onClick = {
+                            val db = FirebaseFirestore.getInstance()
+                            val collection = db.collection("Usuarios").document(userID).collection("Proyectos")
+
+                            for(proyect in projectsSelectedToRemove) {
+                                collection.document(proyect).delete()
+                            }
+                            viewModel.showDeleteProyectsDialog.value = false
+                            Toast.makeText(
+                                context,
+                                "Proyectos removidos",
+                                Toast.LENGTH_LONG
+                            ).show()
+                            viewModel.projectsSelectedToRemove.removeAll(projectsSelectedToRemove)
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = myOrangehigh,
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Text(
+                            text = "Aceptar",
+                            style = MaterialTheme.typography.titleSmall
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                }
+            },
+            title = {
+                Row {
+                    Box() {
+                        Icon(Icons.Default.WarningAmber, contentDescription = null, tint = myOrangehigh)
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = "Advertencia",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = myOrange
+                        )
+                    )
+                }
+            },
+            text = {
+                Text(
+                    text = "Los proyectos no se podran volver a recuperar. ¿Esta seguro de esto?",
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Light)
+                )
+            }
+        )
+    }
+}
+
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -347,8 +462,8 @@ fun ProjectCard(
     authRepository: AuthRepository,
     projectsList: MutableState<List<Project>>
 ) {
-    val showDeleteDialog = remember { mutableStateOf(false) }
-    val showDialog = remember { mutableStateOf(false) }
+    val viewModel: ProjectViewModel = viewModel()
+    val projectsSelectedToRemove = viewModel.projectsSelectedToRemove
     val showDatePicker = remember { mutableStateOf(false) }
 
     Spacer(Modifier.height(15.dp))
@@ -367,12 +482,19 @@ fun ProjectCard(
                     interactionSource = MutableInteractionSource(),
                     indication = LocalIndication.current
                 )
-                .combinedClickable(
-                    onClick = {
+                .combinedClickable(onClick = {
+                    if (projectsSelectedToRemove.size > 0) {
+                        if (!projectsSelectedToRemove.contains(project.id)) {
+                            projectsSelectedToRemove.add(project.id.toString())
+                        } else projectsSelectedToRemove.remove(project.id.toString())
+                    } else {
                         navController.navigate("card_screen/${project.projectName}/${project.creatorName}")
-                    },
-                    onLongClick = { showDeleteDialog.value = true }
-                ),
+                    }
+                }, onLongClick = {
+                    if (!projectsSelectedToRemove.contains(project.id)) {
+                        projectsSelectedToRemove.add(project.id.toString())
+                    } else projectsSelectedToRemove.remove(project.id.toString())
+                }),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
             shape = RoundedCornerShape(15.dp),
         ) {
@@ -380,14 +502,30 @@ fun ProjectCard(
                 modifier = Modifier
                     .padding(10.dp)
             ) {
-                Box(
-                    modifier = Modifier.fillMaxWidth()
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(5.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = project.projectName,
-                        style = MaterialTheme.typography.titleSmall,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
+                    Box(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = project.projectName,
+                            style = MaterialTheme.typography.titleSmall,
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    }
+                    if(projectsSelectedToRemove.contains(project.id.toString())) {
+                        Box() {
+                            Icon(Icons.Default.CheckBox, contentDescription = null, tint = myOrange, modifier = Modifier.align(Alignment.Center))
+                        }
+                    }
+                    if(projectsSelectedToRemove.size > 0 && !projectsSelectedToRemove.contains(project.id.toString())) {
+                        Box() {
+                            Icon(Icons.Default.CheckBoxOutlineBlank, contentDescription = null, tint = myOrange, modifier = Modifier.align(Alignment.Center))
+                        }
+                    }
                 }
                 Spacer(modifier = Modifier.height(5.dp))
                 Divider(color = Color.LightGray, thickness = 1.dp)
@@ -642,7 +780,7 @@ fun RegisterCard(
             ) {
                 val scope = rememberCoroutineScope()
                 Button(
-                    enabled = name.value.length > 6 && name.value.length <= 200 && nameRepliqued.value === false && description.value.length <= 200,
+                    enabled = name.value.length >= 6 && name.value.length <= 200 && nameRepliqued.value === false && description.value.length <= 200,
                     onClick = {
                         scope.launch {
                             val newDoc = Project(
@@ -743,31 +881,27 @@ fun CalendarSample3(
         }
 
         if (showDialog.value) {
-            AlertDialog(
+            Dialog(
                 onDismissRequest = { showDialog.value = false },
-                text = {
-                    CalendarDialog(
-                        state = rememberUseCaseState(visible = true),
-                        config = CalendarConfig(
-                            yearSelection = true,
-                            monthSelection = true,
-                            boundary = timeBoundary,
-                            style = CalendarStyle.MONTH,
-                        ),
-                        selection = CalendarSelection.Period(
-                            selectedRange = selectedRange.value
-                        ) { startDate, endDate ->
-                            selectedRange.value = Range(startDate, endDate)
-                            startDateText.value = startDate.toString()
-                            endDateText.value = endDate.toString()
-                            showDialog.value = false
-                        }
-
-                    )
-                },
-                confirmButton = {},
-                dismissButton = {}
-            )
+            ) {
+                CalendarDialog(
+                    state = rememberUseCaseState(visible = showDialog.value),
+                    config = CalendarConfig(
+                        yearSelection = true,
+                        monthSelection = true,
+                        boundary = timeBoundary,
+                        style = CalendarStyle.MONTH,
+                    ),
+                    selection = CalendarSelection.Period(
+                        selectedRange = selectedRange.value
+                    ) { startDate, endDate ->
+                        selectedRange.value = Range(startDate, endDate)
+                        startDateText.value = startDate.toString()
+                        endDateText.value = endDate.toString()
+                        showDialog.value = false
+                    }
+                )
+            }
         }
         if(startDateText.value.length > 1 && endDateText.value.length > 1) {
             Row(
@@ -791,4 +925,9 @@ fun CalendarSample3(
             }
         }
     }
+}
+
+class ProjectViewModel : ViewModel() {
+    var projectsSelectedToRemove = mutableStateListOf<String>()
+    val showDeleteProyectsDialog = mutableStateOf(false)
 }

@@ -16,18 +16,13 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.indication
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -38,33 +33,27 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.AlertDialog
 import androidx.compose.material.Card
 import androidx.compose.material.Divider
 import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
 import androidx.compose.material.LocalContentColor
 import androidx.compose.material.OutlinedTextField
-import androidx.compose.material.Surface
-import androidx.compose.material.TextButton
 import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.CheckBox
+import androidx.compose.material.icons.filled.CheckBoxOutlineBlank
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.UploadFile
-import androidx.compose.material.ripple.rememberRipple
+import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
@@ -72,8 +61,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RichTooltipBox
-import androidx.compose.material3.RichTooltipState
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -83,30 +70,24 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.Popup
-import androidx.core.graphics.toColor
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.rememberImagePainter
 import com.example.contrupro3.R
@@ -140,8 +121,10 @@ fun DocumentsScreen(
     val isAddDocumentDialogOpen = remember { mutableStateOf(false) }
     val loggedInUserUID: String by authRepository.getLoggedInUserUID().observeAsState("")
     val loggedInUserName: String by authRepository.getLoggedInUserName().observeAsState("")
-    val documentsList = remember { mutableStateOf(emptyList<DocumentModel>()) }
+    val viewModel: DocumentsScreenViewModel = viewModel()
+    val documentsList = viewModel.documentsList
     authRepository.loadDocumentsFromFirebase(documentsList)
+    val documentsSelectedToRemove = viewModel.documentsSelectedToRemove
 
     var filteredDocuments =
         remember(documentsList, selectedFilter, isFilterAscending, searchQuery) {
@@ -163,70 +146,94 @@ fun DocumentsScreen(
                 }
                 filteredList
             }
-        }.value.toMutableList()
+        }
 
     Scaffold(
         floatingActionButton = {
             CompositionLocalProvider(
                 LocalContentColor provides colorResource(id = R.color.white)
             ) {
-                Row {
-                    FloatingActionButton(
-                        onClick = {
-                            isSearchExpanded = !isSearchExpanded
-                            if (!isSearchExpanded) {
-                                searchQuery = ""
-                            }
-                        },
-                        containerColor = myOrangehigh
-                    ) {
-                        Icon(
-                            if (isSearchExpanded) Icons.Default.Close else Icons.Default.Search,
-                            contentDescription = "Buscar Documento",
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    FloatingActionButton(
-                        onClick = { isFilterMenuOpen = true },
-                        containerColor = myOrangehigh
-                    ) {
-                        Icon(
-                            Icons.Default.FilterAlt,
-                            contentDescription = "Filtros"
-                        )
-                    }
-
-                    DropdownMenu(
-                        expanded = isFilterMenuOpen,
-                        onDismissRequest = { isFilterMenuOpen = false }
-                    ) {
-                        DropdownMenuItem(
-                            onClick = {
-                                selectedFilter = "Nombre"
-                                isFilterMenuOpen = false
-                                isFilterAscending = !isFilterAscending
-                            }
+                if (documentsSelectedToRemove.size > 0) {
+                    Row {
+                        FloatingActionButton(
+                            onClick = { viewModel.documentsSelectedToRemove.clear() },
+                            containerColor = myOrangehigh
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("Nombre")
-                                Spacer(Modifier.width(10.dp))
-                                Icon(
-                                    if (selectedFilter == "Nombre" && isFilterAscending) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = "Cancelar",
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
+                        FloatingActionButton(
+                            onClick = { viewModel.showDeleteDocumentsDialog.value = true },
+                            containerColor = myOrangehigh
+                        ) {
+                            Icon(
+                                Icons.Default.Delete,
+                                contentDescription = "Eliminar"
+                            )
                         }
                     }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    FloatingActionButton(
-                        onClick = { isAddDocumentDialogOpen.value = true },
-                        containerColor = myOrangehigh
-                    ) {
-                        Icon(
-                            Icons.Default.Add,
-                            contentDescription = "Agregar Documento"
-                        )
+                } else {
+                    Row {
+                        FloatingActionButton(
+                            onClick = {
+                                isSearchExpanded = !isSearchExpanded
+                                if (!isSearchExpanded) {
+                                    searchQuery = ""
+                                }
+                            },
+                            containerColor = myOrangehigh
+                        ) {
+                            Icon(
+                                if (isSearchExpanded) Icons.Default.Close else Icons.Default.Search,
+                                contentDescription = "Buscar Documento",
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
+                        FloatingActionButton(
+                            onClick = { isFilterMenuOpen = true },
+                            containerColor = myOrangehigh
+                        ) {
+                            Icon(
+                                Icons.Default.FilterAlt,
+                                contentDescription = "Filtros"
+                            )
+                        }
+
+                        DropdownMenu(
+                            expanded = isFilterMenuOpen,
+                            onDismissRequest = { isFilterMenuOpen = false }
+                        ) {
+                            DropdownMenuItem(
+                                onClick = {
+                                    selectedFilter = "Nombre"
+                                    isFilterMenuOpen = false
+                                    isFilterAscending = !isFilterAscending
+                                }
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text("Nombre")
+                                    Spacer(Modifier.width(10.dp))
+                                    Icon(
+                                        if (selectedFilter == "Nombre" && isFilterAscending) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
+                        FloatingActionButton(
+                            onClick = { isAddDocumentDialogOpen.value = true },
+                            containerColor = myOrangehigh
+                        ) {
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = "Agregar Documento"
+                            )
+                        }
                     }
                 }
             }
@@ -251,7 +258,7 @@ fun DocumentsScreen(
                 Spacer(modifier = Modifier.height(5.dp))
                 Divider(color = Color.LightGray, thickness = 1.dp)
                 Spacer(modifier = Modifier.height(5.dp))
-                when (filteredDocuments.size) {
+                when (documentsList.value.size) {
                     0 -> {
                         Text(
                             text = "No tienes documentos publicados.",
@@ -274,7 +281,7 @@ fun DocumentsScreen(
                     }
                 }
                 LazyColumn(modifier = Modifier.weight(1f)) {
-                    items(filteredDocuments) { document ->
+                    items(filteredDocuments.value) { document ->
                         DocumentCard(
                             document = document,
                             navController = navController,
@@ -295,7 +302,7 @@ fun DocumentsScreen(
                 isAddDocumentDialogOpen,
                 loggedInUserName,
                 loggedInUserUID,
-                filteredDocuments
+                documentsList
             )
         }
     }
@@ -310,8 +317,10 @@ fun DocumentCard(
     documentsList: MutableState<List<DocumentModel>>,
     userID: String
 ) {
-    val documentId = document.id
     var showViewer by remember { mutableStateOf(false) }
+    val viewModel: DocumentsScreenViewModel = viewModel()
+    val documentsSelectedToRemove = viewModel.documentsSelectedToRemove
+    val showDeleteDocumentsDialog = viewModel.showDeleteDocumentsDialog
 
     Spacer(Modifier.height(15.dp))
     Box(
@@ -330,29 +339,61 @@ fun DocumentCard(
                 .wrapContentSize(Alignment.Center)
                 .combinedClickable(
                     onClick = {
-                        showViewer = true
+                        if (documentsSelectedToRemove.size > 0) {
+                            if (!documentsSelectedToRemove.contains(document)) {
+                                documentsSelectedToRemove.add(document)
+                            } else documentsSelectedToRemove.remove(document)
+                        } else {
+                            navController.navigate("cardDocument_screen/${userID}/${document.id}")
+                        }
                     },
-                    onDoubleClick = {
-                        navController.navigate("cardDocument_screen/${userID}/${documentId}")
+                    onLongClick = {
+                        if (!documentsSelectedToRemove.contains(document)) {
+                            documentsSelectedToRemove.add(document)
+                        } else documentsSelectedToRemove.remove(document)
                     }
                 )
         ) {
-            if(showViewer) {
-                PdfViewerScreen(navController, document.fileUrl.toString())
-            }
+            if (showViewer) PdfViewerScreen(navController, document.fileUrl.toString())
+            if (showDeleteDocumentsDialog.value === true) RemoveDocumentsSelected(userID = userID)
 
             Column(modifier = Modifier.padding(10.dp)) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier.fillMaxWidth()
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(5.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = document.name.toString(),
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        modifier = Modifier.align(Alignment.Center)
-                    )
+                    Box(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = document.name.toString(),
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    }
+                    if(documentsSelectedToRemove.contains(document)) {
+                        Box {
+                            Icon(
+                                Icons.Default.CheckBox,
+                                contentDescription = null,
+                                tint = myOrange,
+                                modifier = Modifier.align(Alignment.Center)
+                            )
+                        }
+                    }
+                    if(documentsSelectedToRemove.size > 0 && !documentsSelectedToRemove.contains(document)) {
+                        Box {
+                            Icon(
+                                Icons.Default.CheckBoxOutlineBlank,
+                                contentDescription = null,
+                                tint = myOrange,
+                                modifier = Modifier.align(Alignment.Center)
+                            )
+                        }
+                    }
                 }
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(5.dp))
                 Divider(color = Color.LightGray, thickness = 1.dp)
                 Image(
                     painter = rememberImagePainter(
@@ -379,10 +420,8 @@ fun RegisterCardDocument(
     isAddDocumentDialogOpen: MutableState<Boolean>,
     loggedInUserName: String,
     loggedInUserUID: String,
-    documentsFiltered: MutableList<DocumentModel>
+    documentsFiltered: MutableState<List<DocumentModel>>
 ) {
-    var errorDialogVisible by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf("") }
     val documentName = remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var requiredVisible by remember { mutableStateOf(true) }
@@ -417,9 +456,9 @@ fun RegisterCardDocument(
                 value = documentName.value,
                 onValueChange = {
                     documentName.value = it
-                    if (documentsFiltered.find {
-                            it.name?.trim().equals(documentName.value.trim(), ignoreCase = true)
-                        } != null) nameRepliqued = true else nameRepliqued = false
+                    nameRepliqued = documentsFiltered.value.find {
+                        it.name?.trim().equals(documentName.value.trim(), ignoreCase = true)
+                    } != null
                 },
                 label = { Text(text = "Nombre del documento") },
                 colors = TextFieldDefaults.outlinedTextFieldColors(
@@ -438,27 +477,35 @@ fun RegisterCardDocument(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                if(documentName.value.length < 6) {
+                if (documentName.value.length < 6) {
                     Text(
                         text = "* Requerido",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light, color = myOrange),
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.Light,
+                            color = myOrange
+                        ),
                         modifier = Modifier.offset(x = 20.dp)
                     )
-                } else if(nameRepliqued === true) {
+                } else if (nameRepliqued === true) {
                     Text(
                         text = "* Nombre duplicado",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light, color = myOrange),
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.Light,
+                            color = myOrange
+                        ),
                         modifier = Modifier.offset(x = 20.dp)
                     )
                 } else Text(text = " ")
                 Text(
                     text = "${documentName.value.length}/30",
-                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light, color = if(documentName.value.length > 30) myOrange else Color.Black),
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Light,
+                        color = if (documentName.value.length > 30) myOrange else Color.Black
+                    ),
                     modifier = Modifier
                         .offset(x = -20.dp)
                 )
             }
-            Spacer(modifier = Modifier.height(10.dp))
             Spacer(modifier = Modifier.height(10.dp))
             OutlinedTextField(
                 value = description,
@@ -477,7 +524,10 @@ fun RegisterCardDocument(
             )
             Text(
                 text = "${description.length}/200",
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light, color = if(description.length > 200) myOrange else Color.Black),
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontWeight = FontWeight.Light,
+                    color = if (description.length > 200) myOrange else Color.Black
+                ),
                 modifier = Modifier
                     .offset(x = -20.dp)
                     .align(Alignment.End)
@@ -506,7 +556,10 @@ fun RegisterCardDocument(
                 if (requiredVisible) {
                     Text(
                         text = "* Requerido",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light, color = myOrange),
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.Light,
+                            color = myOrange
+                        ),
                         modifier = Modifier.align(Alignment.CenterHorizontally)
                     )
                 }
@@ -614,46 +667,13 @@ fun RegisterCardDocument(
                     }
 
                     Button(
-                        onClick = {
-                            isAddDocumentDialogOpen.value = false
-                        },
+                        onClick = { isAddDocumentDialogOpen.value = false },
                         colors = ButtonDefaults.buttonColors(myOrange, contentColor = Color.White),
                         elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Text("Cancelar")
                     }
-                }
-                Spacer(modifier = Modifier.height(5.dp))
-
-                if (errorDialogVisible) {
-                    AlertDialog(
-                        onDismissRequest = {
-                            errorDialogVisible = false
-                        },
-                        title = {
-                            Text(
-                                text = "Error De Registro",
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                            )
-                        },
-                        text = { Text(errorMessage) },
-                        confirmButton = {
-                            Button(
-                                onClick = {
-                                    errorDialogVisible = false
-                                },
-                                modifier = Modifier
-                                    .padding(8.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = myOrangehigh,
-                                    contentColor = Color.White
-                                )
-                            ) {
-                                Text("Aceptar")
-                            }
-                        }
-                    )
                 }
             }
         }
@@ -671,7 +691,6 @@ suspend fun uploadToStorage(
     var previewByteArray: ByteArray? = null
 
     try {
-        // Generar Preview Del PDF ========================================================================================================
         val pdfFileDescriptor: ParcelFileDescriptor? =
             context.contentResolver.openFileDescriptor(uri, "r")
 
@@ -690,7 +709,6 @@ suspend fun uploadToStorage(
                 previewByteArray = bitmapToByteArray(bitmap)
             }
         }
-        // ================================================================================================================================
 
         context.contentResolver.openInputStream(uri)?.use { inputStream ->
             val byteArray = inputStream.readBytes()
@@ -705,7 +723,12 @@ suspend fun uploadToStorage(
                             .addOnSuccessListener { previewDownloadUri ->
                                 previewRef.downloadUrl.addOnSuccessListener { downloadURL ->
                                     val storageReferences =
-                                        StorageReferences(pdfRef.toString(), pdfDownloadURL.toString(), downloadURL.toString(), previewRef.toString())
+                                        StorageReferences(
+                                            pdfRef.toString(),
+                                            pdfDownloadURL.toString(),
+                                            downloadURL.toString(),
+                                            previewRef.toString()
+                                        )
                                     continuation.resume(storageReferences)
                                 }
                             }
@@ -714,7 +737,6 @@ suspend fun uploadToStorage(
             }.addOnFailureListener { e ->
                 val storageReferences = StorageReferences("null", "null", "null", "null")
                 continuation.resume(storageReferences)
-                Log.e("errores", "$e")
                 Toast.makeText(
                     context,
                     "Carga Fallida",
@@ -723,7 +745,6 @@ suspend fun uploadToStorage(
             }
         }
     } catch (e: Exception) {
-        Log.e("errores", "$e")
         e.printStackTrace()
         continuation.resumeWithException(e)
     }
@@ -747,7 +768,12 @@ fun bitmapToByteArray(bitmap: Bitmap): ByteArray {
     return stream.toByteArray()
 }
 
-data class StorageReferences(val pdfRef: String, val pdfDownloadUrl: String, val previewDownloadUrl: String, val previewRef: String)
+data class StorageReferences(
+    val pdfRef: String,
+    val pdfDownloadUrl: String,
+    val previewDownloadUrl: String,
+    val previewRef: String
+)
 
 @Composable
 fun PdfViewerScreen(navController: NavHostController, pdfUrl: String) {
@@ -770,79 +796,104 @@ fun PdfViewerScreen(navController: NavHostController, pdfUrl: String) {
     }
 }
 
-/*if (showDeleteDialog) {
-    AlertDialog(
-        onDismissRequest = { showDeleteDialog = false },
-        title = {
-            Text(
-                text = "Advertencia",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-            )
-        },
-        text = {
-            when (selectedCards.size) {
-                1 -> {
+@Composable
+fun RemoveDocumentsSelected(userID: String) {
+    val viewModel: DocumentsScreenViewModel = viewModel()
+    val documentsSelectedToRemove = viewModel.documentsSelectedToRemove
+    val documentsList = viewModel.documentsList
+    val context = LocalContext.current
+
+    if (documentsSelectedToRemove.size > 0) {
+        AlertDialog(
+            onDismissRequest = { viewModel.showDeleteDocumentsDialog.value = false },
+            buttons = {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(10.dp),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    Button(
+                        onClick = {
+                            viewModel.showDeleteDocumentsDialog.value = false
+                            viewModel.documentsSelectedToRemove.clear()
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = myOrangehigh,
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Text(
+                            text = "Cancelar",
+                            style = MaterialTheme.typography.titleSmall
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Button(
+                        onClick = {
+                            val db = FirebaseFirestore.getInstance()
+                            val storage = Firebase.storage
+                            val collectionRef =
+                                db.collection("Usuarios").document(userID).collection("Documentos")
+
+                            for (document in documentsSelectedToRemove) {
+                                storage.getReferenceFromUrl("${document.fileRef}").delete()
+                                storage.getReferenceFromUrl("${document.previewRef}").delete()
+                                collectionRef.document("${document.id}").delete()
+                            }
+                            viewModel.documentsList.value = documentsList.value.filter { d -> !documentsSelectedToRemove.contains(d) }
+                            viewModel.showDeleteDocumentsDialog.value = false
+                            Toast.makeText(
+                                context,
+                                "Documentos removidos",
+                                Toast.LENGTH_LONG
+                            ).show()
+                            viewModel.documentsSelectedToRemove.clear()
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = myOrangehigh,
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Text(
+                            text = "Aceptar",
+                            style = MaterialTheme.typography.titleSmall
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                }
+            },
+            title = {
+                Row {
+                    Box {
+                        Icon(
+                            Icons.Default.WarningAmber,
+                            contentDescription = null,
+                            tint = myOrangehigh
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
                     Text(
-                        text = "Se eliminara 1 documento, ¿Esta seguro de esto?"
+                        text = "Advertencia",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = myOrange
+                        )
                     )
                 }
-
-                else -> {
-                    Text(
-                        text = "Se eliminaran ${selectedCards.size} documentos, ¿Esta seguro de esto?"
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    deleteDocuments(userID, selectedCards)
-                    filteredDocuments.removeAll(selectedCards)
-                    selectedCards.clear()
-
-                    showDeleteDialog = false
-                    showDeleteButtons = false
-                    Toast.makeText(
-                        contextt,
-                        "Se han eliminado los documentos correctamente",
-                        Toast.LENGTH_LONG
-                    ).show()
-                },
-                modifier = Modifier
-                    .padding(start = 5.dp, top = 10.dp, end = 10.dp, bottom = 10.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = myOrangehigh,
-                    contentColor = Color.White
+            },
+            text = {
+                Text(
+                    text = "Los documentos no se podran volver a recuperar. ¿Esta seguro de esto?",
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Light)
                 )
-            ) {
-                Text("Aceptar")
             }
-        },
-        dismissButton = {
-            Button(
-                onClick = { showDeleteDialog = false },
-                modifier = Modifier
-                    .padding(start = 5.dp, top = 10.dp, end = 0.dp, bottom = 10.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = myOrangehigh,
-                    contentColor = Color.White
-                )
-            ) {
-                Text("Cancelar")
-            }
-        }
-    )
-}*/
-/*
-fun deleteDocuments(userId: String, selectedCards: MutableList<DocumentModel>) {
-    val db = FirebaseFirestore.getInstance()
-    val storage = Firebase.storage
-    val collectionRef = db.collection("Usuarios").document(userId).collection("Documentos")
-
-    for (document in selectedCards) {
-        collectionRef.document("${document.id}").delete()
-        storage.getReferenceFromUrl("${document.fileRef}").delete()
-        storage.getReferenceFromUrl("${document.previewRef}").delete()
+        )
     }
-}*/
+}
+
+class DocumentsScreenViewModel : ViewModel() {
+    val documentsSelectedToRemove = mutableStateListOf<DocumentModel>()
+    val showDeleteDocumentsDialog = mutableStateOf(false)
+    val documentsList = mutableStateOf(emptyList<DocumentModel>())
+}

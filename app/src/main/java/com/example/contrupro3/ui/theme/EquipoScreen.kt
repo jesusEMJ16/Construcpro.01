@@ -49,11 +49,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.CheckBox
+import androidx.compose.material.icons.filled.CheckBoxOutlineBlank
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
@@ -82,6 +86,8 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.contrupro3.R
 import com.example.contrupro3.modelos.AuthRepository
@@ -89,6 +95,8 @@ import com.example.contrupro3.modelos.Equipos
 import com.example.contrupro3.modelos.Project
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.ktx.Firebase
+import com.google.firebase.storage.ktx.storage
 import kotlinx.coroutines.launch
 import java.util.Locale
 @RequiresApi(Build.VERSION_CODES.O)
@@ -102,9 +110,11 @@ fun TeamCreationScreen(navController: NavController, authRepository: AuthReposit
     var isSearchExpanded by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     val loggedInUserUID: String by authRepository.getLoggedInUserUID().observeAsState("")
-    val teamsList = remember { mutableStateOf(emptyList<Equipos>()) }
+    val viewModel: TeamViewModel = viewModel()
+    val teamsList = viewModel.teamsList
     val isAddTeamDialogOpen = remember { mutableStateOf(false) }
     val loggedInUserName: String by authRepository.getLoggedInUserName().observeAsState("")
+    val teamsSelectedToRemove = viewModel.teamsSelectedToRemove
 
     authRepository.loadEquiposFromFirebase(teamsList)
     val filteredEquipos = remember(teamsList, selectedFilter, isFilterAscending, searchQuery) {
@@ -128,63 +138,87 @@ fun TeamCreationScreen(navController: NavController, authRepository: AuthReposit
             CompositionLocalProvider(
                 LocalContentColor provides colorResource(id = R.color.white)
             ) {
-                Row {
-                    FloatingActionButton(
-                        onClick = {
-                            isSearchExpanded = !isSearchExpanded
-                            if (!isSearchExpanded) {
-                                searchQuery = ""
-                            }
-                        },
-                        containerColor = myOrangehigh
-                    ) {
-                        Icon(
-                            if (isSearchExpanded) Icons.Default.Close else Icons.Default.Search,
-                            contentDescription = "Buscar Equipos",
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    FloatingActionButton(
-                        onClick = { isFilterMenuOpen = true },
-                        containerColor = myOrangehigh
-                    ) {
-                        Icon(
-                            Icons.Default.FilterAlt,
-                            contentDescription = "Filtros"
-                        )
-                    }
-
-                    DropdownMenu(
-                        expanded = isFilterMenuOpen,
-                        onDismissRequest = { isFilterMenuOpen = false }
-                    ) {
-                        DropdownMenuItem(
-                            onClick = {
-                                selectedFilter = "Nombre"
-                                isFilterMenuOpen = false
-                                isFilterAscending = !isFilterAscending
-                            }
+                if (teamsSelectedToRemove.size > 0) {
+                    Row {
+                        FloatingActionButton(
+                            onClick = { viewModel.teamsSelectedToRemove.clear() },
+                            containerColor = myOrangehigh
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("Nombre")
-                                Spacer(Modifier.width(10.dp))
-                                Icon(
-                                    if (selectedFilter == "Nombre" && isFilterAscending) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = "Cancelar",
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
+                        FloatingActionButton(
+                            onClick = { viewModel.showTeamRemoveDialog.value = true },
+                            containerColor = myOrangehigh
+                        ) {
+                            Icon(
+                                Icons.Default.Delete,
+                                contentDescription = "Eliminar"
+                            )
                         }
                     }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    FloatingActionButton(
-                        onClick = { isAddTeamDialogOpen.value = true },
-                        containerColor = myOrangehigh
-                    ) {
-                        Icon(
-                            Icons.Default.Add,
-                            contentDescription = "Agregar Equipo"
-                        )
+                } else {
+                    Row {
+                        FloatingActionButton(
+                            onClick = {
+                                isSearchExpanded = !isSearchExpanded
+                                if (!isSearchExpanded) {
+                                    searchQuery = ""
+                                }
+                            },
+                            containerColor = myOrangehigh
+                        ) {
+                            Icon(
+                                if (isSearchExpanded) Icons.Default.Close else Icons.Default.Search,
+                                contentDescription = "Buscar Equipos",
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
+                        FloatingActionButton(
+                            onClick = { isFilterMenuOpen = true },
+                            containerColor = myOrangehigh
+                        ) {
+                            Icon(
+                                Icons.Default.FilterAlt,
+                                contentDescription = "Filtros"
+                            )
+                        }
+
+                        DropdownMenu(
+                            expanded = isFilterMenuOpen,
+                            onDismissRequest = { isFilterMenuOpen = false }
+                        ) {
+                            DropdownMenuItem(
+                                onClick = {
+                                    selectedFilter = "Nombre"
+                                    isFilterMenuOpen = false
+                                    isFilterAscending = !isFilterAscending
+                                }
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text("Nombre")
+                                    Spacer(Modifier.width(10.dp))
+                                    Icon(
+                                        if (selectedFilter == "Nombre" && isFilterAscending) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
+                        FloatingActionButton(
+                            onClick = { isAddTeamDialogOpen.value = true },
+                            containerColor = myOrangehigh
+                        ) {
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = "Agregar Equipo"
+                            )
+                        }
                     }
                 }
             }
@@ -204,7 +238,7 @@ fun TeamCreationScreen(navController: NavController, authRepository: AuthReposit
                 ) {
                     Spacer(modifier = Modifier.height(5.dp))
                     Text(
-                        text = "Proyectos",
+                        text = "Equipos",
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                     )
                     Spacer(modifier = Modifier.height(5.dp))
@@ -260,7 +294,10 @@ fun TeamCreationScreen(navController: NavController, authRepository: AuthReposit
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun EquipoCard(team: Equipos, navController: NavController,userID: String, authRepository: AuthRepository, equiposList: MutableState<List<Equipos>>) {
-    val showDeleteDialog = remember { mutableStateOf(false) }
+    val viewModel: TeamViewModel = viewModel()
+    val teamsSelectedToRemove = viewModel.teamsSelectedToRemove
+    val showTeamRemoveDIalog = viewModel.showTeamRemoveDialog
+
     Spacer(Modifier.height(15.dp))
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -273,37 +310,63 @@ fun EquipoCard(team: Equipos, navController: NavController,userID: String, authR
             modifier = Modifier
                 .fillMaxWidth(0.7f)
                 .wrapContentSize(Alignment.Center)
-                .indication(
-                    interactionSource = MutableInteractionSource(),
-                    indication = LocalIndication.current
-                )
                 .combinedClickable(
                     onClick = {
-                        navController.navigate("cardteam_screen/${team.id}")
+                        if (teamsSelectedToRemove.size > 0) {
+                            if (!teamsSelectedToRemove.contains(team.id)) {
+                                teamsSelectedToRemove.add(team.id.toString())
+                            } else teamsSelectedToRemove.remove(team.id)
+                        } else navController.navigate("cardteam_screen/${team.id}")
                     },
-                    onLongClick = { showDeleteDialog.value = true }
+                    onLongClick = {
+                        if (!teamsSelectedToRemove.contains(team.id)) {
+                            teamsSelectedToRemove.add(team.id.toString())
+                        } else teamsSelectedToRemove.remove(team.id)
+                    }
                 ),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
             shape = RoundedCornerShape(15.dp),
         ) {
+            if (showTeamRemoveDIalog.value === true) RemoveTeamsSelected(userID = userID)
             Column(modifier = Modifier.padding(10.dp)) {
-                Box(
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(10.dp),
-                    contentAlignment = Alignment.Center
+                        .padding(5.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = team.name.toString(),
-                        style = MaterialTheme.typography.titleSmall,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
+                    Box(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = team.name.toString(),
+                            style = MaterialTheme.typography.titleSmall,
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    }
+                    if(teamsSelectedToRemove.contains(team.id)) {
+                        Box {
+                            Icon(
+                                Icons.Default.CheckBox,
+                                contentDescription = null,
+                                tint = myOrange,
+                                modifier = Modifier.align(Alignment.Center)
+                            )
+                        }
+                    }
+                    if (teamsSelectedToRemove.size > 0 && !teamsSelectedToRemove.contains(team.id)) {
+                        Box {
+                            Icon(
+                                Icons.Default.CheckBoxOutlineBlank,
+                                contentDescription = null,
+                                tint = myOrange,
+                                modifier = Modifier.align(Alignment.Center)
+                            )
+                        }
+                    }
                 }
-
                 Spacer(modifier = Modifier.height(2.dp))
                 Divider(color = Color.LightGray, thickness = 1.dp)
-                Spacer(modifier = Modifier.height(2.dp))
-
+                Spacer(modifier = Modifier.height(5.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
@@ -326,9 +389,7 @@ fun EquipoCard(team: Equipos, navController: NavController,userID: String, authR
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
-
                 Spacer(modifier = Modifier.height(5.dp))
-
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
@@ -347,60 +408,104 @@ fun EquipoCard(team: Equipos, navController: NavController,userID: String, authR
                     }
                     Spacer(modifier = Modifier.width(5.dp))
                     Text(
-                        text = team.members.size.toString(), // Cantidad de personas dentro del equipo
+                        text = team.members.size.toString(),
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
             }
-            fun deleteEquipo(userID: String, equipoID: String) {
-                val db = FirebaseFirestore.getInstance()
-                Log.d("Delete Equipo", "Deleting equipo with User ID: $userID, Equipo ID: $equipoID")
+        }
+    }
+}
 
-                db.collection("Usuarios")
-                    .document(userID)
-                    .collection("Equipos")
-                    .document(equipoID)
-                    .delete()
-                    .addOnSuccessListener {
-                        Log.d("Delete Equipo", "DocumentSnapshot successfully deleted!")
-                        // Actualizar la lista de equipos
-                        equiposList.value = equiposList.value.filter { it.id != equipoID }
-                        // Cargar nuevamente la lista de equipos desde Firebase
-                        authRepository.loadEquiposFromFirebase(equiposList)
-                    }
-                    .addOnFailureListener { e ->
-                        Log.w("Delete Equipo", "Error deleting document", e)
-                    }
-            }
+@Composable
+fun RemoveTeamsSelected(userID: String) {
+    val viewModel: TeamViewModel = viewModel()
+    val teamsSelectedToRemove = viewModel.teamsSelectedToRemove
+    val teamsList = viewModel.teamsList
+    val context = LocalContext.current
 
-            if (showDeleteDialog.value) {
-                AlertDialog(
-                    onDismissRequest = { showDeleteDialog.value = false },
-                    title = { Text(text = "Confirmar eliminación") },
-                    text = { Text(text = "¿Estás seguro de que quieres eliminar este equipo?") },
-                    confirmButton = {
-                        Button(
-                            onClick = {
-                                if (team.id != null) {
-                                    // Eliminar el equipo
-                                    deleteEquipo(userID, team.id)
-                                }
-                                showDeleteDialog.value = false
+    if (teamsSelectedToRemove.size > 0) {
+        AlertDialog(
+            onDismissRequest = { viewModel.showTeamRemoveDialog.value = false },
+            buttons = {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(10.dp),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    Button(
+                        onClick = {
+                            viewModel.showTeamRemoveDialog.value = false
+                            viewModel.teamsSelectedToRemove.clear()
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = myOrangehigh,
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Text(
+                            text = "Cancelar",
+                            style = MaterialTheme.typography.titleSmall
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Button(
+                        onClick = {
+                            val db = FirebaseFirestore.getInstance()
+                            val collectionRef = db.collection("Usuarios").document(userID).collection("Equipos")
+
+                            for (team in teamsSelectedToRemove) {
+                                collectionRef.document("$team").delete()
                             }
-                        ) {
-                            Text("Sí")
-                        }
-                    },
-                    dismissButton = {
-                        Button(
-                            onClick = { showDeleteDialog.value = false }
-                        ) {
-                            Text("No")
-                        }
+                            viewModel.teamsList.value = teamsList.value.filter { d -> !teamsSelectedToRemove.contains(d.id) }
+                            viewModel.showTeamRemoveDialog.value = false
+                            Toast.makeText(
+                                context,
+                                "Equipos removidos",
+                                Toast.LENGTH_LONG
+                            ).show()
+                            viewModel.teamsSelectedToRemove.clear()
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = myOrangehigh,
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Text(
+                            text = "Aceptar",
+                            style = MaterialTheme.typography.titleSmall
+                        )
                     }
+                    Spacer(modifier = Modifier.width(10.dp))
+                }
+            },
+            title = {
+                Row {
+                    Box {
+                        Icon(
+                            Icons.Default.WarningAmber,
+                            contentDescription = null,
+                            tint = myOrangehigh
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = "Advertencia",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = myOrange
+                        )
+                    )
+                }
+            },
+            text = {
+                Text(
+                    text = "Los equipos no se podran volver a recuperar. ¿Esta seguro de esto?",
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Light)
                 )
             }
-        }
+        )
     }
 }
 
@@ -585,21 +690,13 @@ fun addMemberToTeam(teamId: String, memberId: String) {
     query.get().addOnSuccessListener { querySnapshot ->
         if (!querySnapshot.isEmpty) {
             val teamRef = db.collection("Equipos").document(teamId)
-
-            // Luego, actualiza el campo de matriz "members" del equipo con el nuevo miembro
             teamRef.update("members", FieldValue.arrayUnion(memberId))
-                .addOnSuccessListener {
-                    // El nuevo miembro se agregó exitosamente al equipo
-                    // Actualiza la vista del equipo para mostrar al nuevo miembro
-                    // Puedes usar un estado mutable en Jetpack Compose para mantener la lista de miembros del equipo
-                    // y agregar el nuevo miembro al estado mutable
-                }
-                .addOnFailureListener { e ->
-                    // Hubo un error al agregar el nuevo miembro al equipo
-                }
-        } else {
-            // El correo electrónico del nuevo miembro no existe en tu sistema
-            // Puedes mostrar un mensaje de error al usuario
         }
     }
+}
+
+class TeamViewModel: ViewModel() {
+    val teamsList = mutableStateOf(emptyList<Equipos>())
+    val teamsSelectedToRemove = mutableStateListOf<String>()
+    val showTeamRemoveDialog = mutableStateOf(false)
 }
