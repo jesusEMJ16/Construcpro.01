@@ -1,16 +1,9 @@
-package com.example.contrupro3.ui.theme
+package com.example.contrupro3.ui.theme.DocumentsScreens
 
 import android.annotation.SuppressLint
-import android.util.Log
 import android.widget.Toast
-import androidx.compose.animation.core.FastOutLinearInEasing
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.indication
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -56,15 +49,12 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
@@ -80,6 +70,9 @@ import com.example.contrupro3.modelos.AuthRepository
 import com.example.contrupro3.modelos.DocumentModel
 import com.example.contrupro3.modelos.Equipos
 import com.example.contrupro3.modelos.Project
+import com.example.contrupro3.ui.theme.myOrange
+import com.example.contrupro3.ui.theme.myOrangehigh
+import com.example.contrupro3.ui.theme.myOrangelow
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -87,7 +80,7 @@ import kotlinx.coroutines.launch
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CardView_Documents(
+fun CardViewDocumentsScreen(
     navController: NavHostController,
     authRepository: AuthRepository,
     userID: String,
@@ -139,11 +132,7 @@ fun CardView_Documents(
                     Row() {
                         FloatingActionButton(
                             onClick = {
-                                if(projectsEnabled) {
-                                    viewModel.action.value = "remove proyect"
-                                } else if(teamsEnabled) {
-                                    viewModel.action.value = "remove team"
-                                }
+                                if(projectsEnabled) viewModel.action.value = "remove proyect"
                             },
                             containerColor = myOrangehigh
                         ) {
@@ -155,11 +144,7 @@ fun CardView_Documents(
                         Spacer(modifier = Modifier.width(16.dp))
                         FloatingActionButton(
                             onClick = {
-                                if(projectsEnabled) {
-                                    viewModel.action.value = "add proyect"
-                                } else if(teamsEnabled) {
-                                    viewModel.action.value = "add team"
-                                }
+                                if(projectsEnabled) viewModel.action.value = "add proyect"
                             },
                             containerColor = myOrangehigh
                         ) {
@@ -185,19 +170,9 @@ fun CardView_Documents(
                         AddProyects(navController, authRepository, userID, document, projectsList)
                     }
                 }
-                "add team" -> {
-                    Dialog(onDismissRequest = { viewModel.action.value = "" }) {
-                        AddProjects(navController, authRepository, userID, document, projectsList)
-                    }
-                }
                 "remove proyect" -> {
                     Dialog(onDismissRequest = { viewModel.action.value = "" }) {
                         RemoveProjects(navController, authRepository, userID, document, projectsList)
-                    }
-                }
-                "remove team" -> {
-                    Dialog(onDismissRequest = { viewModel.action.value = "" }) {
-                        RemoveTeams(navController, authRepository, userID, document, projectsList)
                     }
                 }
             }
@@ -227,17 +202,7 @@ fun CardView_Documents(
 }
 
 @Composable
-fun AddProjects(navController: NavHostController, authRepository: AuthRepository, userID: String, document: DocumentModel?, projectsList: MutableState<List<Project>>) {
-
-}
-
-@Composable
-fun RemoveTeams(navController: NavHostController, authRepository: AuthRepository, userID: String, document: DocumentModel?, projectsList: MutableState<List<Project>>) {
-
-}
-
-@Composable
-fun InformationCard(
+private fun InformationCard(
     navController: NavHostController,
     authRepository: AuthRepository,
     userID: String,
@@ -383,7 +348,6 @@ fun IntegrationsCard(
     val teamsEnabled by viewModel.teamsEnabled
     val currentProjects by viewModel.currentProjects
     val projectsName = currentProjects.map { p -> p.projectName }.sortedBy { a -> a }.joinToString("\n")
-    val currentTeams by viewModel.currentTeams
 
     Box(modifier = Modifier.fillMaxWidth()) {
         androidx.compose.material3.Card(

@@ -5,10 +5,10 @@ import android.os.Parcelable
 
 data class Project(
     val id: String? = null,
-    val projectName: String = "",
+    var projectName: String = "",
     val creatorName: String = "",
     val creatorUID: String = "",
-    val description: String = "",
+    var description: String = "",
     val startDate: String = "",
     val endDate: String = "",
     val documents: List<String> = emptyList(),

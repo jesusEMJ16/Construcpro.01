@@ -37,7 +37,44 @@ class AuthRepository(private val auth: FirebaseAuth) {
                 }
         }
     }
+    fun loadProject(projectId: String, project: MutableState<Project?>) {
+        val firestore = FirebaseFirestore.getInstance()
+        val user = getCurrentUser()
 
+        if (user != null) {
+            val docProject = firestore.collection("Usuarios")
+                .document(user.uid)
+                .collection("Proyectos")
+                .document(projectId)
+
+            docProject.get()
+                .addOnSuccessListener { document ->
+                    if (document.exists()) {
+                        val loadedDocument = document.toObject(Project::class.java)
+                        if (loadedDocument != null) project.value = loadedDocument
+                    }
+                }
+        }
+    }
+
+    fun loadEquiposFromFirebase(equiposList: MutableState<List<Equipos>>) {
+        val firestore = FirebaseFirestore.getInstance()
+        val user = getCurrentUser()
+        if (user != null) {
+            val equiposCollection = firestore.collection("Usuarios")
+                .document(user.uid)
+                .collection("Equipos")
+
+            equiposCollection.get()
+                .addOnSuccessListener { documents ->
+                    val loadedEquipos = documents.map { document ->
+                        val equipo = document.toObject(Equipos::class.java)
+                        equipo.copy(id = document.id)
+                    }
+                    equiposList.value = loadedEquipos
+                }
+        }
+    }
     fun loadEquipo(equipoID: String, equipo: MutableState<Equipos?>) {
         val firestore = FirebaseFirestore.getInstance()
         val user = getCurrentUser()
@@ -54,61 +91,11 @@ class AuthRepository(private val auth: FirebaseAuth) {
                         val loadedEquipo = document.toObject(Equipos::class.java)
                         equipo.value = loadedEquipo
                     } else {
-                        // El documento del equipo no existe
                         equipo.value = null
                     }
                 }
                 .addOnFailureListener { exception ->
-                    // Manejar el error en caso de que la carga del equipo falle
                     equipo.value = null
-                }
-        }
-    }
-
-
-    fun loadEquiposFromFirebase(equiposList: MutableState<List<Equipos>>) {
-        val firestore = FirebaseFirestore.getInstance()
-        val user = getCurrentUser()
-        if (user != null) {
-            val equiposCollection = firestore.collection("Usuarios")
-                .document(user.uid)
-                .collection("Equipos")
-
-            equiposCollection.get()
-                .addOnSuccessListener { documents ->
-                    val loadedEquipos = documents.map { document ->
-                        val equipo = document.toObject(Equipos::class.java)
-                        equipo.copy(id = document.id)
-                    }
-                    equiposList.value = loadedEquipos // Actualiza el valor del MutableState aquí
-                }
-                .addOnFailureListener { exception ->
-                    // Manejar el error en caso de que la carga de equipos falle
-                }
-        }
-    }
-
-    fun loadDocument(documentoId: String, documento: MutableState<DocumentModel?>) {
-        val firestore = FirebaseFirestore.getInstance()
-        val user = getCurrentUser()
-
-        if (user != null) {
-            val docDocument = firestore.collection("Usuarios")
-                .document(user.uid)
-                .collection("Documentos")
-                .document(documentoId)
-
-            docDocument.get()
-                .addOnSuccessListener { document ->
-                    if (document.exists()) {
-                        val loadedDocument = document.toObject(DocumentModel::class.java)
-                        documento.value = loadedDocument
-                    } else {
-                        documento.value = null
-                    }
-                }
-                .addOnFailureListener { exception ->
-                    documento.value = null
                 }
         }
     }
@@ -134,6 +121,30 @@ class AuthRepository(private val auth: FirebaseAuth) {
                 }
         }
     }
+    fun loadDocument(documentoId: String, documento: MutableState<DocumentModel?>) {
+        val firestore = FirebaseFirestore.getInstance()
+        val user = getCurrentUser()
+
+        if (user != null) {
+            val docDocument = firestore.collection("Usuarios")
+                .document(user.uid)
+                .collection("Documentos")
+                .document(documentoId)
+
+            docDocument.get()
+                .addOnSuccessListener { document ->
+                    if (document.exists()) {
+                        val loadedDocument = document.toObject(DocumentModel::class.java)
+                        documento.value = loadedDocument
+                    } else {
+                        documento.value = null
+                    }
+                }
+                .addOnFailureListener { exception ->
+                    documento.value = null
+                }
+        }
+    }
 
 
 
@@ -145,7 +156,6 @@ class AuthRepository(private val auth: FirebaseAuth) {
         val user = FirebaseAuth.getInstance().currentUser
         return MutableLiveData(user?.uid ?: "")
     }
-
     fun getLoggedInUserName(): LiveData<String> {
         val userNameLiveData = MutableLiveData<String>()
         val user = auth.currentUser

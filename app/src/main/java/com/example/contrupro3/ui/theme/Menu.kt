@@ -1,17 +1,12 @@
 package com.example.contrupro3.ui.theme
 
 import android.util.Log
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.material.*
-import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -26,15 +21,21 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.AlertDialog
+import androidx.compose.material.ButtonDefaults
+import androidx.compose.material.Card
+import androidx.compose.material.Divider
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
+import androidx.compose.material.TextButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.ComposeCompilerApi
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -49,15 +50,14 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.os.bundleOf
 import androidx.navigation.NavController
 import com.example.contrupro3.R
 import com.example.contrupro3.modelos.AuthRepository
 
 @Composable
 fun HamburgueerMenu(navController: NavController, authRepository: AuthRepository) {
-
     var isDrawerOpen by remember { mutableStateOf(false) }
     val offsetX by animateDpAsState(if (isDrawerOpen) 0.dp else (-330).dp, label = "")
     val loggedInUserName: String by authRepository.getLoggedInUserName().observeAsState("")
@@ -89,7 +89,6 @@ fun HamburgueerMenu(navController: NavController, authRepository: AuthRepository
                         ),
                     shape = RoundedCornerShape(topEnd = 25.dp, bottomEnd = 25.dp)
                 ) {
-                    // Contenido del menú desplegable
                     Column(
                         Modifier.padding(0.dp),
                         verticalArrangement = Arrangement.Center,
@@ -191,40 +190,39 @@ fun HamburgueerMenu(navController: NavController, authRepository: AuthRepository
 
 @Composable
 fun MenuOpciones(navController: NavController, authRepository: AuthRepository) {
+    val userID = authRepository.getCurrentUser()?.uid
 
-    val userID = authRepository.getCurrentUser()?.uid // Obtén el userID
-    val projectID = "project_id" // Deberías obtener el projectID de alguna manera
     CreateOptionButton("Proyectos", painterResource(R.drawable.project_management_50px)) {
-        navController.navigate("project_screen/$userID/$projectID")
+        navController.navigate("projects_screen/$userID")
     }
-    CreateOptionButton("Tareas", painterResource(R.drawable.task_50px)){
+    CreateOptionButton("Tareas", painterResource(R.drawable.task_50px)) {
 
     }
-    CreateOptionButton("Calendario", painterResource(R.drawable.calendar_50px)){
+    CreateOptionButton("Calendario", painterResource(R.drawable.calendar_50px)) {
 
     }
-    CreateOptionButton("Planificacion", painterResource(R.drawable.architect_50px)){
+    CreateOptionButton("Planificacion", painterResource(R.drawable.architect_50px)) {
 
     }
-    CreateOptionButton("Comunicacion", painterResource(R.drawable.communication_50px)){
+    CreateOptionButton("Comunicacion", painterResource(R.drawable.communication_50px)) {
 
     }
-    CreateOptionButton("Materiales y Suministros", painterResource(R.drawable.materials_50px)){
+    CreateOptionButton("Materiales y Suministros", painterResource(R.drawable.materials_50px)) {
 
     }
-    CreateOptionButton("Equipo y Personal", painterResource(R.drawable.task_50px)){
-        navController.navigate("team_screen/$userID")
+    CreateOptionButton("Equipo y Personal", painterResource(R.drawable.task_50px)) {
+        navController.navigate("teams_screen/$userID")
     }
-    CreateOptionButton("Reportes y Analiticas", painterResource(R.drawable.analytics_50px)){
+    CreateOptionButton("Reportes y Analiticas", painterResource(R.drawable.analytics_50px)) {
 
     }
-    CreateOptionButton("Prosupuesto y Compras", painterResource(R.drawable.profit_50px)){
+    CreateOptionButton("Prosupuesto y Compras", painterResource(R.drawable.profit_50px)) {
         navController.navigate("presucom_screen")
     }
-    CreateOptionButton("Planos y Documentacion", painterResource(R.drawable.documents_50px)){
+    CreateOptionButton("Planos y Documentacion", painterResource(R.drawable.documents_50px)) {
         navController.navigate("documents_screen/$userID")
     }
-    CreateOptionButton("Soporte y Ayuda", painterResource(R.drawable.help_50px)){
+    CreateOptionButton("Soporte y Ayuda", painterResource(R.drawable.help_50px)) {
 
     }
 
@@ -233,7 +231,7 @@ fun MenuOpciones(navController: NavController, authRepository: AuthRepository) {
 }
 
 @Composable
-fun SectionDown(navController: NavController,authRepository: AuthRepository) {
+fun SectionDown(navController: NavController, authRepository: AuthRepository) {
     var showDialog by remember { mutableStateOf(false) }
     Column(
         modifier = Modifier
@@ -294,7 +292,7 @@ fun SectionDown(navController: NavController,authRepository: AuthRepository) {
                                     authRepository.logoutUser { success ->
                                         if (success) {
                                             // Navega a la pantalla de inicio de sesión o realiza alguna otra acción
-                                            navController.navigate("login_screen"){
+                                            navController.navigate("login_screen") {
                                                 popUpTo("project_screen") { inclusive = true }
                                             }
                                         } else {
@@ -321,7 +319,7 @@ fun SectionDown(navController: NavController,authRepository: AuthRepository) {
             }
             TextButton(
                 onClick = {
-                          showDialog = true
+                    showDialog = true
                 },
                 colors = ButtonDefaults.textButtonColors(backgroundColor = Color.Transparent),
                 elevation = ButtonDefaults.elevation(0.dp),
@@ -333,7 +331,7 @@ fun SectionDown(navController: NavController,authRepository: AuthRepository) {
                     tint = myOrange
                 )
             }
-           ConfirmDialog()
+            ConfirmDialog()
         }
     }
 }
@@ -342,7 +340,7 @@ fun SectionDown(navController: NavController,authRepository: AuthRepository) {
 @Composable
 fun CreateOptionButton(text: String, icon: Painter, onClick: () -> Unit) {
     TextButton(
-        onClick = onClick ,
+        onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
     ) {

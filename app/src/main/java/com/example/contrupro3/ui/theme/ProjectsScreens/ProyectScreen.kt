@@ -1,4 +1,4 @@
-package com.example.contrupro3.ui.theme
+package com.example.contrupro3.ui.theme.ProjectsScreens
 
 import android.annotation.SuppressLint
 import android.os.Build
@@ -46,7 +46,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.CheckBox
 import androidx.compose.material.icons.filled.CheckBoxOutlineBlank
 import androidx.compose.material.icons.filled.Checklist
@@ -58,10 +57,8 @@ import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -97,6 +94,10 @@ import androidx.navigation.NavController
 import com.example.contrupro3.R
 import com.example.contrupro3.modelos.AuthRepository
 import com.example.contrupro3.modelos.Project
+import com.example.contrupro3.ui.theme.HamburgueerMenu
+import com.example.contrupro3.ui.theme.myOrange
+import com.example.contrupro3.ui.theme.myOrangehigh
+import com.example.contrupro3.ui.theme.myOrangelow
 import com.google.firebase.firestore.FirebaseFirestore
 import com.maxkeppeker.sheets.core.models.base.rememberUseCaseState
 import com.maxkeppeler.sheets.calendar.CalendarDialog
@@ -488,7 +489,7 @@ fun ProjectCard(
                             projectsSelectedToRemove.add(project.id.toString())
                         } else projectsSelectedToRemove.remove(project.id.toString())
                     } else {
-                        navController.navigate("card_screen/${project.projectName}/${project.creatorName}")
+                        navController.navigate("cardview_projects_screen/$userID/${project.id.toString()}")
                     }
                 }, onLongClick = {
                     if (!projectsSelectedToRemove.contains(project.id)) {

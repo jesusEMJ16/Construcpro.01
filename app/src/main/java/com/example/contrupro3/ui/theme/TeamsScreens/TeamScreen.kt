@@ -1,4 +1,4 @@
-package com.example.contrupro3.ui.theme
+package com.example.contrupro3.ui.theme.TeamsScreens
 
 
 import androidx.compose.foundation.layout.*
@@ -9,12 +9,9 @@ import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.indication
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,7 +20,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -31,10 +27,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.AlertDialog
 import androidx.compose.material.Card
 import androidx.compose.material.Divider
@@ -43,7 +37,6 @@ import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Icon
 import androidx.compose.material.LocalContentColor
 import androidx.compose.material.OutlinedTextField
-import androidx.compose.material.TextField
 import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -79,7 +72,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
@@ -92,18 +84,19 @@ import androidx.navigation.NavController
 import com.example.contrupro3.R
 import com.example.contrupro3.modelos.AuthRepository
 import com.example.contrupro3.modelos.Equipos
-import com.example.contrupro3.modelos.Project
+import com.example.contrupro3.ui.theme.HamburgueerMenu
+import com.example.contrupro3.ui.theme.myOrange
+import com.example.contrupro3.ui.theme.myOrangehigh
+import com.example.contrupro3.ui.theme.myOrangelow
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.ktx.Firebase
-import com.google.firebase.storage.ktx.storage
 import kotlinx.coroutines.launch
 import java.util.Locale
 @RequiresApi(Build.VERSION_CODES.O)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @ExperimentalMaterial3Api
 @Composable
-fun TeamCreationScreen(navController: NavController, authRepository: AuthRepository, userID: String) {
+fun TeamsScreen(navController: NavController, authRepository: AuthRepository, userID: String) {
     var selectedFilter by remember { mutableStateOf("Nombre") }
     var isFilterAscending by remember { mutableStateOf(false) }
     var isFilterMenuOpen by remember { mutableStateOf(false) }
@@ -316,7 +309,7 @@ fun EquipoCard(team: Equipos, navController: NavController,userID: String, authR
                             if (!teamsSelectedToRemove.contains(team.id)) {
                                 teamsSelectedToRemove.add(team.id.toString())
                             } else teamsSelectedToRemove.remove(team.id)
-                        } else navController.navigate("cardteam_screen/${team.id}")
+                        } else navController.navigate("cardview_teams_screen/${userID}/${team.id}")
                     },
                     onLongClick = {
                         if (!teamsSelectedToRemove.contains(team.id)) {

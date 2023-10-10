@@ -1,22 +1,23 @@
 package com.example.contrupro3.modelos
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.contrupro3.ui.theme.CardViewTeam
-import com.example.contrupro3.ui.theme.CardView_Documents
-import com.example.contrupro3.ui.theme.Cardview
-import com.example.contrupro3.ui.theme.DocumentsScreen
+import com.example.contrupro3.ui.theme.DocumentsScreens.CardViewDocumentsScreen
+import com.example.contrupro3.ui.theme.ProjectsScreens.CardviewProjectsScreen
+import com.example.contrupro3.ui.theme.DocumentsScreens.DocumentsScreen
 import com.example.contrupro3.ui.theme.LoginPage
 import com.example.contrupro3.ui.theme.Presupuesto_y_Compras
-import com.example.contrupro3.ui.theme.ProjectView
+import com.example.contrupro3.ui.theme.ProjectsScreens.ProjectView
 import com.example.contrupro3.ui.theme.RegisterPage
 import com.example.contrupro3.ui.theme.SplashScreen
-import com.example.contrupro3.ui.theme.TeamCreationScreen
+import com.example.contrupro3.ui.theme.TeamsScreens.CardViewTeamsScreen
+import com.example.contrupro3.ui.theme.TeamsScreens.TeamsScreen
 import com.example.contrupro3.ui.theme.UserProfilePage
 import com.google.firebase.auth.FirebaseAuth
 
@@ -24,11 +25,14 @@ import com.google.firebase.auth.FirebaseAuth
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppNavigator(auth: FirebaseAuth, navController: NavHostController, authRepository: AuthRepository) {
-
+fun AppNavigator(
+    auth: FirebaseAuth,
+    navController: NavHostController,
+    authRepository: AuthRepository
+) {
     NavHost(navController = navController, startDestination = "splash_screen") {
         composable("splash_screen") {
-            SplashScreen(navController = navController, authRepository = authRepository)
+            SplashScreen(navController, authRepository)
         }
         composable("login_screen") {
             LoginPage(navController = navController, authRepository = authRepository)
@@ -39,44 +43,42 @@ fun AppNavigator(auth: FirebaseAuth, navController: NavHostController, authRepos
         composable("user_screen") {
             UserProfilePage(navController = navController)
         }
-        composable("project_screen/{userID}/{projectID}") { backStackEntry ->
+        composable("projects_screen/{userID}") { backStackEntry ->
             val arguments = backStackEntry.arguments
             val userID = arguments?.getString("userID")
-            val projectID = arguments?.getString("projectID")
-            if (userID != null && projectID != null) {
+            if (userID != null) {
                 ProjectView(navController = navController, authRepository = authRepository, userID)
-            } else {
-                // Manejar el caso en que los parámetros sean null
             }
         }
-        composable("card_screen/{projectName}/{creatorName}") { backStackEntry ->
-            val projectName = backStackEntry.arguments?.getString("projectName") ?: ""
-            val creatorName = backStackEntry.arguments?.getString("creatorName") ?: ""
-            Cardview(navController = navController, projectName = projectName, creatorName = creatorName)
+        composable("cardview_projects_screen/{userId}/{projectId}") { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId") ?: ""
+            val projectId = backStackEntry.arguments?.getString("projectId") ?: ""
+            CardviewProjectsScreen(navController, authRepository, userId, projectId)
         }
-        composable("team_screen/{userID}") { backStackEntry ->
+        composable("teams_screen/{userID}") { backStackEntry ->
             val userID = backStackEntry.arguments?.getString("userID")
             if (userID != null) {
-                TeamCreationScreen(navController, authRepository, userID)
+                TeamsScreen(navController, authRepository, userID)
             }
         }
-        composable("cardteam_screen/{equipoID}") { backStackEntry ->
-            val equipoID = backStackEntry.arguments?.getString("equipoID") ?: ""
-            CardViewTeam(navController = navController, authRepository = authRepository, equipoID)
+        composable("cardview_teams_screen/{userId}/{teamId}") { backStackEntry ->
+            val teamId = backStackEntry.arguments?.getString("teamId") ?: ""
+            val userId = backStackEntry.arguments?.getString("userId") ?: ""
+            CardViewTeamsScreen(navController, authRepository, userId, teamId)
         }
         composable("documents_screen/{userID}") { backStackEntry ->
             val arguments = backStackEntry.arguments
             val userID = arguments?.getString("userID")
             if (userID != null) {
-                DocumentsScreen(navController = navController, authRepository = authRepository, userID)
+                DocumentsScreen(navController, authRepository, userID)
             }
         }
-        composable("cardDocument_screen/{userId}/{documentId}") { backStackEntry ->
+        composable("cardview_documents_screen/{userId}/{documentId}") { backStackEntry ->
             val arguments = backStackEntry.arguments
             val userID = arguments?.getString("userId")
             val documentId = arguments?.getString("documentId")
             if (userID != null && documentId != null) {
-                CardView_Documents(navController = navController, authRepository = authRepository, userID, documentId)
+                CardViewDocumentsScreen(navController, authRepository, userID, documentId)
             }
         }
         composable("presucom_screen") { backStackEntry ->

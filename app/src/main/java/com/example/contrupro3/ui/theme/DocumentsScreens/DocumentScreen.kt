@@ -1,4 +1,4 @@
-package com.example.contrupro3.ui.theme
+package com.example.contrupro3.ui.theme.DocumentsScreens
 
 import android.annotation.SuppressLint
 import android.content.ContentResolver
@@ -9,7 +9,6 @@ import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.ParcelFileDescriptor
 import android.provider.OpenableColumns
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -75,7 +74,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -93,6 +91,10 @@ import coil.compose.rememberImagePainter
 import com.example.contrupro3.R
 import com.example.contrupro3.modelos.AuthRepository
 import com.example.contrupro3.modelos.DocumentModel
+import com.example.contrupro3.ui.theme.HamburgueerMenu
+import com.example.contrupro3.ui.theme.myOrange
+import com.example.contrupro3.ui.theme.myOrangehigh
+import com.example.contrupro3.ui.theme.myOrangelow
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.ktx.storage
@@ -344,7 +346,7 @@ fun DocumentCard(
                                 documentsSelectedToRemove.add(document)
                             } else documentsSelectedToRemove.remove(document)
                         } else {
-                            navController.navigate("cardDocument_screen/${userID}/${document.id}")
+                            navController.navigate("cardview_documents_screen/${userID}/${document.id}")
                         }
                     },
                     onLongClick = {

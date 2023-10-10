@@ -9,7 +9,8 @@ data class Equipos(
     val creatorName: String? = "",
     val creatorUID: String? = "",
     val description: String? = "",
-    val members: List<String> = emptyList()
+    val members: List<String> = emptyList(),
+    val projectsLinked: List<String> = emptyList()
 
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
@@ -18,6 +19,7 @@ data class Equipos(
         parcel.readString(),
         parcel.readString(),
         parcel.readString(),
+        parcel.createStringArrayList() ?: emptyList(),
         parcel.createStringArrayList() ?: emptyList()
     )
 
@@ -28,6 +30,7 @@ data class Equipos(
         parcel.writeString(creatorUID)
         parcel.writeString(description)
         parcel.writeStringList(members)
+        parcel.writeStringList(projectsLinked)
     }
 
     override fun describeContents(): Int {
