@@ -24,9 +24,8 @@ import com.example.contrupro3.ui.theme.Budgets_purchasesScreens.PresupuestoModel
 fun ComprasScreen() {
 
     val listaDeCompras = listOf(
-        Compra(1, "01/01/2023", "Proveedor A", 10, 100.0, 1000.0),
-        Compra(2, "02/01/2023", "Proveedor B", 5, 200.0, 1000.0),
-        // ... otros objetos Compra
+        Compra(1,"Cemento", "01/01/2023", "Proveedor A", 10, 100.0, 1000.0),
+        Compra(2,"Hierro", "02/01/2023", "Proveedor B", 5, 200.0, 1000.0),
     )
 
     Column(
