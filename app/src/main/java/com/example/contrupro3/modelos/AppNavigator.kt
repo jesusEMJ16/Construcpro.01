@@ -1,7 +1,6 @@
 package com.example.contrupro3.modelos
 
 import android.os.Build
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
@@ -12,7 +11,7 @@ import com.example.contrupro3.ui.theme.DocumentsScreens.CardViewDocumentsScreen
 import com.example.contrupro3.ui.theme.ProjectsScreens.CardviewProjectsScreen
 import com.example.contrupro3.ui.theme.DocumentsScreens.DocumentsScreen
 import com.example.contrupro3.ui.theme.LoginPage
-import com.example.contrupro3.ui.theme.Presupuesto_y_Compras
+import com.example.contrupro3.ui.theme.Budgets_purchasesScreens.Presupuesto_y_Compras
 import com.example.contrupro3.ui.theme.ProjectsScreens.ProjectView
 import com.example.contrupro3.ui.theme.RegisterPage
 import com.example.contrupro3.ui.theme.SplashScreen
