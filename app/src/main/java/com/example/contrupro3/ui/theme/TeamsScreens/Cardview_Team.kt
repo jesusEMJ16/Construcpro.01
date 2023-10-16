@@ -8,7 +8,6 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,14 +19,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.AlertDialog
+import androidx.compose.material.Card
 import androidx.compose.material.Divider
-import androidx.compose.material.LocalContentColor
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material.icons.Icons
@@ -35,57 +32,39 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Link
-import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.example.contrupro3.R
 import com.example.contrupro3.modelos.AuthRepository
 import com.example.contrupro3.modelos.Equipos
 import com.example.contrupro3.modelos.Project
+import com.example.contrupro3.modelos.UserModel
 import com.example.contrupro3.ui.theme.myOrange
 import com.example.contrupro3.ui.theme.myOrangehigh
-import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.O)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -95,7 +74,8 @@ fun CardViewTeamsScreen(
     navController: NavHostController,
     authRepository: AuthRepository,
     userId: String,
-    teamId: String
+    teamId: String,
+    viewModel: CardviewTeam_ViewModel
 ) {
     val teamsList = remember { mutableStateOf<Equipos?>(null) }
     val projectsList = remember { mutableStateOf(emptyList<Project>()) }
@@ -106,19 +86,11 @@ fun CardViewTeamsScreen(
     }
 
     if (teamsList.value === null) {
-        Box(modifier = Modifier.fillMaxSize()) {
-        }
+        Box(modifier = Modifier.fillMaxSize())
     } else {
-        val viewModel: CardViewTeamsViewModel = viewModel()
-        val team: Equipos? = teamsList.value
-        val teamName by viewModel.teamName
-        val action by viewModel.action
-        val showProjectsButtons = remember { mutableStateOf(false) }
+        val team = viewModel.team.observeAsState(initial = teamsList.value).value
         val currentProjectsFiltered =
             projectsList.value.filter { p -> team?.projectsLinked!!.contains(p.id.toString()) }
-        viewModel.teamName.value = team?.name.toString()
-        viewModel.teamDescription.value = team?.description.toString()
-        viewModel.currentProjects.value = currentProjectsFiltered
 
         Scaffold(
             topBar = {
@@ -129,33 +101,13 @@ fun CardViewTeamsScreen(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Column {
-                                Text(teamName, style = MaterialTheme.typography.titleLarge)
+                                Text(
+                                    team?.name.toString(),
+                                    style = MaterialTheme.typography.titleLarge
+                                )
                                 Text(
                                     team?.creatorName ?: "",
                                     style = MaterialTheme.typography.bodyMedium
-                                )
-                            }
-                            IconButton(
-                                onClick = {
-                                    showProjectsButtons.value = !showProjectsButtons.value
-                                },
-                                modifier = Modifier.padding(5.dp)
-                            ) {
-                                if (showProjectsButtons.value) {
-                                    Icon(
-                                        Icons.Default.Link,
-                                        contentDescription = null,
-                                        tint = myOrange,
-                                        modifier = Modifier
-                                            .size(30.dp)
-                                            .rotate(-45f)
-                                    )
-                                } else Icon(
-                                    Icons.Default.Link,
-                                    contentDescription = null,
-                                    tint = myOrange,
-                                    modifier = Modifier
-                                        .size(30.dp)
                                 )
                             }
                         }
@@ -171,110 +123,41 @@ fun CardViewTeamsScreen(
                     }
                 )
             },
-            floatingActionButton = {
-                CompositionLocalProvider(
-                    LocalContentColor provides colorResource(id = R.color.white)
-                ) {
-                    if (showProjectsButtons.value === true) {
-                        Row {
-                            FloatingActionButton(
-                                onClick = {
-                                    if (showProjectsButtons.value) viewModel.action.value =
-                                        "remove projects"
-                                },
-                                containerColor = myOrangehigh
-                            ) {
-                                androidx.compose.material.Icon(
-                                    Icons.Default.Delete,
-                                    contentDescription = "Eliminar",
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(16.dp))
-                            FloatingActionButton(
-                                onClick = {
-                                    if (showProjectsButtons.value) viewModel.action.value =
-                                        "list projects"
-                                },
-                                containerColor = myOrangehigh
-                            ) {
-                                androidx.compose.material.Icon(
-                                    Icons.Default.List,
-                                    contentDescription = "Ver lista"
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(16.dp))
-                            FloatingActionButton(
-                                onClick = {
-                                    if (showProjectsButtons.value) viewModel.action.value =
-                                        "add projects"
-                                },
-                                containerColor = myOrangehigh
-                            ) {
-                                androidx.compose.material.Icon(
-                                    Icons.Default.Add,
-                                    contentDescription = "Añadir"
-                                )
-                            }
-                        }
-                    }
-                }
-            }
         ) {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                when (action) {
-                    "add projects" -> {
-                        Dialog(onDismissRequest = { viewModel.action.value = "" }) {
-                            AddProyects(
-                                navController,
-                                authRepository,
-                                userId,
-                                team?.id.toString(),
-                                projectsList
-                            )
-                        }
-                    }
-
-                    "remove projects" -> {
-                        Dialog(onDismissRequest = { viewModel.action.value = "" }) {
-                            RemoveProjects(
-                                navController,
-                                authRepository,
-                                userId,
-                                team?.id.toString(),
-                                projectsList
-                            )
-                        }
-                    }
-
-                    "list projects" -> {
-                        Dialog(onDismissRequest = { viewModel.action.value = "" }) {
-                            ListProjects(navController, authRepository, userId)
-                        }
-                    }
-                }
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .offset(y = 60.dp),
-                    verticalArrangement = Arrangement.Top,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Spacer(modifier = Modifier.height(5.dp))
-                    Divider(
-                        color = Color.LightGray,
-                        thickness = 1.dp,
-                        modifier = Modifier.padding(horizontal = 10.dp)
-                    )
-                    InformationCard(navController, authRepository, userId, team)
-                    Spacer(modifier = Modifier.height(10.dp))
-                    MembersCard(navController, authRepository, userId, team)
-                }
+                Sections(navController, authRepository, userId, team, viewModel)
             }
         }
+    }
+}
+
+@Composable
+fun Sections(
+    navController: NavHostController,
+    authRepository: AuthRepository,
+    userId: String,
+    team: Equipos?,
+    viewModel: CardviewTeam_ViewModel
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .offset(y = 60.dp),
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Spacer(modifier = Modifier.height(5.dp))
+        Divider(
+            color = Color.LightGray,
+            thickness = 1.dp,
+            modifier = Modifier.padding(horizontal = 10.dp)
+        )
+        InformationCard(navController, authRepository, userId, team, viewModel)
+        Spacer(modifier = Modifier.height(10.dp))
+        MembersCard(navController, authRepository, userId, team, viewModel)
     }
 }
 
@@ -283,16 +166,18 @@ private fun InformationCard(
     navController: NavHostController,
     authRepository: AuthRepository,
     userId: String,
-    team: Equipos?
+    team: Equipos?,
+    viewModel: CardviewTeam_ViewModel
 ) {
-    val viewModel: CardViewTeamsViewModel = viewModel()
-    val teamName by viewModel.teamName
-    val teamDescription by viewModel.teamDescription
-    var name by remember { mutableStateOf("$teamName") }
-    var description by remember { mutableStateOf("$teamDescription") }
+    val name: String by viewModel.name.observeAsState(initial = "${team?.name}")
+    val description: String by viewModel.description.observeAsState(initial = "${team?.description}")
+    val enableSaveButton: Boolean by viewModel.saveNameAndDescriptionButtonEnable.observeAsState(
+        initial = false
+    )
     val context = LocalContext.current
     val currentLocalView = LocalView.current
-    val inputMethodManager = LocalView.current.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+    val inputMethodManager =
+        LocalView.current.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
 
     Box(modifier = Modifier.fillMaxWidth()) {
         Column(
@@ -301,13 +186,14 @@ private fun InformationCard(
                 .padding(16.dp),
             verticalArrangement = Arrangement.Top
         ) {
+            /* === NameField === */
             Text(
                 text = "Información del equipo",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold),
                 color = myOrange,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
-            Spacer(modifier = Modifier.height(5.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = "Nombre del equipo",
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
@@ -315,55 +201,37 @@ private fun InformationCard(
                     .offset(x = 5.dp)
                     .padding(5.dp)
             )
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                maxLines = 1,
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                colors = TextFieldDefaults.outlinedTextFieldColors(
-                    unfocusedBorderColor = Color.Transparent,
-                    backgroundColor = Color(0x79D8D8D8),
-                    focusedBorderColor = Color.Transparent,
-                    cursorColor = myOrange,
-                    disabledBorderColor = Color.Transparent,
-                ),
-                trailingIcon = {
-                    IconButton(onClick = {
-                        name = ""
-                    }) {
-                        Icon(
-                            Icons.Default.Close,
-                            contentDescription = "Borrar nombre"
-                        )
-                    }
-                }
-            )
-            if (name !== teamName) {
-                Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    if (name.length < 6) {
-                        Text(
-                            text = "* Requerido",
-                            style = MaterialTheme.typography.labelMedium.copy(
-                                fontWeight = FontWeight.Light,
-                                color = myOrange
-                            ),
-                            modifier = Modifier.offset(x = 5.dp)
-                        )
-                    } else Spacer(modifier = Modifier.width(0.dp))
+            NameField(name, team) {
+                viewModel.onInfoChanged(
+                    it,
+                    description,
+                    team
+                )
+            }
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (name.length < 6) {
                     Text(
-                        text = "${name.length}/30",
+                        text = "* Requerido",
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontWeight = FontWeight.Light,
-                            color = if (name.length < 6 || name.length > 30) myOrange else Color.Black
-                        )
+                            color = myOrange
+                        ),
+                        modifier = Modifier.offset(x = 5.dp)
                     )
-                }
+                } else Spacer(modifier = Modifier.width(0.dp))
+                Text(
+                    text = "${name.length}/30",
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Light,
+                        color = if (name.length < 6 || name.length > 30) myOrange else Color.Black
+                    )
+                )
             }
-            Spacer(modifier = Modifier.height(15.dp))
+
+            /* === DescriptionField === */
             Text(
                 text = "Descripción del equipo",
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
@@ -371,60 +239,40 @@ private fun InformationCard(
                     .offset(x = 5.dp)
                     .padding(5.dp)
             )
-            OutlinedTextField(
-                value = description,
-                onValueChange = { description = it },
-                maxLines = 1,
-                placeholder = {
-                    if (teamDescription != null && teamDescription.length > 0) {
-                        Text("${teamDescription}")
-                    } else {
-                        Text("No hay descripción establecida.")
-                    }
-                },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                colors = TextFieldDefaults.outlinedTextFieldColors(
-                    unfocusedBorderColor = Color.Transparent,
-                    backgroundColor = Color(0x79D8D8D8),
-                    focusedBorderColor = Color.Transparent,
-                    cursorColor = myOrange,
-                    disabledBorderColor = Color.Transparent,
-                ),
-                trailingIcon = {
-                    IconButton(onClick = {
-                        description = ""
-                    }) {
-                        Icon(
-                            Icons.Default.Close,
-                            contentDescription = "Borrar descripción"
-                        )
-                    }
-                }
-            )
-            if (description !== teamDescription) {
-                Text(
-                    text = "${description.length}/200",
-                    style = MaterialTheme.typography.labelMedium.copy(
-                        fontWeight = FontWeight.Light,
-                        color = if (description.length > 200) myOrange else Color.Black
-                    ),
-                    modifier = Modifier.align(Alignment.End)
+            DescriptionField(description, team) {
+                viewModel.onInfoChanged(
+                    name,
+                    it,
+                    team
                 )
             }
+            Text(
+                text = "${description.length}/200",
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontWeight = FontWeight.Light,
+                    color = if (description.length > 200) myOrange else Color.Black
+                ),
+                modifier = Modifier.align(Alignment.End)
+            )
         }
     }
-    if (name !== teamName || description !== teamDescription) {
+
+    if (name.trim() !== team?.name.toString()
+            .trim() || description.trim() !== team?.description.toString().trim()
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(5.dp),
+                .padding(horizontal = 10.dp),
             horizontalArrangement = Arrangement.End
         ) {
             Button(
                 onClick = {
-                    name = "$teamName"
-                    description = "$teamDescription"
+                    viewModel.onInfoChanged(
+                        "${team?.name.toString()}",
+                        "${team?.description.toString()}",
+                        team
+                    )
                 },
                 colors = ButtonDefaults.buttonColors(
                     contentColor = Color.White,
@@ -437,29 +285,38 @@ private fun InformationCard(
             Spacer(modifier = Modifier.width(10.dp))
             Button(
                 onClick = {
+                    inputMethodManager.hideSoftInputFromWindow(currentLocalView.windowToken, 0)
                     val db = FirebaseFirestore.getInstance()
                     val collection =
                         db.collection("Usuarios").document(userId).collection("Equipos")
                             .document(team?.id.toString())
 
-                    if (name !== teamName) {
-                        viewModel.teamName.value = name
-                        collection.update("name", "$name")
-                    }
-                    if (description !== teamDescription) {
-                        viewModel.teamDescription.value = description
-                        collection.update("description", "$description")
-                    }
-                    inputMethodManager.hideSoftInputFromWindow(currentLocalView.windowToken, 0)
-                    name = teamName
-                    description = teamDescription
+                    if (name !== team?.name.toString().trim()) collection.update(
+                        "name",
+                        "${name.trim()}"
+                    )
+                    if (description !== team?.description.toString()
+                            .trim()
+                    ) collection.update("description", "${description.trim()}")
+
+                    viewModel.onInfoChanged(
+                        name.trim(), description.trim(), Equipos(
+                            team?.id,
+                            name.trim(),
+                            team?.creatorName,
+                            team?.creatorUID,
+                            description.trim(),
+                            team?.members,
+                            team?.projectsLinked
+                        )
+                    )
                     Toast.makeText(
                         context,
                         "Datos Actualizados",
                         Toast.LENGTH_LONG
                     ).show()
                 },
-                enabled = name.length >= 6 && name.length <= 30 && description.length <= 200,
+                enabled = enableSaveButton,
                 colors = ButtonDefaults.buttonColors(
                     contentColor = Color.White,
                     containerColor = myOrangehigh
@@ -473,12 +330,78 @@ private fun InformationCard(
 }
 
 @Composable
+fun DescriptionField(description: String, team: Equipos?, onTextFieldChanged: (String) -> Unit) {
+    OutlinedTextField(
+        value = description,
+        onValueChange = { onTextFieldChanged(it) },
+        maxLines = 1,
+        placeholder = {
+            if (team?.description != null && team?.description!!.length > 0) {
+                Text("${team?.description}")
+            } else {
+                Text("No hay descripción establecida.")
+            }
+        },
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth(),
+        colors = TextFieldDefaults.outlinedTextFieldColors(
+            unfocusedBorderColor = Color.Transparent,
+            backgroundColor = Color(0x79D8D8D8),
+            focusedBorderColor = Color.Transparent,
+            cursorColor = myOrange,
+            disabledBorderColor = Color.Transparent,
+        ),
+        trailingIcon = {
+            IconButton(onClick = {
+                onTextFieldChanged("")
+            }) {
+                Icon(
+                    Icons.Default.Close,
+                    contentDescription = "Borrar descripción"
+                )
+            }
+        }
+    )
+}
+
+@Composable
+fun NameField(name: String, team: Equipos?, onTextFieldChanged: (String) -> Unit) {
+    OutlinedTextField(
+        value = name,
+        onValueChange = { onTextFieldChanged(it) },
+        maxLines = 1,
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth(),
+        colors = TextFieldDefaults.outlinedTextFieldColors(
+            unfocusedBorderColor = Color.Transparent,
+            backgroundColor = Color(0x79D8D8D8),
+            focusedBorderColor = Color.Transparent,
+            cursorColor = myOrange,
+            disabledBorderColor = Color.Transparent,
+        ),
+        trailingIcon = {
+            IconButton(onClick = {
+                onTextFieldChanged("")
+            }) {
+                Icon(
+                    Icons.Default.Close,
+                    contentDescription = "Borrar nombre"
+                )
+            }
+        }
+    )
+}
+
+@Composable
 private fun MembersCard(
     navController: NavHostController,
     authRepository: AuthRepository,
     userId: String,
-    team: Equipos?
+    team: Equipos?,
+    viewModel: CardviewTeam_ViewModel
 ) {
+    var showAddInviteDialog: Boolean by remember { mutableStateOf(false) }
+
     Box(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier
@@ -496,106 +419,145 @@ private fun MembersCard(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .fillMaxHeight(0.6f)
+                    .fillMaxHeight(0.5f)
                     .background(Color(0x79D8D8D8))
             ) {
 
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 5.dp),
+                horizontalArrangement = Arrangement.End
+            ) {
+                IconButton(
+                    modifier = Modifier.padding(end = 10.dp),
+                    onClick = { }, colors = IconButtonDefaults.filledIconButtonColors(
+                        containerColor = myOrangehigh,
+                        contentColor = Color.White
+                    )
+                ) {
+                    Icon(Icons.Default.Delete, contentDescription = "Eliminar usuarios")
+                }
+                IconButton(
+                    onClick = {
+                        showAddInviteDialog = true
+                    }, colors = IconButtonDefaults.filledIconButtonColors(
+                        containerColor = myOrangehigh,
+                        contentColor = Color.White
+                    )
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Añadir usuarios")
+                }
+            }
+        }
+        if (showAddInviteDialog) AddInviteDialog(team, viewModel) { showAddInviteDialog = false }
+    }
+}
+
+@Composable
+fun AddInviteDialog(
+    team: Equipos?,
+    viewModel: CardviewTeam_ViewModel,
+    DismissDialog: () -> Unit
+) {
+    val email: String by viewModel.email.observeAsState(initial = "")
+    val enableInviteButton by viewModel.enableInviteButton.observeAsState(initial = false)
+
+    Dialog(onDismissRequest = { DismissDialog() }) {
+        Card(
+            modifier = Modifier
+                .padding(10.dp)
+                .fillMaxHeight(0.55f),
+            shape = RoundedCornerShape(4.dp),
+            elevation = 4.dp,
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Invitar Usuario",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = myOrange
+                )
+                Spacer(modifier = Modifier.height(5.dp))
+                Divider(color = Color.Black, thickness = 1.dp)
+                Spacer(modifier = Modifier.height(15.dp))
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { viewModel.onAddDialogChanged(it) },
+                    label = { Text(text = "Correo electronico") },
+                    colors = TextFieldDefaults.outlinedTextFieldColors(
+                        textColor = Color.Black,
+                        cursorColor = myOrange,
+                        focusedBorderColor = Color(0xA9D8D8D8),
+                        unfocusedBorderColor = Color(0xA9D8D8D8),
+                        backgroundColor = Color(0x79D8D8D8)
+                    ),
+                    singleLine = true,
+                    maxLines = 1,
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    trailingIcon = {
+                        IconButton(onClick = {
+                            viewModel.onAddDialogChanged("")
+                        }) {
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = "Borrar email"
+                            )
+                        }
+                    }
+                )
+                if (email.length > 0 && enableInviteButton === false) {
+                    Text(
+                        text = "Correo electronico no válido",
+                        modifier = Modifier
+                            .align(Alignment.Start)
+                            .offset(x = 4.dp),
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.Light,
+                            color = myOrange
+                        )
+                    )
+                }
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(10.dp),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.Bottom
+            ) {
+                Button(
+                    onClick = { DismissDialog() }, colors = ButtonDefaults.buttonColors(
+                        contentColor = Color.White,
+                        containerColor = myOrangehigh
+                    ), modifier = Modifier.padding(end = 15.dp)
+                ) {
+                    Text(text = "Cancelar")
+                }
+                Button(
+                    enabled = enableInviteButton,
+                    onClick = {  },
+                    colors = ButtonDefaults.buttonColors(
+                        contentColor = Color.White,
+                        containerColor = myOrangehigh
+                    ),
+                    modifier = Modifier.padding(end = 15.dp)
+                ) {
+                    Text(text = "Invitar")
+                }
             }
         }
     }
 }
 
-fun getInvitesFromFirebase(
-    teamId: String,
-    onSuccess: (List<String>) -> Unit,
-    onFailure: (Exception) -> Unit
-) {
-    val firestore = FirebaseFirestore.getInstance()
 
-    firestore.collectionGroup("Invitaciones")
-        .whereEqualTo("teamId", teamId)
-        .get()
-        .addOnSuccessListener { querySnapshot ->
-            val integrantes = querySnapshot.documents
-
-            if (integrantes.isNotEmpty()) {
-//                onSuccess(integrantes)
-            }
-        }
-        .addOnFailureListener { exception ->
-            onFailure(exception)
-        }
-}
-
-fun isValidEmail(email: String): Boolean {
-    val emailRegex = Regex("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\$")
-    return email.matches(emailRegex)
-}
-
-@Composable
-fun InvitarDialog(
-    onInvite: (String) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    var email by remember { mutableStateOf("") }
-    var isEmailValid by remember { mutableStateOf(true) }
-
-    AlertDialog(
-        onDismissRequest = { onDismiss() },
-        title = { Text("Invitar a un nuevo miembro") },
-        text = {
-            Column {
-                TextField(
-                    value = email,
-                    onValueChange = {
-                        email = it
-                        isEmailValid = isValidEmail(it) // Validar el correo al cambiarlo
-                    },
-                    label = { Text("Dirección de correo electrónico") }
-                )
-                if (!isEmailValid) {
-                    Text(
-                        text = "Correo electrónico no válido",
-                        color = Color.Red,
-                        fontSize = 12.sp,
-                        modifier = Modifier.padding(top = 4.dp)
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    if (isEmailValid) {
-                        onInvite(email)
-                        onDismiss()
-                    }
-                },
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 5.dp),
-                colors = ButtonDefaults.buttonColors(
-                    myOrange,
-                    contentColor = Color.White
-                ),
-            ) {
-                Text("Invitar")
-            }
-        },
-        dismissButton = {
-            Button(
-                onClick = { onDismiss() },
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 5.dp),
-                colors = ButtonDefaults.buttonColors(
-                    myOrange,
-                    contentColor = Color.White
-                ),
-            ) {
-                Text("Cancelar")
-            }
-        }
-    )
-}
-
-@SuppressLint("UnrememberedMutableState")
+/*@SuppressLint("UnrememberedMutableState")
 @Composable
 fun AddProyects(
     navController: NavHostController,
@@ -784,9 +746,9 @@ fun AddProyects(
             }
         }
     }
-}
+}*/
 
-@Composable
+/*@Composable
 fun RemoveProjects(
     navController: NavHostController,
     authRepository: AuthRepository,
@@ -962,8 +924,9 @@ fun RemoveProjects(
             }
         }
     }
-}
+}*/
 
+/*
 @SuppressLint("UnrememberedMutableState")
 @Composable
 fun ListProjects(
@@ -1041,7 +1004,7 @@ fun ListProjects(
                 horizontalArrangement = Arrangement.End
             ) {
                 Button(
-                    onClick = { viewModel.action.value = "" },
+                    onClick = {  },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = myOrangehigh,
                         contentColor = Color.White
@@ -1056,14 +1019,4 @@ fun ListProjects(
             }
         }
     }
-}
-
-class CardViewTeamsViewModel : ViewModel() {
-    val teamName = mutableStateOf("")
-    val teamDescription = mutableStateOf("")
-    val membersList = mutableListOf<String>()
-    val nameEnabled = mutableStateOf(false)
-    val descriptionEnabled = mutableStateOf(false)
-    val currentProjects = mutableStateOf(emptyList<Project>())
-    val action = mutableStateOf("")
-}
+}*/

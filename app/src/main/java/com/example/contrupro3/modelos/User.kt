@@ -3,14 +3,12 @@ package com.example.contrupro3.modelos
 import android.os.Parcel
 import android.os.Parcelable
 
-data class Equipos(
-    val id: String? = null,
-    val name: String? = "",
-    val creatorName: String? = "",
-    val creatorUID: String? = "",
-    val description: String? = "",
-    val members: List<String>? = emptyList(),
-    val projectsLinked: List<String>? = emptyList()
+data class UserModel(
+    val name: String? = null,
+    val lastName: String? = "",
+    val email: String? = "",
+    val phoneNumber: String? = "",
+    val role: String? = ""
 
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
@@ -18,19 +16,15 @@ data class Equipos(
         parcel.readString(),
         parcel.readString(),
         parcel.readString(),
-        parcel.readString(),
-        parcel.createStringArrayList() ?: emptyList(),
-        parcel.createStringArrayList() ?: emptyList()
+        parcel.readString()
     )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
-        parcel.writeString(id)
         parcel.writeString(name)
-        parcel.writeString(creatorName)
-        parcel.writeString(creatorUID)
-        parcel.writeString(description)
-        parcel.writeStringList(members)
-        parcel.writeStringList(projectsLinked)
+        parcel.writeString(lastName)
+        parcel.writeString(email)
+        parcel.writeString(phoneNumber)
+        parcel.writeString(role)
     }
 
     override fun describeContents(): Int {
