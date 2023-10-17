@@ -20,6 +20,7 @@ import com.example.contrupro3.ui.theme.ProjectsScreens.ProjectView
 import com.example.contrupro3.ui.theme.RegisterPage
 import com.example.contrupro3.ui.theme.SplashScreen
 import com.example.contrupro3.ui.theme.TeamsScreens.CardViewTeamsScreen
+import com.example.contrupro3.ui.theme.TeamsScreens.CardviewTeam_ViewModel
 import com.example.contrupro3.ui.theme.TeamsScreens.TeamsScreen
 import com.example.contrupro3.ui.theme.UserProfilePage
 import com.google.firebase.auth.FirebaseAuth
@@ -69,7 +70,7 @@ fun AppNavigator(
         composable("cardview_teams_screen/{userId}/{teamId}") { backStackEntry ->
             val teamId = backStackEntry.arguments?.getString("teamId") ?: ""
             val userId = backStackEntry.arguments?.getString("userId") ?: ""
-            CardViewTeamsScreen(navController, authRepository, userId, teamId)
+            CardViewTeamsScreen(navController, authRepository, userId, teamId, CardviewTeam_ViewModel())
         }
         composable("documents_screen/{userID}") { backStackEntry ->
             val arguments = backStackEntry.arguments

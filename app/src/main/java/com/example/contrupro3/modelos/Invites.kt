@@ -5,6 +5,7 @@ import android.os.Parcelable
 
 data class ModelInvites(
     val id: String? = null,
+    val userId: String? = null,
     val userName: String? = "",
     val userEmail: String? = "",
     val userPhotoUrl: String? = "",
@@ -16,11 +17,13 @@ data class ModelInvites(
         parcel.readString(),
         parcel.readString(),
         parcel.readString(),
+        parcel.readString(),
         parcel.readString()
     )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeString(id)
+        parcel.writeString(userId)
         parcel.writeString(userName)
         parcel.writeString(userEmail)
         parcel.writeString(userPhotoUrl)

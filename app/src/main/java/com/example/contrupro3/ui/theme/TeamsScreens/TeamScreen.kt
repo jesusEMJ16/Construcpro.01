@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.*
 
 import android.annotation.SuppressLint
 import android.os.Build
-import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -401,7 +400,7 @@ fun EquipoCard(team: Equipos, navController: NavController,userID: String, authR
                     }
                     Spacer(modifier = Modifier.width(5.dp))
                     Text(
-                        text = team.members.size.toString(),
+                        text = team.members?.size.toString(),
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
