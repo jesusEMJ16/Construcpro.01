@@ -258,7 +258,6 @@ fun DocumentsScreen(
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                 )
                 Spacer(modifier = Modifier.height(5.dp))
-                Divider(color = Color.LightGray, thickness = 1.dp)
                 Spacer(modifier = Modifier.height(5.dp))
                 when (documentsList.value.size) {
                     0 -> {

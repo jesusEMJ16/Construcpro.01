@@ -11,8 +11,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -42,18 +44,19 @@ fun SplashScreen(navController: NavHostController, authRepository: AuthRepositor
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Icon(
-                painter = painterResource(R.drawable.logo_name),
+            Image(
+                painter = painterResource(id = R.drawable.logo_name),
                 contentDescription = "Logo",
                 modifier = Modifier
                     .size(300.dp)
-                    .padding(bottom = 100.dp)
+                    //.padding(bottom = 100.dp)
             )
+            Spacer(modifier = Modifier.height(20.dp))
             BouncingDots()
         }
     }
     LaunchedEffect(Unit) {
-        delay(1000)
+        delay(2000)
         if (authRepository.isEmailVerified()) {
             val userID = authRepository.getCurrentUser()?.uid
             navController.navigate("projects_screen/$userID") {

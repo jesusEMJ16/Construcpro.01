@@ -96,14 +96,14 @@ fun HamburgueerMenu(navController: NavController, authRepository: AuthRepository
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.Start
                     ) {
-                        Spacer(modifier = Modifier.height(25.dp))
+                        Spacer(modifier = Modifier.height(30.dp))
+
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .wrapContentHeight(align = Alignment.Bottom),
                             horizontalArrangement = Arrangement.Center
                         ) {
-
                             val welcomeText = buildAnnotatedString {
                                 withStyle(
                                     style = SpanStyle(
@@ -250,7 +250,7 @@ fun SectionDown(navController: NavController, authRepository: AuthRepository) {
             ) {
                 Icon(
                     painterResource(R.drawable.config_icon),
-                    modifier = Modifier.size(40.dp),
+                    modifier = Modifier.size(35.dp),
                     contentDescription = null ,
                     tint = Color.Unspecified
                 )
@@ -267,7 +267,7 @@ fun SectionDown(navController: NavController, authRepository: AuthRepository) {
                 Icon(
                     painterResource(R.drawable.user_icon),
                     contentDescription = null,
-                    modifier = Modifier.size(40.dp),
+                    modifier = Modifier.size(35.dp),
                     tint = Color.Unspecified
                 )
             }
@@ -324,8 +324,8 @@ fun SectionDown(navController: NavController, authRepository: AuthRepository) {
                 contentPadding = PaddingValues(16.dp)
             ) {
                 Icon(
-                    painterResource(R.drawable.user_icon),
-                    modifier = Modifier.size(40.dp),
+                    painterResource(R.drawable.close_icon),
+                    modifier = Modifier.size(35.dp),
                     contentDescription = null,
                     tint = Color.Unspecified
                 )

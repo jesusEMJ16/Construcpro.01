@@ -298,10 +298,13 @@ fun ProjectView(navController: NavController, authRepository: AuthRepository, us
                 Spacer(modifier = Modifier.height(5.dp))
                 Text(
                     text = "Proyectos",
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 32.sp
+                    )
                 )
                 Spacer(modifier = Modifier.height(5.dp))
-                Divider(color = myBlue, thickness = 1.dp)
+              //  Divider(color = myBlue, thickness = 1.dp)
                 Spacer(modifier = Modifier.height(5.dp))
                 when (filteredProjects.value.size) {
                     0 -> {

@@ -76,6 +76,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -231,10 +232,12 @@ fun TeamsScreen(navController: NavController, authRepository: AuthRepository, us
                     Spacer(modifier = Modifier.height(5.dp))
                     Text(
                         text = "Equipos",
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 32.sp
+                        )
                     )
                     Spacer(modifier = Modifier.height(5.dp))
-                    Divider(color = Color.LightGray, thickness = 1.dp)
                     Spacer(modifier = Modifier.height(5.dp))
                     when (filteredEquipos.value.size) {
                         0 -> {

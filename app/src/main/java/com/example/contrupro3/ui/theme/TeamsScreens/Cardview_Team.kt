@@ -3,7 +3,6 @@ package com.example.contrupro3.ui.theme.TeamsScreens
 import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
-import android.util.Log
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.annotation.RequiresApi
@@ -41,7 +40,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -82,7 +80,6 @@ import com.example.contrupro3.modelos.Equipos
 import com.example.contrupro3.modelos.Project
 import com.example.contrupro3.ui.theme.myBlue
 import com.example.contrupro3.ui.theme.myOrangehigh
-import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -95,7 +92,8 @@ fun CardViewTeamsScreen(
     navController: NavHostController,
     authRepository: AuthRepository,
     userId: String,
-    teamId: String
+    teamId: String,
+    cardviewteamViewmodel: CardviewTeam_ViewModel
 ) {
     val teamsList = remember { mutableStateOf<Equipos?>(null) }
     val projectsList = remember { mutableStateOf(emptyList<Project>()) }

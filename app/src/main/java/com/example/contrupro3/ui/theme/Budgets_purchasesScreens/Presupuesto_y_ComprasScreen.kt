@@ -26,6 +26,11 @@ import androidx.compose.material.Icon
 import androidx.compose.material.Surface
 import androidx.compose.material.TextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AssuredWorkload
+import androidx.compose.material.icons.filled.Checklist
+import androidx.compose.material.icons.filled.Computer
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.RealEstateAgent
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Support
@@ -45,6 +50,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -52,6 +58,7 @@ import androidx.navigation.NavController
 import com.example.contrupro3.modelos.AuthRepository
 import com.example.contrupro3.modelos.Project
 import com.example.contrupro3.ui.theme.HamburgueerMenu
+import com.example.contrupro3.ui.theme.lightblue
 import com.example.contrupro3.ui.theme.myBlue
 import com.google.android.material.tabs.TabItem
 
@@ -107,7 +114,7 @@ fun ProyectoSelectionHeader(authRepository: AuthRepository) {
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
             )
             Spacer(modifier = Modifier.height(5.dp))
-            Divider(color = Color.LightGray, thickness = 1.dp)
+            //Divider(color = Color.LightGray, thickness = 1.dp)
             Spacer(modifier = Modifier.height(10.dp))
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -249,11 +256,11 @@ fun TabsRow(currentSelection: String, onTabSelected: (String) -> Unit) {
     val tabs = listOf(
         TabData("Resumen del Presupuesto", Icons.Default.RealEstateAgent),
         TabData("Gestión de Compras", Icons.Default.ShoppingCart),
-        TabData("Gestión de Suministros y Materiales", Icons.Default.Support),
-        TabData("Provedores", Icons.Default.Support),
-        TabData("Especificaciones Técnicas", Icons.Default.Support),
-        TabData("Criterios de Cuantificación", Icons.Default.Support),
-        TabData("Historial y Reportes", Icons.Default.Support),
+        TabData("Gestión de Suministros y Materiales",Icons.Default.AssuredWorkload),
+        TabData("Provedores", Icons.Default.People),
+        TabData("Especificaciones Técnicas", Icons.Default.Checklist),
+        TabData("Criterios de Cuantificación", Icons.Default.Computer),
+        TabData("Historial y Reportes", Icons.Default.History),
     )
 
     LazyRow(
@@ -285,7 +292,7 @@ fun TabItem(title: String, icon: ImageVector, isSelected: Boolean, onClick: () -
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = if (isSelected) myBlue else Color.Black
+            tint = if (isSelected) lightblue else myBlue
         )
         GradientText(title, isSelected)
     }
@@ -294,7 +301,12 @@ fun TabItem(title: String, icon: ImageVector, isSelected: Boolean, onClick: () -
 fun GradientText(text: String, isSelected: Boolean) {
     Text(
         text = text,
-        color = if (isSelected) myBlue else Color.Black
+        style = if (isSelected) {
+            TextStyle(fontWeight = FontWeight.Bold) // Texto en negrita si está seleccionado
+        } else {
+            TextStyle(fontWeight = FontWeight.Normal) // Texto normal si no está seleccionado
+        },
+        color = if (isSelected) lightblue else myBlue
     )
 }
 
