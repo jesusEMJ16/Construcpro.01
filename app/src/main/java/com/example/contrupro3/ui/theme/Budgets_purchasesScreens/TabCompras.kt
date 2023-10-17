@@ -32,13 +32,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.contrupro3.ui.theme.Budgets_purchasesScreens.PresupuestoModels.Compra
-import com.example.contrupro3.ui.theme.myOrange
 import androidx.compose.runtime.*
 import androidx.compose.ui.layout.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.snapshots.SnapshotStateMap
+import com.example.contrupro3.ui.theme.myBlue
 
 @Composable
 fun ComprasScreen() {
@@ -86,11 +86,12 @@ fun ComprasScreen() {
         ) {
             FloatingActionButton(
                 onClick = { },
-                containerColor = myOrange
+                containerColor = myBlue,
             ) {
-                androidx.compose.material.Icon(
+                Icon(
                     Icons.Default.Add,
-                    contentDescription = "Agregar Compra"
+                    contentDescription = "Agregar Compra",
+                    tint = Color.White
                 )
             }
         }

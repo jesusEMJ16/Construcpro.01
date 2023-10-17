@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -41,12 +42,12 @@ fun SplashScreen(navController: NavHostController, authRepository: AuthRepositor
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Image(
-                painter = painterResource(R.drawable.logo_con_nombre),
+            Icon(
+                painter = painterResource(R.drawable.logo_name),
                 contentDescription = "Logo",
                 modifier = Modifier
+                    .size(300.dp)
                     .padding(bottom = 100.dp)
-                    .size(250.dp)
             )
             BouncingDots()
         }
@@ -95,7 +96,7 @@ fun BouncingDots() {
                         shape = CircleShape
                     )
                     .clip(CircleShape)
-                    .background(Color(0xFFFFA500))
+                    .background(myBlue)
             )
         }
     }

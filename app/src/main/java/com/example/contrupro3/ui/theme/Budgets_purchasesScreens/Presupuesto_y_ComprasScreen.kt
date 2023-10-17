@@ -52,7 +52,7 @@ import androidx.navigation.NavController
 import com.example.contrupro3.modelos.AuthRepository
 import com.example.contrupro3.modelos.Project
 import com.example.contrupro3.ui.theme.HamburgueerMenu
-import com.example.contrupro3.ui.theme.myOrange
+import com.example.contrupro3.ui.theme.myBlue
 import com.google.android.material.tabs.TabItem
 
 @Composable
@@ -285,7 +285,7 @@ fun TabItem(title: String, icon: ImageVector, isSelected: Boolean, onClick: () -
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = if (isSelected) myOrange else Color.Black
+            tint = if (isSelected) myBlue else Color.Black
         )
         GradientText(title, isSelected)
     }
@@ -294,7 +294,7 @@ fun TabItem(title: String, icon: ImageVector, isSelected: Boolean, onClick: () -
 fun GradientText(text: String, isSelected: Boolean) {
     Text(
         text = text,
-        color = if (isSelected) myOrange else Color.Black
+        color = if (isSelected) myBlue else Color.Black
     )
 }
 

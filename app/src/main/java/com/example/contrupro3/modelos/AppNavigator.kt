@@ -4,14 +4,18 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.example.contrupro3.ui.theme.Budgets_purchasesScreens.Presupuesto_y_Compras
 import com.example.contrupro3.ui.theme.DocumentsScreens.CardViewDocumentsScreen
-import com.example.contrupro3.ui.theme.ProjectsScreens.CardviewProjectsScreen
 import com.example.contrupro3.ui.theme.DocumentsScreens.DocumentsScreen
 import com.example.contrupro3.ui.theme.LoginPage
-import com.example.contrupro3.ui.theme.Budgets_purchasesScreens.Presupuesto_y_Compras
+import com.example.contrupro3.ui.theme.ProjectsScreens.CardviewProjectsScreen
 import com.example.contrupro3.ui.theme.ProjectsScreens.ProjectView
 import com.example.contrupro3.ui.theme.RegisterPage
 import com.example.contrupro3.ui.theme.SplashScreen
@@ -27,8 +31,9 @@ import com.google.firebase.auth.FirebaseAuth
 fun AppNavigator(
     auth: FirebaseAuth,
     navController: NavHostController,
-    authRepository: AuthRepository
+    authRepository: AuthRepository,
 ) {
+
     NavHost(navController = navController, startDestination = "splash_screen") {
         composable("splash_screen") {
             SplashScreen(navController, authRepository)
@@ -36,6 +41,7 @@ fun AppNavigator(
         composable("login_screen") {
             LoginPage(navController = navController, authRepository = authRepository)
         }
+
         composable("register_screen") {
             RegisterPage(navController = navController)
         }

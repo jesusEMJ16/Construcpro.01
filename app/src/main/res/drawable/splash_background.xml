@@ -4,6 +4,6 @@
     <item>
         <bitmap
             android:gravity="center"
-            android:src="@drawable/logo_sin_nombre"/> <!-- Reemplazar logo -->
+            android:src="@drawable/logo"/> <!-- Reemplazar logo -->
     </item>
 </layer-list>

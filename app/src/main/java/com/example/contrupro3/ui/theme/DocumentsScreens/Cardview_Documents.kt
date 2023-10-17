@@ -70,7 +70,7 @@ import com.example.contrupro3.modelos.AuthRepository
 import com.example.contrupro3.modelos.DocumentModel
 import com.example.contrupro3.modelos.Equipos
 import com.example.contrupro3.modelos.Project
-import com.example.contrupro3.ui.theme.myOrange
+import com.example.contrupro3.ui.theme.myBlue
 import com.example.contrupro3.ui.theme.myOrangehigh
 import com.example.contrupro3.ui.theme.myOrangelow
 import com.google.firebase.firestore.FirebaseFirestore
@@ -119,7 +119,7 @@ fun CardViewDocumentsScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = null, tint = myOrange)
+                        Icon(Icons.Default.ArrowBack, contentDescription = null, tint = myBlue)
                     }
                 },
             )
@@ -234,7 +234,7 @@ private fun InformationCard(
                 Text(
                     text = "Información del documento",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold),
-                    color = myOrange
+                    color = myBlue
                 )
                 Spacer(modifier = Modifier.height(5.dp))
                 Divider(color = Color.LightGray, thickness = 1.dp)
@@ -258,7 +258,7 @@ private fun InformationCard(
                         unfocusedBorderColor = Color.Transparent,
                         backgroundColor = if (nameEnabled) Color(0x41FF7239) else Color(0x79D8D8D8),
                         focusedBorderColor = Color.Transparent,
-                        cursorColor = myOrange,
+                        cursorColor = myBlue,
                         disabledBorderColor = Color.Transparent,
                     ),
                     trailingIcon = {
@@ -306,7 +306,7 @@ private fun InformationCard(
                         unfocusedBorderColor = Color.Transparent,
                         backgroundColor = if (descriptionEnabled) Color(0x41FF7239) else Color(0x79D8D8D8),
                         focusedBorderColor = Color.Transparent,
-                        cursorColor = myOrange,
+                        cursorColor = myBlue,
                         disabledBorderColor = Color.Transparent,
                     ),
                     trailingIcon = {
@@ -368,7 +368,7 @@ fun IntegrationsCard(
                 Text(
                     text = "Integraciones al documento",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold),
-                    color = myOrange
+                    color = myBlue
                 )
                 Spacer(modifier = Modifier.height(5.dp))
                 Divider(color = Color.LightGray, thickness = 1.dp)
@@ -398,7 +398,7 @@ fun IntegrationsCard(
                         unfocusedBorderColor = Color.Transparent,
                         backgroundColor = if (proyectsEnabled) Color(0x41FF7239) else Color(0x79D8D8D8),
                         focusedBorderColor = Color.Transparent,
-                        cursorColor = myOrange,
+                        cursorColor = myBlue,
                         disabledBorderColor = Color.Transparent,
                     ),
                     trailingIcon = {
@@ -446,7 +446,7 @@ fun IntegrationsCard(
                         unfocusedBorderColor = Color.Transparent,
                         backgroundColor = if (teamsEnabled) Color(0x41FF7239) else Color(0x79D8D8D8),
                         focusedBorderColor = Color.Transparent,
-                        cursorColor = myOrange,
+                        cursorColor = myBlue,
                         disabledBorderColor = Color.Transparent,
                     ),
                     trailingIcon = {
@@ -506,7 +506,7 @@ fun AddProyects(
             Text(
                 text = "Añadir Proyectos",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = myOrange
+                color = myBlue
             )
             Spacer(modifier = Modifier.height(5.dp))
             Divider(color = Color.Black, thickness = 1.dp)
@@ -556,7 +556,7 @@ fun AddProyects(
                                 checked = newChange
                             },
                             colors = androidx.compose.material3.CheckboxDefaults.colors(
-                                uncheckedColor = myOrange,
+                                uncheckedColor = myBlue,
                                 checkedColor = myOrangehigh,
                                 checkmarkColor = Color.White
                             )
@@ -667,7 +667,7 @@ fun RemoveProjects(
             Text(
                 text = "Remover Proyectos",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = myOrange
+                color = myBlue
             )
             Spacer(modifier = Modifier.height(5.dp))
             Divider(color = Color.Black, thickness = 1.dp)
@@ -716,7 +716,7 @@ fun RemoveProjects(
                                 checked = newChange
                             },
                             colors = androidx.compose.material3.CheckboxDefaults.colors(
-                                uncheckedColor = myOrange,
+                                uncheckedColor = myBlue,
                                 checkedColor = myOrangehigh,
                                 checkmarkColor = Color.White
                             )

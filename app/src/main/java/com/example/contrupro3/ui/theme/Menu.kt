@@ -42,6 +42,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
@@ -87,7 +89,7 @@ fun HamburgueerMenu(navController: NavController, authRepository: AuthRepository
                             4.dp,
                             shape = RoundedCornerShape(topEnd = 20.dp, bottomEnd = 20.dp)
                         ),
-                    shape = RoundedCornerShape(topEnd = 25.dp, bottomEnd = 25.dp)
+                    shape = RoundedCornerShape(topEnd = 30.dp, bottomEnd = 20.dp)
                 ) {
                     Column(
                         Modifier.padding(0.dp),
@@ -99,7 +101,6 @@ fun HamburgueerMenu(navController: NavController, authRepository: AuthRepository
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .wrapContentHeight(align = Alignment.Bottom),
-                            // verticalAlignment = Alignment.Bottom,
                             horizontalArrangement = Arrangement.Center
                         ) {
 
@@ -116,7 +117,7 @@ fun HamburgueerMenu(navController: NavController, authRepository: AuthRepository
                                 }
                                 withStyle(
                                     style = SpanStyle(
-                                        color = myOrange,
+                                        color = lightblue,
                                         fontSize = 16.sp,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -141,19 +142,20 @@ fun HamburgueerMenu(navController: NavController, authRepository: AuthRepository
                         }
                         Spacer(modifier = Modifier.height(5.dp))
                         Divider(color = Color.LightGray, thickness = 1.dp)
+                        Spacer(modifier = Modifier.height(5.dp))
                         MenuOpciones(navController, authRepository)
                         Column(
                             modifier = Modifier.fillMaxWidth(),
                             verticalArrangement = Arrangement.Center,
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Spacer(modifier = Modifier.height(15.dp))
+                            Spacer(modifier = Modifier.height(20.dp))
                             Image(
-                                painter = painterResource(R.drawable.logoshape),
+                                painter = painterResource(R.drawable.logo),
                                 contentDescription = "Logo",
                                 modifier = Modifier
-                                    .height(100.dp)
-                                    .width(100.dp)
+                                    .height(80.dp)
+                                    .width(80.dp)
                             )
                         }
                         SectionDown(navController, authRepository)
@@ -170,17 +172,17 @@ fun HamburgueerMenu(navController: NavController, authRepository: AuthRepository
             Crossfade(targetState = isDrawerOpen, label = "") { state ->
                 if (state) {
                     Icon(
-                        imageVector = Icons.Filled.ArrowBack,
+                        painterResource(R.drawable.arrow_icon),
                         contentDescription = "Close Menu",
                         modifier = Modifier.size(44.dp),// Ajusta el tamaño del ícono
-                        tint = myOrange
+                        tint = Color.Unspecified
                     )
                 } else {
                     Icon(
-                        imageVector = Icons.Filled.Menu,
+                        painterResource(R.drawable.menu_icon),
                         contentDescription = "Abrir menú",
                         modifier = Modifier.size(44.dp), // Ajusta el tamaño del ícono
-                        tint = myOrange
+                        tint = Color.Unspecified
                     )
                 }
             }
@@ -192,37 +194,31 @@ fun HamburgueerMenu(navController: NavController, authRepository: AuthRepository
 fun MenuOpciones(navController: NavController, authRepository: AuthRepository) {
     val userID = authRepository.getCurrentUser()?.uid
 
-    CreateOptionButton("Proyectos", painterResource(R.drawable.project_management_50px)) {
+    CreateOptionButton("Proyectos", painterResource(R.drawable.proyect_icon)) {
         navController.navigate("projects_screen/$userID")
     }
-    CreateOptionButton("Tareas", painterResource(R.drawable.task_50px)) {
+    CreateOptionButton("Tareas", painterResource(R.drawable.task_icon)) {
 
     }
-    CreateOptionButton("Calendario", painterResource(R.drawable.calendar_50px)) {
+    CreateOptionButton("Calendario", painterResource(R.drawable.calender_icon)) {
 
     }
-    CreateOptionButton("Planificacion", painterResource(R.drawable.architect_50px)) {
+    CreateOptionButton("Comunicacion", painterResource(R.drawable.comunication_icon)) {
 
     }
-    CreateOptionButton("Comunicacion", painterResource(R.drawable.communication_50px)) {
-
-    }
-    CreateOptionButton("Materiales y Suministros", painterResource(R.drawable.materials_50px)) {
-
-    }
-    CreateOptionButton("Equipo y Personal", painterResource(R.drawable.task_50px)) {
+    CreateOptionButton("Equipos", painterResource(R.drawable.task_icon)) {
         navController.navigate("teams_screen/$userID")
     }
-    CreateOptionButton("Reportes y Analiticas", painterResource(R.drawable.analytics_50px)) {
+    CreateOptionButton("Reportes y Analiticas", painterResource(R.drawable.analityc_icon)) {
 
     }
-    CreateOptionButton("Prosupuesto y Compras", painterResource(R.drawable.profit_50px)) {
+    CreateOptionButton("Prosupuesto y Compras", painterResource(R.drawable.costs_icon)) {
         navController.navigate("presucom_screen")
     }
-    CreateOptionButton("Planos y Documentacion", painterResource(R.drawable.documents_50px)) {
+    CreateOptionButton("Planos y Documentacion", painterResource(R.drawable.documents_icon)) {
         navController.navigate("documents_screen/$userID")
     }
-    CreateOptionButton("Soporte y Ayuda", painterResource(R.drawable.help_50px)) {
+    CreateOptionButton("Soporte y Ayuda", painterResource(R.drawable.help_icon)) {
 
     }
 
@@ -253,9 +249,10 @@ fun SectionDown(navController: NavController, authRepository: AuthRepository) {
                 elevation = ButtonDefaults.elevation(0.dp),
             ) {
                 Icon(
-                    painterResource(R.drawable.settings_50px),
-                    contentDescription = null,
-                    tint = myOrange
+                    painterResource(R.drawable.config_icon),
+                    modifier = Modifier.size(40.dp),
+                    contentDescription = null ,
+                    tint = Color.Unspecified
                 )
             }
 
@@ -268,9 +265,10 @@ fun SectionDown(navController: NavController, authRepository: AuthRepository) {
                 contentPadding = PaddingValues(16.dp)
             ) {
                 Icon(
-                    painterResource(R.drawable.user_50px),
+                    painterResource(R.drawable.user_icon),
                     contentDescription = null,
-                    tint = myOrange
+                    modifier = Modifier.size(40.dp),
+                    tint = Color.Unspecified
                 )
             }
             @Composable
@@ -326,9 +324,10 @@ fun SectionDown(navController: NavController, authRepository: AuthRepository) {
                 contentPadding = PaddingValues(16.dp)
             ) {
                 Icon(
-                    painterResource(R.drawable.deleteuser_50px),
+                    painterResource(R.drawable.user_icon),
+                    modifier = Modifier.size(40.dp),
                     contentDescription = null,
-                    tint = myOrange
+                    tint = Color.Unspecified
                 )
             }
             ConfirmDialog()
@@ -349,8 +348,13 @@ fun CreateOptionButton(text: String, icon: Painter, onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Start
         ) {
-            Icon(icon, contentDescription = null, tint = myOrange)
-            Spacer(modifier = Modifier.width(5.dp))
+            Icon(
+                icon,
+                contentDescription = null,
+                modifier = Modifier.size(40.dp), // Establece el tamaño del icono a 50dp
+                tint = Color.Unspecified
+            )
+            Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = text,
                 color = Color.Black,

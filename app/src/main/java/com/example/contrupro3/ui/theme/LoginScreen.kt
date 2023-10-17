@@ -71,7 +71,7 @@ fun LoginPage(navController: NavController, authRepository: AuthRepository) {
                 .offset(y = 35.dp)
         ) {
             Image(
-                painter = painterResource(R.drawable.logo_con_nombre),
+                painter = painterResource(R.drawable.logo_name),
                 contentDescription = "App Logo",
                 modifier = Modifier.fillMaxSize()
             )
@@ -142,11 +142,14 @@ fun LoginPage(navController: NavController, authRepository: AuthRepository) {
                                     "PASSWORD_INVALID" -> {
                                         incorrectPasswordState.value = true
                                     }
+
                                     "EMAIL_INVALID" -> {
                                         emailNotFoundState.value = true
                                     }
+
                                     else -> {
-                                        snackbarMessageState.value = "Inicio de sesión fallido. Verifica tus credenciales."
+                                        snackbarMessageState.value =
+                                            "Inicio de sesión fallido. Verifica tus credenciales."
                                         snackbarVisibleState.value = true
                                     }
                                 }
@@ -155,7 +158,7 @@ fun LoginPage(navController: NavController, authRepository: AuthRepository) {
                     }
                 },
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 5.dp),
-                colors = ButtonDefaults.buttonColors(myOrange, contentColor = Color.White),
+                colors = ButtonDefaults.buttonColors(myBlue, contentColor = Color.White),
                 modifier = Modifier
                     .offset(y = 30.dp)
                     .fillMaxWidth(0.6f)
@@ -169,7 +172,7 @@ fun LoginPage(navController: NavController, authRepository: AuthRepository) {
                     navController.navigate("register_screen")
                 },
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 5.dp),
-                colors = ButtonDefaults.buttonColors(myOrange, contentColor = Color.White),
+                colors = ButtonDefaults.buttonColors(myBlue, contentColor = Color.White),
                 modifier = Modifier
                     .fillMaxWidth(0.6f)
                     .padding(8.dp)
@@ -251,9 +254,14 @@ fun LoginPage(navController: NavController, authRepository: AuthRepository) {
         }
         if (loginSuccessState.value) {
             val userID = authRepository.getCurrentUser()?.uid // Obtén el userID
-            val projectID = "project_id" // Deberías obtener el projectID de alguna manera
-            navController.navigate("project_screen/$userID/$projectID") {
-                popUpTo("login_page") { inclusive = true }
+            if (userID != null) { // Asegúrate de que el userID no sea nulo
+                navController.navigate("projects_screen/$userID") {
+                    popUpTo("login_screen") {
+                        inclusive = true
+                    } // Asegúrate de que esto coincida con la ruta definida en tu gráfico de navegación
+                }
+            } else {
+                // Manejar el caso en que el userID sea nulo, quizás mostrando un error al usuario
             }
         }
     }

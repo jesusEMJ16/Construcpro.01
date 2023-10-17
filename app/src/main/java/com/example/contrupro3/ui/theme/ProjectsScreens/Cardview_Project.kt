@@ -49,7 +49,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.contrupro3.modelos.AuthRepository
 import com.example.contrupro3.modelos.Project
-import com.example.contrupro3.ui.theme.myOrange
+import com.example.contrupro3.ui.theme.myBlue
 import com.example.contrupro3.ui.theme.myOrangehigh
 import com.example.contrupro3.ui.theme.myOrangelow
 import com.google.firebase.firestore.FirebaseFirestore
@@ -87,7 +87,7 @@ fun CardviewProjectsScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = null, tint = myOrange)
+                        Icon(Icons.Default.ArrowBack, contentDescription = null, tint = myBlue)
                     }
                 },
             )
@@ -150,7 +150,7 @@ private fun InformationCard(
                 Text(
                     text = "Información del proyecto",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold),
-                    color = myOrange
+                    color = myBlue
                 )
                 Spacer(modifier = Modifier.height(5.dp))
                 Divider(color = Color.LightGray, thickness = 1.dp)
@@ -174,7 +174,7 @@ private fun InformationCard(
                         unfocusedBorderColor = Color.Transparent,
                         backgroundColor = if (nameEnabled) Color(0x41FF7239) else Color(0x79D8D8D8),
                         focusedBorderColor = Color.Transparent,
-                        cursorColor = myOrange,
+                        cursorColor = myBlue,
                         disabledBorderColor = Color.Transparent,
                     ),
                     trailingIcon = {
@@ -202,13 +202,13 @@ private fun InformationCard(
                         if(name.length < 6) {
                             Text(
                                 text = "* Requerido",
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light, color = myOrange),
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light, color = myBlue),
                                 modifier = Modifier.offset(x = 5.dp)
                             )
                         } else Spacer(modifier = Modifier.width(0.dp))
                         Text(
                             text = "${name.length}/30",
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light, color = if(name.length < 6 || name.length > 30) myOrange else Color.Black)
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light, color = if(name.length < 6 || name.length > 30) myBlue else Color.Black)
                         )
                     }
                 }
@@ -238,7 +238,7 @@ private fun InformationCard(
                         unfocusedBorderColor = Color.Transparent,
                         backgroundColor = if (descriptionEnabled) Color(0x41FF7239) else Color(0x79D8D8D8),
                         focusedBorderColor = Color.Transparent,
-                        cursorColor = myOrange,
+                        cursorColor = myBlue,
                         disabledBorderColor = Color.Transparent,
                     ),
                     trailingIcon = {
@@ -261,7 +261,7 @@ private fun InformationCard(
                 if(descriptionEnabled) {
                     Text(
                         text = "${description.length}/200",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light, color = if(description.length > 200) myOrange else Color.Black),
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light, color = if(description.length > 200) myBlue else Color.Black),
                         modifier = Modifier.align(Alignment.End)
                     )
                 }

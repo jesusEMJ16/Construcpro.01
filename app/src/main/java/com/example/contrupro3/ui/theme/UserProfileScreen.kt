@@ -48,7 +48,7 @@ fun UserProfilePage(navController: NavController) {
                 .fillMaxWidth()
         ) {
             Image(
-                painter = painterResource(R.drawable.user_profile), // Asegúrate de tener una imagen en tus recursos
+                painter = painterResource(R.drawable.user_icon), // Asegúrate de tener una imagen en tus recursos
                 contentDescription = "User Profile Image",
                 modifier = Modifier
                     .size(100.dp)
@@ -178,7 +178,7 @@ fun UserProfilePage(navController: NavController) {
             Button(
                 onClick = {},
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 5.dp),
-                colors = ButtonDefaults.buttonColors(myOrange, contentColor = Color.White),
+                colors = ButtonDefaults.buttonColors(myBlue, contentColor = Color.White),
                 modifier = Modifier
                     .fillMaxWidth(0.6f)
                     .padding(8.dp)

@@ -95,9 +95,10 @@ import com.example.contrupro3.R
 import com.example.contrupro3.modelos.AuthRepository
 import com.example.contrupro3.modelos.Project
 import com.example.contrupro3.ui.theme.HamburgueerMenu
-import com.example.contrupro3.ui.theme.myOrange
+import com.example.contrupro3.ui.theme.myBlue
 import com.example.contrupro3.ui.theme.myOrangehigh
 import com.example.contrupro3.ui.theme.myOrangelow
+import com.example.contrupro3.ui.theme.mywhie
 import com.google.firebase.firestore.FirebaseFirestore
 import com.maxkeppeker.sheets.core.models.base.rememberUseCaseState
 import com.maxkeppeler.sheets.calendar.CalendarDialog
@@ -285,6 +286,7 @@ fun ProjectView(navController: NavController, authRepository: AuthRepository, us
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .background(mywhie)
                 .padding(5.dp),
             contentAlignment = Alignment.Center
         ) {
@@ -299,7 +301,7 @@ fun ProjectView(navController: NavController, authRepository: AuthRepository, us
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                 )
                 Spacer(modifier = Modifier.height(5.dp))
-                Divider(color = Color.LightGray, thickness = 1.dp)
+                Divider(color = myBlue, thickness = 1.dp)
                 Spacer(modifier = Modifier.height(5.dp))
                 when (filteredProjects.value.size) {
                     0 -> {
@@ -438,7 +440,7 @@ fun RemoveProjectsSelected(userID: String) {
                         text = "Advertencia",
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Bold,
-                            color = myOrange
+                            color = myBlue
                         )
                     )
                 }
@@ -519,12 +521,12 @@ fun ProjectCard(
                     }
                     if(projectsSelectedToRemove.contains(project.id.toString())) {
                         Box() {
-                            Icon(Icons.Default.CheckBox, contentDescription = null, tint = myOrange, modifier = Modifier.align(Alignment.Center))
+                            Icon(Icons.Default.CheckBox, contentDescription = null, tint = myBlue, modifier = Modifier.align(Alignment.Center))
                         }
                     }
                     if(projectsSelectedToRemove.size > 0 && !projectsSelectedToRemove.contains(project.id.toString())) {
                         Box() {
-                            Icon(Icons.Default.CheckBoxOutlineBlank, contentDescription = null, tint = myOrange, modifier = Modifier.align(Alignment.Center))
+                            Icon(Icons.Default.CheckBoxOutlineBlank, contentDescription = null, tint = myBlue, modifier = Modifier.align(Alignment.Center))
                         }
                     }
                 }
@@ -699,7 +701,7 @@ fun RegisterCard(
             Text(
                 text = "Crear Proyecto",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = myOrange
+                color = myBlue
             )
             Spacer(modifier = Modifier.height(5.dp))
             Divider(color = Color.Black, thickness = 1.dp)
@@ -715,7 +717,7 @@ fun RegisterCard(
                 label = { Text(text = "Nombre del proyecto") },
                 colors = TextFieldDefaults.outlinedTextFieldColors(
                     textColor = Color.Black,
-                    cursorColor = myOrange,
+                    cursorColor = myBlue,
                     focusedBorderColor = Color(0xA9D8D8D8),
                     unfocusedBorderColor = Color(0xA9D8D8D8),
                     backgroundColor = Color(0x79D8D8D8)
@@ -732,19 +734,19 @@ fun RegisterCard(
                 if(name.value.length < 6) {
                     Text(
                         text = "* Requerido",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light, color = myOrange),
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light, color = myBlue),
                         modifier = Modifier.offset(x = 20.dp)
                     )
                 } else if(nameRepliqued.value === true) {
                     Text(
                         text = "* Nombre duplicado",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light, color = myOrange),
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light, color = myBlue),
                         modifier = Modifier.offset(x = 20.dp)
                     )
                 } else Text(text = " ")
                 Text(
                     text = "${name.value.length}/30",
-                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light, color = if(name.value.length > 30) myOrange else Color.Black),
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light, color = if(name.value.length > 30) myBlue else Color.Black),
                     modifier = Modifier
                         .offset(x = -20.dp)
                 )
@@ -756,7 +758,7 @@ fun RegisterCard(
                 label = { Text(text = "Descripción del proyecto") },
                 colors = TextFieldDefaults.outlinedTextFieldColors(
                     textColor = Color.Black,
-                    cursorColor = myOrange,
+                    cursorColor = myBlue,
                     focusedBorderColor = Color(0xA9D8D8D8),
                     unfocusedBorderColor = Color(0xA9D8D8D8),
                     backgroundColor = Color(0x79D8D8D8)
@@ -767,7 +769,7 @@ fun RegisterCard(
             )
             Text(
                 text = "${description.value.length}/200",
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light, color = if(description.value.length > 200) myOrange else Color.Black),
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light, color = if(description.value.length > 200) myBlue else Color.Black),
                 modifier = Modifier
                     .offset(x = -20.dp)
                     .align(Alignment.End)
@@ -829,7 +831,7 @@ fun RegisterCard(
                                 }
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(myOrange, contentColor = Color.White),
+                    colors = ButtonDefaults.buttonColors(myBlue, contentColor = Color.White),
                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
                     shape = RoundedCornerShape(12.dp)
                 ) {
@@ -840,7 +842,7 @@ fun RegisterCard(
                     onClick = {
                         isAddProjectDialogOpen.value = false
                     },
-                    colors = ButtonDefaults.buttonColors(myOrange, contentColor = Color.White),
+                    colors = ButtonDefaults.buttonColors(myBlue, contentColor = Color.White),
                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
                     shape = RoundedCornerShape(12.dp)
                 ) {

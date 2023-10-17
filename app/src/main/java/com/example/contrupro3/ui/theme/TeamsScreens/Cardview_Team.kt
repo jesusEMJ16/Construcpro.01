@@ -80,7 +80,7 @@ import com.example.contrupro3.R
 import com.example.contrupro3.modelos.AuthRepository
 import com.example.contrupro3.modelos.Equipos
 import com.example.contrupro3.modelos.Project
-import com.example.contrupro3.ui.theme.myOrange
+import com.example.contrupro3.ui.theme.myBlue
 import com.example.contrupro3.ui.theme.myOrangehigh
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.firebase.firestore.FirebaseFirestore
@@ -145,7 +145,7 @@ fun CardViewTeamsScreen(
                                     Icon(
                                         Icons.Default.Link,
                                         contentDescription = null,
-                                        tint = myOrange,
+                                        tint = myBlue,
                                         modifier = Modifier
                                             .size(30.dp)
                                             .rotate(-45f)
@@ -153,7 +153,7 @@ fun CardViewTeamsScreen(
                                 } else Icon(
                                     Icons.Default.Link,
                                     contentDescription = null,
-                                    tint = myOrange,
+                                    tint = myBlue,
                                     modifier = Modifier
                                         .size(30.dp)
                                 )
@@ -165,7 +165,7 @@ fun CardViewTeamsScreen(
                             Icon(
                                 Icons.Default.ArrowBack,
                                 contentDescription = null,
-                                tint = myOrange
+                                tint = myBlue
                             )
                         }
                     }
@@ -304,7 +304,7 @@ private fun InformationCard(
             Text(
                 text = "Información del equipo",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold),
-                color = myOrange,
+                color = myBlue,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
             Spacer(modifier = Modifier.height(5.dp))
@@ -325,7 +325,7 @@ private fun InformationCard(
                     unfocusedBorderColor = Color.Transparent,
                     backgroundColor = Color(0x79D8D8D8),
                     focusedBorderColor = Color.Transparent,
-                    cursorColor = myOrange,
+                    cursorColor = myBlue,
                     disabledBorderColor = Color.Transparent,
                 ),
                 trailingIcon = {
@@ -349,7 +349,7 @@ private fun InformationCard(
                             text = "* Requerido",
                             style = MaterialTheme.typography.labelMedium.copy(
                                 fontWeight = FontWeight.Light,
-                                color = myOrange
+                                color = myBlue
                             ),
                             modifier = Modifier.offset(x = 5.dp)
                         )
@@ -358,7 +358,7 @@ private fun InformationCard(
                         text = "${name.length}/30",
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontWeight = FontWeight.Light,
-                            color = if (name.length < 6 || name.length > 30) myOrange else Color.Black
+                            color = if (name.length < 6 || name.length > 30) myBlue else Color.Black
                         )
                     )
                 }
@@ -388,7 +388,7 @@ private fun InformationCard(
                     unfocusedBorderColor = Color.Transparent,
                     backgroundColor = Color(0x79D8D8D8),
                     focusedBorderColor = Color.Transparent,
-                    cursorColor = myOrange,
+                    cursorColor = myBlue,
                     disabledBorderColor = Color.Transparent,
                 ),
                 trailingIcon = {
@@ -407,7 +407,7 @@ private fun InformationCard(
                     text = "${description.length}/200",
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontWeight = FontWeight.Light,
-                        color = if (description.length > 200) myOrange else Color.Black
+                        color = if (description.length > 200) myBlue else Color.Black
                     ),
                     modifier = Modifier.align(Alignment.End)
                 )
@@ -489,7 +489,7 @@ private fun MembersCard(
             Text(
                 text = "Lista De Usuarios",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold),
-                color = myOrange,
+                color = myBlue,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
             Spacer(modifier = Modifier.height(10.dp))
@@ -573,7 +573,7 @@ fun InvitarDialog(
                 },
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 5.dp),
                 colors = ButtonDefaults.buttonColors(
-                    myOrange,
+                    myBlue,
                     contentColor = Color.White
                 ),
             ) {
@@ -585,7 +585,7 @@ fun InvitarDialog(
                 onClick = { onDismiss() },
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 5.dp),
                 colors = ButtonDefaults.buttonColors(
-                    myOrange,
+                    myBlue,
                     contentColor = Color.White
                 ),
             ) {
@@ -628,7 +628,7 @@ fun AddProyects(
             Text(
                 text = "Enlazar Proyectos",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = myOrange
+                color = myBlue
             )
             Spacer(modifier = Modifier.height(5.dp))
             Divider(color = Color.Black, thickness = 1.dp)
@@ -697,7 +697,7 @@ fun AddProyects(
                                     checked = newChange
                                 },
                                 colors = CheckboxDefaults.colors(
-                                    uncheckedColor = myOrange,
+                                    uncheckedColor = myBlue,
                                     checkedColor = myOrangehigh,
                                     checkmarkColor = Color.White
                                 )
@@ -818,7 +818,7 @@ fun RemoveProjects(
             Text(
                 text = "Remover Proyectos",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = myOrange
+                color = myBlue
             )
             Spacer(modifier = Modifier.height(5.dp))
             Divider(color = Color.Black, thickness = 1.dp)
@@ -880,7 +880,7 @@ fun RemoveProjects(
                                     checked = newChange
                                 },
                                 colors = CheckboxDefaults.colors(
-                                    uncheckedColor = myOrange,
+                                    uncheckedColor = myBlue,
                                     checkedColor = myOrangehigh,
                                     checkmarkColor = Color.White
                                 )
@@ -990,7 +990,7 @@ fun ListProjects(
             Text(
                 text = "Lista De Proyectos",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = myOrange
+                color = myBlue
             )
             Spacer(modifier = Modifier.height(5.dp))
             Divider(color = Color.Black, thickness = 1.dp)

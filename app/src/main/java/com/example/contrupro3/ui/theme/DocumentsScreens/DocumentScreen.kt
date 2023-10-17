@@ -92,7 +92,7 @@ import com.example.contrupro3.R
 import com.example.contrupro3.modelos.AuthRepository
 import com.example.contrupro3.modelos.DocumentModel
 import com.example.contrupro3.ui.theme.HamburgueerMenu
-import com.example.contrupro3.ui.theme.myOrange
+import com.example.contrupro3.ui.theme.myBlue
 import com.example.contrupro3.ui.theme.myOrangehigh
 import com.example.contrupro3.ui.theme.myOrangelow
 import com.google.firebase.firestore.FirebaseFirestore
@@ -379,7 +379,7 @@ fun DocumentCard(
                             Icon(
                                 Icons.Default.CheckBox,
                                 contentDescription = null,
-                                tint = myOrange,
+                                tint = myBlue,
                                 modifier = Modifier.align(Alignment.Center)
                             )
                         }
@@ -389,7 +389,7 @@ fun DocumentCard(
                             Icon(
                                 Icons.Default.CheckBoxOutlineBlank,
                                 contentDescription = null,
-                                tint = myOrange,
+                                tint = myBlue,
                                 modifier = Modifier.align(Alignment.Center)
                             )
                         }
@@ -449,7 +449,7 @@ fun RegisterCardDocument(
             Text(
                 text = "Crear Documento",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = myOrange
+                color = myBlue
             )
             Spacer(modifier = Modifier.height(5.dp))
             Divider(color = Color.Black, thickness = 1.dp)
@@ -484,7 +484,7 @@ fun RegisterCardDocument(
                         text = "* Requerido",
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontWeight = FontWeight.Light,
-                            color = myOrange
+                            color = myBlue
                         ),
                         modifier = Modifier.offset(x = 20.dp)
                     )
@@ -493,7 +493,7 @@ fun RegisterCardDocument(
                         text = "* Nombre duplicado",
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontWeight = FontWeight.Light,
-                            color = myOrange
+                            color = myBlue
                         ),
                         modifier = Modifier.offset(x = 20.dp)
                     )
@@ -502,7 +502,7 @@ fun RegisterCardDocument(
                     text = "${documentName.value.length}/30",
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontWeight = FontWeight.Light,
-                        color = if (documentName.value.length > 30) myOrange else Color.Black
+                        color = if (documentName.value.length > 30) myBlue else Color.Black
                     ),
                     modifier = Modifier
                         .offset(x = -20.dp)
@@ -528,7 +528,7 @@ fun RegisterCardDocument(
                 text = "${description.length}/200",
                 style = MaterialTheme.typography.labelMedium.copy(
                     fontWeight = FontWeight.Light,
-                    color = if (description.length > 200) myOrange else Color.Black
+                    color = if (description.length > 200) myBlue else Color.Black
                 ),
                 modifier = Modifier
                     .offset(x = -20.dp)
@@ -560,7 +560,7 @@ fun RegisterCardDocument(
                         text = "* Requerido",
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontWeight = FontWeight.Light,
-                            color = myOrange
+                            color = myBlue
                         ),
                         modifier = Modifier.align(Alignment.CenterHorizontally)
                     )
@@ -588,11 +588,11 @@ fun RegisterCardDocument(
             if (showLoadingSpinner) {
                 Text(
                     text = "Subiendo Archivo...",
-                    style = MaterialTheme.typography.bodySmall.copy(color = myOrange)
+                    style = MaterialTheme.typography.bodySmall.copy(color = myBlue)
                 )
                 Spacer(modifier = Modifier.height(10.dp))
                 CircularProgressIndicator(
-                    color = myOrange
+                    color = myBlue
                 )
             }
             Row(
@@ -661,7 +661,7 @@ fun RegisterCardDocument(
                                 }
                             }
                         },
-                        colors = ButtonDefaults.buttonColors(myOrange, contentColor = Color.White),
+                        colors = ButtonDefaults.buttonColors(myBlue, contentColor = Color.White),
                         elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
                         shape = RoundedCornerShape(12.dp)
                     ) {
@@ -670,7 +670,7 @@ fun RegisterCardDocument(
 
                     Button(
                         onClick = { isAddDocumentDialogOpen.value = false },
-                        colors = ButtonDefaults.buttonColors(myOrange, contentColor = Color.White),
+                        colors = ButtonDefaults.buttonColors(myBlue, contentColor = Color.White),
                         elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
                         shape = RoundedCornerShape(12.dp)
                     ) {
@@ -879,7 +879,7 @@ fun RemoveDocumentsSelected(userID: String) {
                         text = "Advertencia",
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Bold,
-                            color = myOrange
+                            color = myBlue
                         )
                     )
                 }

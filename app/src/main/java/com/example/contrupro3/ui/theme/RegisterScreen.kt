@@ -79,7 +79,7 @@ fun RegisterPage(navController: NavController) {
         contentAlignment = Alignment.Center
     ) {
         Image(
-            painter = painterResource(R.drawable.logo_con_nombre),
+            painter = painterResource(R.drawable.logo_name),
             contentDescription = "App Logo",
             modifier = Modifier
                 .size(150.dp) // Ajusta el tamaño del logo si es necesario
@@ -275,7 +275,7 @@ fun RegisterPage(navController: NavController) {
                     }
                 },
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 5.dp),
-                colors = ButtonDefaults.buttonColors(myOrange, contentColor = Color.White),
+                colors = ButtonDefaults.buttonColors(myBlue, contentColor = Color.White),
                 modifier = Modifier
                     .offset(y = 20.dp)
                     .fillMaxWidth(0.6f)
