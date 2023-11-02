@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace 'com.example.contrupro3'
-    compileSdk 33
+    compileSdk 34
 
     viewBinding {
         enabled = true

@@ -38,6 +38,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.snapshots.SnapshotStateMap
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import com.example.contrupro3.ui.theme.myBlue
 
 @Composable
@@ -46,6 +50,7 @@ fun ComprasScreen() {
         Compra(1,"asdasdadasdadadadsCemento", "01/01/2023", "Proveedor A", 100000, 100.0, 1000.0),
         Compra(2,"Hierro", "02/01/2023", "Proveedor B", 5, 200.0, 1000.0),
     )
+    val showDialog = remember { mutableStateOf(false) }
 
     val selectedRows = remember { mutableStateMapOf<Int, Boolean>() }
 
@@ -85,7 +90,7 @@ fun ComprasScreen() {
             horizontalArrangement = Arrangement.End
         ) {
             FloatingActionButton(
-                onClick = { },
+                onClick = { showDialog.value = true },
                 containerColor = myBlue,
             ) {
                 Icon(
@@ -94,7 +99,115 @@ fun ComprasScreen() {
                     tint = Color.White
                 )
             }
+            if (showDialog.value) {
+                CompraDialog(onDismissRequest = { showDialog.value = false })
+            }
         }
+    }
+}
+
+@Composable
+fun CompraDialog(onDismissRequest: () -> Unit) {
+
+    Dialog(onDismissRequest = onDismissRequest) {
+        AlertDialog(
+            onDismissRequest = onDismissRequest,
+            title = { Text("Añadir compra",
+                style = TextStyle(
+                    fontSize = 24.sp,
+                    textAlign = TextAlign.Center
+                ),
+                modifier = Modifier.fillMaxWidth()
+                    .padding(top = 5.dp)
+            )},
+            text = {
+                addcompra()
+            },
+
+            confirmButton = {
+                Button(
+                    onClick = onDismissRequest,
+                    colors = ButtonDefaults.buttonColors(backgroundColor = myBlue,
+                        contentColor = Color.White)) {
+                    Text("Confirmar")
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = onDismissRequest,
+                    colors = ButtonDefaults.buttonColors(
+                        backgroundColor = myBlue,
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+}
+
+@Composable
+fun addcompra(){
+
+    Column(
+        modifier = Modifier.padding(top = 15.dp)
+    ){
+        val producto = remember { mutableStateOf(TextFieldValue()) }
+        val fechaCompra = remember { mutableStateOf(TextFieldValue()) }
+        val proveedor = remember { mutableStateOf(TextFieldValue()) }
+        val cantidad = remember { mutableStateOf(TextFieldValue()) }
+        val precioUnitario = remember { mutableStateOf(TextFieldValue()) }
+        val precioTotal = remember { mutableStateOf(TextFieldValue()) }
+
+        TextField(
+            value = producto.value,
+            onValueChange = { producto.value = it },
+            label = { Text("Producto") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+        )
+        TextField(
+            value = fechaCompra.value,
+            onValueChange = { fechaCompra.value = it },
+            label = { Text("Fecha de compra") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+        )
+        TextField(
+            value = proveedor.value,
+            onValueChange = { proveedor.value = it },
+            label = { Text("Proveedor") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+        )
+        TextField(
+            value = cantidad.value,
+            onValueChange = { cantidad.value = it },
+            label = { Text("Cantidad") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+        )
+        TextField(
+            value = precioUnitario.value,
+            onValueChange = { precioUnitario.value = it },
+            label = { Text("Precio Unitario") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+        )
+        TextField(
+            value = precioTotal.value,
+            onValueChange = { precioTotal.value = it },
+            label = { Text("Precio Total") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+        )
     }
 }
 
@@ -172,4 +285,9 @@ fun CompraItem(compra: Compra, selectedRows: SnapshotStateMap<Int, Boolean>) {
 @Preview
 fun aspreviewas(){
     ComprasScreen()
+}
+@Composable
+@Preview
+fun aspreviewa2(){
+    CompraDialog(onDismissRequest = {})
 }

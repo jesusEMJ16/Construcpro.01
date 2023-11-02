@@ -43,7 +43,7 @@ fun AppNavigator(
             RegisterPage(navController = navController)
         }
         composable("user_screen") {
-            UserProfilePage(navController = navController)
+            UserProfilePage(navController = navController, authRepository)
         }
         composable("projects_screen/{userID}") { backStackEntry ->
             val arguments = backStackEntry.arguments

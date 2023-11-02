@@ -6,9 +6,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -31,14 +33,18 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.contrupro3.R
 import androidx.compose.material.OutlinedTextField
+import androidx.compose.ui.res.colorResource
+import com.example.contrupro3.modelos.AuthRepository
+import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun UserProfilePage(navController: NavController) {
+fun UserProfilePage(navController: NavController, authRepository: AuthRepository) {
 
     Box(
         modifier = Modifier
-            .fillMaxSize(),
+            .fillMaxSize()
+            .background(mywhie),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -48,7 +54,7 @@ fun UserProfilePage(navController: NavController) {
                 .fillMaxWidth()
         ) {
             Image(
-                painter = painterResource(R.drawable.user_icon), // Asegúrate de tener una imagen en tus recursos
+                painter = painterResource(R.drawable.user_icon),
                 contentDescription = "User Profile Image",
                 modifier = Modifier
                     .size(100.dp)
@@ -186,6 +192,6 @@ fun UserProfilePage(navController: NavController) {
                 Text("Actualizar perfil")
             }
         }
+        HamburgueerMenu(navController, authRepository)
     }
 }
-
