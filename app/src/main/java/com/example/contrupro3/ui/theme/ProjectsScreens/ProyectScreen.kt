@@ -865,13 +865,16 @@ fun CalendarSample3(
     startDateText: MutableState<String>,
     endDateText: MutableState<String>
 ) {
-    val timeBoundary = LocalDate.now().let { now -> now.minusYears(2)..now.plusYears(10) }
+    // Establece el límite de tiempo para 10 años atrás y 99 años en el futuro.
+    val timeBoundary = LocalDate.now().let { now -> now.minusYears(10)..now.plusYears(99) }
+
+    // Inicializa el rango seleccionado para comenzar desde la fecha actual.
     val selectedRange = remember {
-        val default =
-            LocalDate.now().minusYears(2).let { time -> time..time.plusDays(8) }
+        val default = LocalDate.now().let { time -> time..time.plusDays(8) }
         mutableStateOf(default.toRange())
     }
 
+    // Estado para mostrar u ocultar el diálogo.
     val showDialog = remember { mutableStateOf(false) }
 
     Column {
@@ -886,6 +889,7 @@ fun CalendarSample3(
             Text(text = "Seleccionar Fecha")
         }
 
+        // Muestra el diálogo cuando se hace clic en el botón.
         if (showDialog.value) {
             Dialog(
                 onDismissRequest = { showDialog.value = false },
@@ -901,6 +905,7 @@ fun CalendarSample3(
                     selection = CalendarSelection.Period(
                         selectedRange = selectedRange.value
                     ) { startDate, endDate ->
+                        // Actualiza el rango seleccionado y los textos de inicio y fin.
                         selectedRange.value = Range(startDate, endDate)
                         startDateText.value = startDate.toString()
                         endDateText.value = endDate.toString()
@@ -909,7 +914,9 @@ fun CalendarSample3(
                 )
             }
         }
-        if(startDateText.value.length > 1 && endDateText.value.length > 1) {
+
+        // Muestra las fechas seleccionadas.
+        if(startDateText.value.isNotEmpty() && endDateText.value.isNotEmpty()) {
             Row(
                 modifier = Modifier.fillMaxWidth(0.8f),
                 horizontalArrangement = Arrangement.SpaceAround
