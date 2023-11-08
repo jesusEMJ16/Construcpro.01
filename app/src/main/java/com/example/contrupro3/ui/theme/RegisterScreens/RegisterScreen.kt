@@ -1,4 +1,4 @@
-package com.example.contrupro3.ui.theme
+package com.example.contrupro3.ui.theme.RegisterScreens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -9,8 +9,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.Box
-import androidx.compose.material.DropdownMenu
-import androidx.compose.material.DropdownMenuItem
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -28,7 +26,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -37,20 +34,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.contrupro3.R
-import com.example.contrupro3.modelos.AuthRepository
+import com.example.contrupro3.models.AuthRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import androidx.compose.material.icons.filled.Visibility
-import com.google.firebase.auth.FirebaseAuthUserCollisionException
+import com.example.contrupro3.ui.theme.myBlue
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -158,11 +153,6 @@ fun RegisterPage(navController: NavController) {
                     .shadow(5.dp)
                     .background(Color.White)
             )
-            Spacer(modifier = Modifier.height(10.dp))
-            //mi menu desplegable
-            RoleSelector { newRole ->
-                role = newRole
-            }
             Spacer(modifier = Modifier.height(10.dp))
 
             OutlinedTextField(
@@ -297,54 +287,6 @@ fun RegisterPage(navController: NavController) {
                     modifier = Modifier.padding(16.dp)
                 ) {
                     Text("Registro exitoso. Por favor, confirma tu correo electrónico.")
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun RoleSelector(onRoleSelected: (String) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    val roles = listOf(
-        "Miembro de equipo",
-        "Supervisor",
-        "Contratista",
-        "Arquitecto",
-        "Administrador"
-    ) // Los roles que quieras
-    var selectedRole by remember { mutableStateOf("Selecciona un rol...") } // Placeholder
-
-    Box(modifier = Modifier.fillMaxWidth(0.8f)) {
-        TextButton(
-            onClick = { expanded = true },
-            colors = ButtonDefaults.buttonColors(Color.Transparent, contentColor = Color.Black),
-            modifier = Modifier
-                .fillMaxWidth()
-                .shadow(5.dp)
-                .height(60.dp)
-                .background(Color.White)
-        ) {
-            Text(
-                selectedRole,
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 5.dp),
-                fontWeight = FontWeight.Normal,
-                fontSize = 16.sp
-            )
-        }
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
-        ) {
-            roles.forEach { role ->
-                DropdownMenuItem(onClick = {
-                    selectedRole = role
-                    expanded = false
-                    onRoleSelected(role)
-                }) {
-                    Text(role)
                 }
             }
         }

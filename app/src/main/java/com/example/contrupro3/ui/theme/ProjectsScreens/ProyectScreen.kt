@@ -92,9 +92,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.contrupro3.R
-import com.example.contrupro3.modelos.AuthRepository
-import com.example.contrupro3.modelos.Project
-import com.example.contrupro3.ui.theme.HamburgueerMenu
+import com.example.contrupro3.models.AuthRepository
+import com.example.contrupro3.models.ProjectsModels.Project
+import com.example.contrupro3.ui.theme.Menu.HamburgueerMenu
 import com.example.contrupro3.ui.theme.myBlue
 import com.example.contrupro3.ui.theme.myOrangehigh
 import com.example.contrupro3.ui.theme.myOrangelow

@@ -82,9 +82,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.contrupro3.R
-import com.example.contrupro3.modelos.AuthRepository
-import com.example.contrupro3.modelos.Equipos
-import com.example.contrupro3.ui.theme.HamburgueerMenu
+import com.example.contrupro3.models.AuthRepository
+import com.example.contrupro3.models.TeamsModels.Teams
+import com.example.contrupro3.ui.theme.Menu.HamburgueerMenu
 import com.example.contrupro3.ui.theme.myBlue
 import com.example.contrupro3.ui.theme.myOrangehigh
 import com.example.contrupro3.ui.theme.myOrangelow
@@ -288,7 +288,7 @@ fun TeamsScreen(navController: NavController, authRepository: AuthRepository, us
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun EquipoCard(team: Equipos, navController: NavController,userID: String, authRepository: AuthRepository, equiposList: MutableState<List<Equipos>>) {
+fun EquipoCard(team: Teams, navController: NavController, userID: String, authRepository: AuthRepository, equiposList: MutableState<List<Teams>>) {
     val viewModel: TeamViewModel = viewModel()
     val teamsSelectedToRemove = viewModel.teamsSelectedToRemove
     val showTeamRemoveDIalog = viewModel.showTeamRemoveDialog
@@ -510,7 +510,7 @@ fun RemoveTeamsSelected(userID: String) {
 fun RegisterCardTeam(
     isAddTeamDialogOpen: MutableState<Boolean>, loggedInUserName: String,
     loggedInUserUID: String,
-    teams: List<Equipos>
+    teams: List<Teams>
 ) {
     val name = remember { mutableStateOf("") }
     val description = remember { mutableStateOf("") }
@@ -614,7 +614,7 @@ fun RegisterCardTeam(
                     enabled = name.value.length >= 6 && name.value.length <= 30 && nameRepliqued.value === false && description.value.length <= 200,
                     onClick = {
                         scope.launch {
-                            val newDoc = Equipos(
+                            val newDoc = Teams(
                                 null,
                                 name.value.lowercase(Locale.getDefault())
                                     .replaceFirstChar {
@@ -691,7 +691,7 @@ fun addMemberToTeam(teamId: String, memberId: String) {
 }
 
 class TeamViewModel: ViewModel() {
-    val teamsList = mutableStateOf(emptyList<Equipos>())
+    val teamsList = mutableStateOf(emptyList<Teams>())
     val teamsSelectedToRemove = mutableStateListOf<String>()
     val showTeamRemoveDialog = mutableStateOf(false)
 }

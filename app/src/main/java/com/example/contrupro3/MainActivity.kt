@@ -6,12 +6,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import com.example.contrupro3.modelos.AppNavigator
-import com.example.contrupro3.modelos.AuthRepository
+import com.example.contrupro3.models.AppNavigator
+import com.example.contrupro3.models.AuthRepository
 import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : ComponentActivity() {

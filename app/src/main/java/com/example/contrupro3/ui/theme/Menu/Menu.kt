@@ -1,4 +1,4 @@
-package com.example.contrupro3.ui.theme
+package com.example.contrupro3.ui.theme.Menu
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.animateDpAsState
@@ -50,7 +50,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.contrupro3.R
-import com.example.contrupro3.modelos.AuthRepository
+import com.example.contrupro3.models.AuthRepository
+import com.example.contrupro3.ui.theme.lightblue
 
 @Composable
 fun HamburgueerMenu(navController: NavController, authRepository: AuthRepository) {

@@ -66,10 +66,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.contrupro3.R
-import com.example.contrupro3.modelos.AuthRepository
-import com.example.contrupro3.modelos.DocumentModel
-import com.example.contrupro3.modelos.Equipos
-import com.example.contrupro3.modelos.Project
+import com.example.contrupro3.models.AuthRepository
+import com.example.contrupro3.models.DocumentsModels.DocumentModel
+import com.example.contrupro3.models.TeamsModels.Teams
+import com.example.contrupro3.models.ProjectsModels.Project
 import com.example.contrupro3.ui.theme.myBlue
 import com.example.contrupro3.ui.theme.myOrangehigh
 import com.example.contrupro3.ui.theme.myOrangelow
@@ -801,5 +801,5 @@ class MyViewModel : ViewModel() {
     val teamsEnabled = mutableStateOf(false)
     val action = mutableStateOf("")
     val currentProjects = mutableStateOf(emptyList<Project>())
-    val currentTeams = mutableStateOf(emptyList<Equipos>())
+    val currentTeams = mutableStateOf(emptyList<Teams>())
 }

@@ -1,7 +1,7 @@
-package com.example.contrupro3.ui.theme
+package com.example.contrupro3.ui.theme.LoginScreens
 
 import androidx.compose.material.AlertDialog
-import com.example.contrupro3.modelos.AuthRepository
+import com.example.contrupro3.models.AuthRepository
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -44,6 +44,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import com.example.contrupro3.ui.theme.myBlue
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

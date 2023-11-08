@@ -1,7 +1,8 @@
-package com.example.contrupro3.modelos
+package com.example.contrupro3.models.UserModels
 
 import android.os.Parcel
 import android.os.Parcelable
+import com.example.contrupro3.models.TeamsModels.Teams
 
 data class UserModel(
     val name: String? = null,
@@ -31,12 +32,12 @@ data class UserModel(
         return 0
     }
 
-    companion object CREATOR : Parcelable.Creator<Equipos> {
-        override fun createFromParcel(parcel: Parcel): Equipos {
-            return Equipos(parcel)
+    companion object CREATOR : Parcelable.Creator<Teams> {
+        override fun createFromParcel(parcel: Parcel): Teams {
+            return Teams(parcel)
         }
 
-        override fun newArray(size: Int): Array<Equipos?> {
+        override fun newArray(size: Int): Array<Teams?> {
             return arrayOfNulls(size)
         }
     }

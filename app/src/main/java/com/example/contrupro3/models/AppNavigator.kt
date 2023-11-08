@@ -1,4 +1,4 @@
-package com.example.contrupro3.modelos
+package com.example.contrupro3.models
 
 import android.os.Build
 import androidx.annotation.RequiresApi
@@ -10,15 +10,15 @@ import androidx.navigation.compose.composable
 import com.example.contrupro3.ui.theme.Budgets_purchasesScreens.Presupuesto_y_Compras
 import com.example.contrupro3.ui.theme.DocumentsScreens.CardViewDocumentsScreen
 import com.example.contrupro3.ui.theme.DocumentsScreens.DocumentsScreen
-import com.example.contrupro3.ui.theme.LoginPage
+import com.example.contrupro3.ui.theme.LoginScreens.LoginPage
 import com.example.contrupro3.ui.theme.ProjectsScreens.CardviewProjectsScreen
 import com.example.contrupro3.ui.theme.ProjectsScreens.ProjectView
-import com.example.contrupro3.ui.theme.RegisterPage
-import com.example.contrupro3.ui.theme.SplashScreen
+import com.example.contrupro3.ui.theme.RegisterScreens.RegisterPage
+import com.example.contrupro3.ui.theme.SplashScreen.SplashScreen
 import com.example.contrupro3.ui.theme.TeamsScreens.CardViewTeamsScreen
-import com.example.contrupro3.ui.theme.TeamsScreens.CardviewTeam_ViewModel
+import com.example.contrupro3.models.TeamsModels.CardviewTeam_ViewModel
 import com.example.contrupro3.ui.theme.TeamsScreens.TeamsScreen
-import com.example.contrupro3.ui.theme.UserProfilePage
+import com.example.contrupro3.ui.theme.UserProfileScreens.UserProfilePage
 import com.google.firebase.auth.FirebaseAuth
 
 

@@ -1,4 +1,4 @@
-package com.example.contrupro3.modelos
+package com.example.contrupro3.models.DocumentsModels
 
 import android.os.Parcel
 import android.os.Parcelable

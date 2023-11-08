@@ -1,4 +1,4 @@
-package com.example.contrupro3.ui.theme.Budgets_purchasesScreens.PresupuestoModels
+package com.example.contrupro3.models.BudgetModels
 
 data class Compra(
     val id: Int,

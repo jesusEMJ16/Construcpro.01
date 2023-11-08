@@ -89,9 +89,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.rememberImagePainter
 import com.example.contrupro3.R
-import com.example.contrupro3.modelos.AuthRepository
-import com.example.contrupro3.modelos.DocumentModel
-import com.example.contrupro3.ui.theme.HamburgueerMenu
+import com.example.contrupro3.models.AuthRepository
+import com.example.contrupro3.models.DocumentsModels.DocumentModel
+import com.example.contrupro3.ui.theme.Menu.HamburgueerMenu
 import com.example.contrupro3.ui.theme.myBlue
 import com.example.contrupro3.ui.theme.myOrangehigh
 import com.example.contrupro3.ui.theme.myOrangelow

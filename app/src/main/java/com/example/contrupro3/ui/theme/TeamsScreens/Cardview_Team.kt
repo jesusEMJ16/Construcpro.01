@@ -75,9 +75,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.contrupro3.R
-import com.example.contrupro3.modelos.AuthRepository
-import com.example.contrupro3.modelos.Equipos
-import com.example.contrupro3.modelos.Project
+import com.example.contrupro3.models.AuthRepository
+import com.example.contrupro3.models.TeamsModels.Teams
+import com.example.contrupro3.models.ProjectsModels.Project
+import com.example.contrupro3.models.TeamsModels.CardviewTeam_ViewModel
 import com.example.contrupro3.ui.theme.myBlue
 import com.example.contrupro3.ui.theme.myOrangehigh
 import com.google.firebase.firestore.FirebaseFirestore
@@ -95,7 +96,7 @@ fun CardViewTeamsScreen(
     teamId: String,
     cardviewteamViewmodel: CardviewTeam_ViewModel
 ) {
-    val teamsList = remember { mutableStateOf<Equipos?>(null) }
+    val teamsList = remember { mutableStateOf<Teams?>(null) }
     val projectsList = remember { mutableStateOf(emptyList<Project>()) }
 
     LaunchedEffect(Unit) {
@@ -108,7 +109,7 @@ fun CardViewTeamsScreen(
         }
     } else {
         val viewModel: CardViewTeamsViewModel = viewModel()
-        val team: Equipos? = teamsList.value
+        val team: Teams? = teamsList.value
         val teamName by viewModel.teamName
         val action by viewModel.action
         val showProjectsButtons = remember { mutableStateOf(false) }
@@ -281,7 +282,7 @@ private fun InformationCard(
     navController: NavHostController,
     authRepository: AuthRepository,
     userId: String,
-    team: Equipos?
+    team: Teams?
 ) {
     val viewModel: CardViewTeamsViewModel = viewModel()
     val teamName by viewModel.teamName
@@ -475,7 +476,7 @@ private fun MembersCard(
     navController: NavHostController,
     authRepository: AuthRepository,
     userId: String,
-    team: Equipos?
+    team: Teams?
 ) {
     Box(modifier = Modifier.fillMaxWidth()) {
         Column(
@@ -606,9 +607,9 @@ fun AddProyects(
     val viewModel: CardViewTeamsViewModel = viewModel()
     val context = LocalContext.current
     val currentProjects by viewModel.currentProjects
-    val teamsList = remember { mutableStateOf<Equipos?>(null) }
+    val teamsList = remember { mutableStateOf<Teams?>(null) }
     authRepository.loadEquipo(teamId, teamsList)
-    val team: Equipos? = teamsList.value
+    val team: Teams? = teamsList.value
 
     androidx.compose.material.Card(
         modifier = Modifier.padding(10.dp),
@@ -796,9 +797,9 @@ fun RemoveProjects(
     val viewModel: CardViewTeamsViewModel = viewModel()
     val context = LocalContext.current
     val proyectsCurrent = viewModel.currentProjects
-    val teamsList = remember { mutableStateOf<Equipos?>(null) }
+    val teamsList = remember { mutableStateOf<Teams?>(null) }
     authRepository.loadEquipo(teamId.toString(), teamsList)
-    val team: Equipos? = teamsList.value
+    val team: Teams? = teamsList.value
 
     androidx.compose.material.Card(
         modifier = Modifier.padding(10.dp),

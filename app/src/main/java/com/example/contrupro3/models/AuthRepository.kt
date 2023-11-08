@@ -1,16 +1,20 @@
-package com.example.contrupro3.modelos
+package com.example.contrupro3.models
 
 import android.util.Log
 import androidx.compose.runtime.MutableState
 import com.google.firebase.firestore.DocumentReference
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import com.example.contrupro3.models.DocumentsModels.DocumentModel
+import com.example.contrupro3.models.ProjectsModels.Project
+import com.example.contrupro3.models.TeamsModels.Teams
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.GoogleAuthProvider
 
 class AuthRepository(private val auth: FirebaseAuth) {
 
@@ -57,7 +61,7 @@ class AuthRepository(private val auth: FirebaseAuth) {
         }
     }
 
-    fun loadEquiposFromFirebase(equiposList: MutableState<List<Equipos>>) {
+    fun loadEquiposFromFirebase(equiposList: MutableState<List<Teams>>) {
         val firestore = FirebaseFirestore.getInstance()
         val user = getCurrentUser()
         if (user != null) {
@@ -68,14 +72,14 @@ class AuthRepository(private val auth: FirebaseAuth) {
             equiposCollection.get()
                 .addOnSuccessListener { documents ->
                     val loadedEquipos = documents.map { document ->
-                        val equipo = document.toObject(Equipos::class.java)
+                        val equipo = document.toObject(Teams::class.java)
                         equipo.copy(id = document.id)
                     }
                     equiposList.value = loadedEquipos
                 }
         }
     }
-    fun loadEquipo(equipoID: String, equipo: MutableState<Equipos?>) {
+    fun loadEquipo(equipoID: String, equipo: MutableState<Teams?>) {
         val firestore = FirebaseFirestore.getInstance()
         val user = getCurrentUser()
 
@@ -88,7 +92,7 @@ class AuthRepository(private val auth: FirebaseAuth) {
             equipoDocument.get()
                 .addOnSuccessListener { document ->
                     if (document.exists()) {
-                        val loadedEquipo = document.toObject(Equipos::class.java)
+                        val loadedEquipo = document.toObject(Teams::class.java)
                         equipo.value = loadedEquipo
                     } else {
                         equipo.value = null
@@ -145,9 +149,17 @@ class AuthRepository(private val auth: FirebaseAuth) {
                 }
         }
     }
-
-
-
+    fun firebaseAuthWithGoogle(idToken: String, onSuccess: () -> Unit, onFail: (String) -> Unit) {
+        val credential = GoogleAuthProvider.getCredential(idToken, null)
+        auth.signInWithCredential(credential)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    onSuccess()
+                } else {
+                    onFail(task.exception?.message ?: "Error desconocido")
+                }
+            }
+    }
 
     fun getCurrentUser(): FirebaseUser? {
         return auth.currentUser

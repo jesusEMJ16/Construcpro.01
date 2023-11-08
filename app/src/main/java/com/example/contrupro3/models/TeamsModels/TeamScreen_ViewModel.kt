@@ -1,17 +1,13 @@
-package com.example.contrupro3.ui.theme.TeamsScreens
+package com.example.contrupro3.models.TeamsModels
 
 import android.util.Patterns
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.example.contrupro3.modelos.Equipos
-import com.example.contrupro3.modelos.UserModel
-import com.google.firebase.firestore.CollectionReference
-import com.google.firebase.firestore.FirebaseFirestore
 
 class CardviewTeam_ViewModel : ViewModel() {
-    private val _team = MutableLiveData<Equipos?>()
-    val team: LiveData<Equipos?> = _team
+    private val _team = MutableLiveData<Teams?>()
+    val team: LiveData<Teams?> = _team
 
     private val _name = MutableLiveData<String>()
     val name: LiveData<String> = _name
@@ -28,7 +24,7 @@ class CardviewTeam_ViewModel : ViewModel() {
     private val _saveNameAndDescriptionButtonEnable = MutableLiveData<Boolean>()
     val saveNameAndDescriptionButtonEnable: LiveData<Boolean> = _saveNameAndDescriptionButtonEnable
 
-    fun onInfoChanged(name: String, description: String, team: Equipos?) {
+    fun onInfoChanged(name: String, description: String, team: Teams?) {
         _name.value = name
         _team.value = team
         _description.value = description
