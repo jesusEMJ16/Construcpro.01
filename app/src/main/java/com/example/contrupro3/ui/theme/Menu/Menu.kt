@@ -208,7 +208,7 @@ fun MenuOpciones(navController: NavController, authRepository: AuthRepository) {
 
     }
     CreateOptionButton("Prosupuesto y Compras", painterResource(R.drawable.costs_icon)) {
-        navController.navigate("presucom_screen")
+        navController.navigate("presucom_screen/$userID")
     }
     CreateOptionButton("Planos y Documentacion", painterResource(R.drawable.documents_icon)) {
         navController.navigate("documents_screen/$userID")

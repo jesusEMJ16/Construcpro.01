@@ -15,7 +15,6 @@ import com.example.contrupro3.ui.theme.ProjectsScreens.CardviewProjectsScreen
 import com.example.contrupro3.ui.theme.ProjectsScreens.ProjectView
 import com.example.contrupro3.ui.theme.RegisterScreens.RegisterPage
 import com.example.contrupro3.ui.theme.SplashScreen.SplashScreen
-import com.example.contrupro3.ui.theme.TeamsScreens.CardViewTeamsScreen
 import com.example.contrupro3.models.TeamsModels.CardviewTeam_ViewModel
 import com.example.contrupro3.ui.theme.TeamsScreens.TeamsScreen
 import com.example.contrupro3.ui.theme.UserProfileScreens.UserProfilePage
@@ -63,11 +62,11 @@ fun AppNavigator(
                 TeamsScreen(navController, authRepository, userID)
             }
         }
-        composable("cardview_teams_screen/{userId}/{teamId}") { backStackEntry ->
+        /*composable("cardview_teams_screen/{userId}/{teamId}") { backStackEntry ->
             val teamId = backStackEntry.arguments?.getString("teamId") ?: ""
             val userId = backStackEntry.arguments?.getString("userId") ?: ""
             CardViewTeamsScreen(navController, authRepository, userId, teamId, CardviewTeam_ViewModel())
-        }
+        }*/
         composable("documents_screen/{userID}") { backStackEntry ->
             val arguments = backStackEntry.arguments
             val userID = arguments?.getString("userID")
@@ -83,8 +82,12 @@ fun AppNavigator(
                 CardViewDocumentsScreen(navController, authRepository, userID, documentId)
             }
         }
-        composable("presucom_screen") { backStackEntry ->
-            Presupuesto_y_Compras(navController, authRepository)
+        composable("presucom_screen/{userId}") { backStackEntry ->
+            val arguments = backStackEntry.arguments
+            val userID = arguments?.getString("userId")
+            if (userID != null) {
+                Presupuesto_y_Compras(navController, authRepository, userID)
+            }
         }
         // Definir otras rutas aquí...
     }

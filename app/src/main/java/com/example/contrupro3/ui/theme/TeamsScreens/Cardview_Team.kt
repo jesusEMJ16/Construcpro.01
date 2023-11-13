@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.AlertDialog
 import androidx.compose.material.Divider
@@ -76,8 +75,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.contrupro3.R
 import com.example.contrupro3.models.AuthRepository
-import com.example.contrupro3.models.TeamsModels.Teams
-import com.example.contrupro3.models.ProjectsModels.Project
 import com.example.contrupro3.models.TeamsModels.CardviewTeam_ViewModel
 import com.example.contrupro3.ui.theme.myBlue
 import com.example.contrupro3.ui.theme.myOrangehigh
@@ -85,6 +82,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+/*
 @RequiresApi(Build.VERSION_CODES.O)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @ExperimentalMaterial3Api
@@ -96,7 +94,7 @@ fun CardViewTeamsScreen(
     teamId: String,
     cardviewteamViewmodel: CardviewTeam_ViewModel
 ) {
-    val teamsList = remember { mutableStateOf<Teams?>(null) }
+    val teamsList = remember { mutableStateOf<Equipos?>(null) }
     val projectsList = remember { mutableStateOf(emptyList<Project>()) }
 
     LaunchedEffect(Unit) {
@@ -109,7 +107,7 @@ fun CardViewTeamsScreen(
         }
     } else {
         val viewModel: CardViewTeamsViewModel = viewModel()
-        val team: Teams? = teamsList.value
+        val team: Equipos? = teamsList.value
         val teamName by viewModel.teamName
         val action by viewModel.action
         val showProjectsButtons = remember { mutableStateOf(false) }
@@ -282,7 +280,7 @@ private fun InformationCard(
     navController: NavHostController,
     authRepository: AuthRepository,
     userId: String,
-    team: Teams?
+    team: Equipos?
 ) {
     val viewModel: CardViewTeamsViewModel = viewModel()
     val teamName by viewModel.teamName
@@ -291,7 +289,8 @@ private fun InformationCard(
     var description by remember { mutableStateOf("$teamDescription") }
     val context = LocalContext.current
     val currentLocalView = LocalView.current
-    val inputMethodManager = LocalView.current.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+    val inputMethodManager =
+        LocalView.current.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
 
     Box(modifier = Modifier.fillMaxWidth()) {
         Column(
@@ -476,7 +475,7 @@ private fun MembersCard(
     navController: NavHostController,
     authRepository: AuthRepository,
     userId: String,
-    team: Teams?
+    team: Equipos?
 ) {
     Box(modifier = Modifier.fillMaxWidth()) {
         Column(
@@ -607,9 +606,9 @@ fun AddProyects(
     val viewModel: CardViewTeamsViewModel = viewModel()
     val context = LocalContext.current
     val currentProjects by viewModel.currentProjects
-    val teamsList = remember { mutableStateOf<Teams?>(null) }
+    val teamsList = remember { mutableStateOf<Equipos?>(null) }
     authRepository.loadEquipo(teamId, teamsList)
-    val team: Teams? = teamsList.value
+    val team: Equipos? = teamsList.value
 
     androidx.compose.material.Card(
         modifier = Modifier.padding(10.dp),
@@ -797,9 +796,9 @@ fun RemoveProjects(
     val viewModel: CardViewTeamsViewModel = viewModel()
     val context = LocalContext.current
     val proyectsCurrent = viewModel.currentProjects
-    val teamsList = remember { mutableStateOf<Teams?>(null) }
+    val teamsList = remember { mutableStateOf<Equipos?>(null) }
     authRepository.loadEquipo(teamId.toString(), teamsList)
-    val team: Teams? = teamsList.value
+    val team: Equipos? = teamsList.value
 
     androidx.compose.material.Card(
         modifier = Modifier.padding(10.dp),
@@ -1065,4 +1064,4 @@ class CardViewTeamsViewModel : ViewModel() {
     val descriptionEnabled = mutableStateOf(false)
     val currentProjects = mutableStateOf(emptyList<Project>())
     val action = mutableStateOf("")
-}
+}*/

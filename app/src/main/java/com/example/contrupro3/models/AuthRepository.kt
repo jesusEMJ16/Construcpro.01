@@ -5,6 +5,7 @@ import androidx.compose.runtime.MutableState
 import com.google.firebase.firestore.DocumentReference
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import com.example.contrupro3.models.BudgetModels.PurchasesModel
 import com.example.contrupro3.models.DocumentsModels.DocumentModel
 import com.example.contrupro3.models.ProjectsModels.Project
 import com.example.contrupro3.models.TeamsModels.Teams
@@ -159,6 +160,28 @@ class AuthRepository(private val auth: FirebaseAuth) {
                     onFail(task.exception?.message ?: "Error desconocido")
                 }
             }
+    }
+
+    fun loadPurchasesFromFirebase(projectId: String, purchasesList: MutableState<List<PurchasesModel>>) {
+        val firestore = FirebaseFirestore.getInstance()
+        val user = getCurrentUser()
+
+        if (user != null && projectId != null) {
+            val budgetsCollection = firestore.collection("Usuarios")
+                .document(user.uid)
+                .collection("Proyectos")
+                .document(projectId)
+                .collection("Purchases")
+
+            budgetsCollection.get()
+                .addOnSuccessListener { documents ->
+                    val loadedPurchases = documents.map { document ->
+                        val purchase = document.toObject(PurchasesModel::class.java)
+                        purchase.copy(id = document.id)
+                    }
+                    purchasesList.value = loadedPurchases
+                }
+        }
     }
 
     fun getCurrentUser(): FirebaseUser? {
