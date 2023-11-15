@@ -47,7 +47,7 @@ import com.google.android.filament.Material
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
-fun SuministrosScreen(viewModel: SuministrosViewModel, navController: NavController, authRepository: AuthRepository) {
+fun SuministrosScreen(viewModel: SuministrosViewModel, authRepository: AuthRepository) {
 
     // Suponiendo que tienes un ViewModel que maneja la lógica de negocio
     val listaMateriales by viewModel.listaMateriales.observeAsState(initial = emptyList())

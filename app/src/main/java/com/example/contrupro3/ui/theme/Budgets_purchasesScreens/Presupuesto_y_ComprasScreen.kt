@@ -47,8 +47,10 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.contrupro3.models.AuthRepository
+import com.example.contrupro3.models.BudgetModels.SuministrosViewModel
 import com.example.contrupro3.models.ProjectsModels.Project
 import com.example.contrupro3.ui.theme.Menu.HamburgueerMenu
 import com.example.contrupro3.ui.theme.lightblue
@@ -59,6 +61,7 @@ fun Presupuesto_y_Compras(navController: NavController, authRepository: AuthRepo
     // Variable para almacenar la selección actual (Presupuestos o Compras)
     var currentSelection by remember { mutableStateOf("Presupuestos") }
     var isProjectDialogOpen by remember { mutableStateOf(false) }
+    val suministrosViewModel = viewModel<SuministrosViewModel>() // Crea una instancia del ViewModel
 
     Surface(modifier = Modifier.fillMaxSize(), color = Color.White) {
         Column {
@@ -72,8 +75,8 @@ fun Presupuesto_y_Compras(navController: NavController, authRepository: AuthRepo
             Box(modifier = Modifier.weight(1f)) {
                 when (currentSelection) {
                     "Resumen del Presupuesto" -> ResumenScreen()
-                    "Gestión de Compras" -> ComprasScreen()
-                    "Gestión de Suministros y Materiales" -> SuministrosScreen()
+                    "Gestión de Compras" -> ComprasScreen(authRepository, userId = "jesusprueba", selectedProject = null)
+                    "Gestión de Suministros y Materiales" -> SuministrosScreen(suministrosViewModel, authRepository)
                     "Provedores" -> ProveedoresScreen()
                     "Especificaciones Técnicas" -> EspecificacionesScreen()
                     "Criterios de Cuantificación" -> CriteriosScreen()
