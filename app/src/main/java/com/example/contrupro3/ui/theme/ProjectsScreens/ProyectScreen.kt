@@ -21,14 +21,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.AlertDialog
@@ -39,7 +37,6 @@ import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Icon
 import androidx.compose.material.LocalContentColor
 import androidx.compose.material.OutlinedTextField
-import androidx.compose.material.TextField
 import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -56,7 +53,6 @@ import androidx.compose.material.icons.filled.DocumentScanner
 import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -69,15 +65,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -88,12 +81,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.core.util.toRange
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.contrupro3.R
 import com.example.contrupro3.models.AuthRepository
 import com.example.contrupro3.models.ProjectsModels.Project
+import com.example.contrupro3.models.ProjectsModels.ProjectsScreen_ViewModel
+import com.example.contrupro3.models.TeamsModels.TeamScreen_ViewModel
 import com.example.contrupro3.ui.theme.Menu.HamburgueerMenu
 import com.example.contrupro3.ui.theme.myBlue
 import com.example.contrupro3.ui.theme.myOrangehigh
@@ -105,6 +99,7 @@ import com.maxkeppeler.sheets.calendar.CalendarDialog
 import com.maxkeppeler.sheets.calendar.models.CalendarConfig
 import com.maxkeppeler.sheets.calendar.models.CalendarSelection
 import com.maxkeppeler.sheets.calendar.models.CalendarStyle
+import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.util.Locale
@@ -113,67 +108,37 @@ import java.util.Locale
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @ExperimentalMaterial3Api
 @Composable
-fun ProjectView(navController: NavController, authRepository: AuthRepository, userID: String) {
-    var selectedFilter by remember { mutableStateOf("Fecha de inicio") }
-    var isFilterAscending by remember { mutableStateOf(false) }
-    var isFilterMenuOpen by remember { mutableStateOf(false) }
-    var isSearchExpanded by remember { mutableStateOf(false) }
-    var searchQuery by remember { mutableStateOf("") }
+fun ProjectView(
+    navController: NavController,
+    authRepository: AuthRepository,
+    userID: String,
+    projectsscreenViewmodel: ProjectsScreen_ViewModel
+) {
+    val projectViewModel: ProjectsScreen_ViewModel = viewModel()
+    val projectsSelectedToRemove = projectViewModel.projectsSelectedToRemove.observeAsState(emptyList())
+    val showRemoveProyectsDialog = projectViewModel.showDeleteProyectsDialog.observeAsState(false)
     val loggedInUserUID: String by authRepository.getLoggedInUserUID().observeAsState("")
-    val projectsList = remember { mutableStateOf(emptyList<Project>()) }
+    val projectsList = remember { mutableStateOf<List<Project>>(emptyList()) }
     val isAddProjectDialogOpen = remember { mutableStateOf(false) }
     val loggedInUserName: String by authRepository.getLoggedInUserName().observeAsState("")
+
     authRepository.loadProjectsFromFirebase(projectsList)
-    val viewModel: ProjectViewModel = viewModel()
-    val projectsSelectedToRemove = viewModel.projectsSelectedToRemove
-    val showRemoveProyectsDialog = viewModel.showDeleteProyectsDialog
-
-    val filteredProjects = remember(projectsList, selectedFilter, isFilterAscending, searchQuery) {
-        derivedStateOf {
-            var filteredList = projectsList.value.filter {
-                it.projectName.contains(
-                    searchQuery,
-                    ignoreCase = true
-                )
-            }
-            when (selectedFilter) {
-                "Nombre" -> {
-                    filteredList = if (isFilterAscending) {
-                        filteredList.sortedBy { it.projectName }
-                    } else {
-                        filteredList.sortedByDescending { it.projectName }
-                    }
-                }
-
-                "Fecha de inicio" -> {
-                    filteredList = if (isFilterAscending) {
-                        filteredList.sortedBy { it.startDate }
-                    } else {
-                        filteredList.sortedByDescending { it.startDate }
-                    }
-                }
-
-                "Fecha de finalización" -> {
-                    filteredList = if (isFilterAscending) {
-                        filteredList.sortedBy { it.endDate }
-                    } else {
-                        filteredList.sortedByDescending { it.endDate }
-                    }
-                }
-            }
-            filteredList
-        }
-    }
+    val filteredProjects = FilterProjects(projectsList, projectViewModel)
 
     Scaffold(
         floatingActionButton = {
             CompositionLocalProvider(
                 LocalContentColor provides colorResource(id = R.color.white)
             ) {
-                if(projectsSelectedToRemove.size > 0) {
+                if (projectsSelectedToRemove.value.size > 0) {
                     Row {
                         FloatingActionButton(
-                            onClick = { projectsSelectedToRemove.clear() },
+                            onClick = {
+                                projectViewModel.onRemoveProjectsChanged(
+                                    emptyList(),
+                                    false
+                                )
+                            },
                             containerColor = myOrangehigh
                         ) {
                             Icon(
@@ -183,7 +148,12 @@ fun ProjectView(navController: NavController, authRepository: AuthRepository, us
                         }
                         Spacer(modifier = Modifier.width(16.dp))
                         FloatingActionButton(
-                            onClick = { viewModel.showDeleteProyectsDialog.value = true },
+                            onClick = {
+                                projectViewModel.onRemoveProjectsChanged(
+                                    projectsSelectedToRemove.value,
+                                    true
+                                )
+                            },
                             containerColor = myOrangehigh
                         ) {
                             Icon(
@@ -193,92 +163,7 @@ fun ProjectView(navController: NavController, authRepository: AuthRepository, us
                         }
                     }
                 } else {
-                    Row {
-                        FloatingActionButton(
-                            onClick = {
-                                isSearchExpanded = !isSearchExpanded
-                                if (!isSearchExpanded) {
-                                    searchQuery = ""
-                                }
-                            },
-                            containerColor = myOrangehigh
-                        ) {
-                            Icon(
-                                if (isSearchExpanded) Icons.Default.Close else Icons.Default.Search,
-                                contentDescription = "Buscar Proyectos",
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(16.dp))
-                        FloatingActionButton(
-                            onClick = { isFilterMenuOpen = true },
-                            containerColor = myOrangehigh
-                        ) {
-                            Icon(
-                                Icons.Default.FilterAlt,
-                                contentDescription = "Filtros"
-                            )
-                        }
-                        DropdownMenu(
-                            expanded = isFilterMenuOpen,
-                            onDismissRequest = { isFilterMenuOpen = false }
-                        ) {
-                            DropdownMenuItem(onClick = {
-                                selectedFilter = "Nombre"
-                                isFilterMenuOpen = false
-                                isFilterAscending = !isFilterAscending
-                            }) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text("Nombre")
-                                    Spacer(Modifier.width(10.dp))
-                                    Icon(
-                                        if (selectedFilter == "Nombre" && isFilterAscending) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
-                            }
-                            DropdownMenuItem(onClick = {
-                                selectedFilter = "Fecha de inicio"
-                                isFilterMenuOpen = false
-                                isFilterAscending = !isFilterAscending
-                            }) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text("Fecha de inicio")
-                                    Spacer(Modifier.width(10.dp))
-                                    Icon(
-                                        if (selectedFilter == "Fecha de inicio" && isFilterAscending) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
-                            }
-                            DropdownMenuItem(onClick = {
-                                selectedFilter = "Fecha de finalización"
-                                isFilterMenuOpen = false
-                                isFilterAscending = !isFilterAscending
-                            }) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text("Fecha de finalización")
-                                    Spacer(Modifier.width(10.dp))
-                                    Icon(
-                                        if (selectedFilter == "Fecha de finalización" && isFilterAscending) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
-                            }
-                        }
-                        Spacer(modifier = Modifier.width(16.dp))
-                        FloatingActionButton(
-                            onClick = { isAddProjectDialogOpen.value = true },
-                            containerColor = myOrangehigh
-                        ) {
-                            Icon(
-                                Icons.Default.Add,
-                                contentDescription = "Agregar Proyecto"
-                            )
-                        }
-                    }
+                    FiltersDropdowMenuProjects(projectViewModel) { isAddProjectDialogOpen.value = true }
                 }
             }
         }
@@ -303,10 +188,9 @@ fun ProjectView(navController: NavController, authRepository: AuthRepository, us
                         fontSize = 32.sp
                     )
                 )
+                Spacer(modifier = Modifier.height(10.dp))
                 Spacer(modifier = Modifier.height(5.dp))
-              //  Divider(color = myBlue, thickness = 1.dp)
-                Spacer(modifier = Modifier.height(5.dp))
-                when (filteredProjects.value.size) {
+                when (filteredProjects.size) {
                     0 -> {
                         Text(
                             text = "No tienes proyectos creados.",
@@ -323,19 +207,21 @@ fun ProjectView(navController: NavController, authRepository: AuthRepository, us
 
                     else -> {
                         Text(
-                            text = "Tienes ${filteredProjects.value.size} proyectos creados.",
+                            text = "Tienes ${filteredProjects.size} proyectos creados.",
                             modifier = Modifier.padding(bottom = 10.dp)
                         )
                     }
                 }
                 LazyColumn(modifier = Modifier.weight(1f)) {
-                    items(filteredProjects.value) { project ->
+                    items(filteredProjects.size) { index ->
+                        val project = filteredProjects[index]
                         ProjectCard(
                             project = project,
                             navController = navController,
                             userID,
                             authRepository,
-                            projectsList
+                            filteredProjects,
+                            projectViewModel
                         )
                         Spacer(Modifier.height(15.dp))
                     }
@@ -344,46 +230,189 @@ fun ProjectView(navController: NavController, authRepository: AuthRepository, us
         }
     }
 
-    if(showRemoveProyectsDialog.value === true) RemoveProjectsSelected(userID)
+    if (showRemoveProyectsDialog.value === true) RemoveProjectsSelected(userID, projectViewModel)
     HamburgueerMenu(navController = navController, authRepository = authRepository)
     if (isAddProjectDialogOpen.value) {
         Dialog(onDismissRequest = { isAddProjectDialogOpen.value = false }) {
-            RegisterCard(isAddProjectDialogOpen, loggedInUserName, loggedInUserUID, filteredProjects)
-        }
-    }
-    if (isSearchExpanded) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(0.5f)
-                .offset(x = 80.dp, y = 640.dp)
-                .navigationBarsPadding()
-        ) {
-            TextField(
-                value = searchQuery,
-                onValueChange = { newValue ->
-                    searchQuery = newValue
-                    if (newValue.isEmpty()) {
-                        authRepository.loadProjectsFromFirebase(projectsList)
-                    }
-                },
-                label = { Text("Buscar Proyecto") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .navigationBarsPadding()
+            RegisterCard(
+                isAddProjectDialogOpen,
+                loggedInUserName,
+                loggedInUserUID,
+                filteredProjects,
+                projectViewModel
             )
         }
     }
 }
 
 @Composable
-fun RemoveProjectsSelected(userID: String) {
-    val viewModel: ProjectViewModel = viewModel()
-    val projectsSelectedToRemove = viewModel.projectsSelectedToRemove
+fun FiltersDropdowMenuProjects(projectViewModel: ProjectsScreen_ViewModel, openAddProjects: () -> Unit) {
+    val isFilterMenuOpen = projectViewModel.isFilterMenuOpen.observeAsState(false)
+    val isSearchExpanded = projectViewModel.isSearchExpanded.observeAsState(false)
+    val isFilterAscending = projectViewModel.isFilterAscending.observeAsState(false)
+    val filterSelected = projectViewModel.filterSelected.observeAsState("Fecha de inicio")
+
+    Row {
+        FloatingActionButton(
+            onClick = {
+                projectViewModel.onFilterSelectionChanged(
+                    true,
+                    isSearchExpanded.value,
+                    "Fecha de inicio",
+                    isFilterAscending.value
+                )
+            },
+            containerColor = myOrangehigh
+        ) {
+            Icon(
+                Icons.Default.FilterAlt,
+                contentDescription = "Filtros"
+            )
+        }
+        DropdownMenu(
+            expanded = isFilterMenuOpen.value,
+            onDismissRequest = {
+                projectViewModel.onFilterSelectionChanged(
+                    false,
+                    isSearchExpanded.value,
+                    "Fecha de inicio",
+                    isFilterAscending.value
+                )
+            }
+        ) {
+            DropdownMenuItem(onClick = {
+                projectViewModel.onFilterSelectionChanged(
+                    false,
+                    isSearchExpanded.value,
+                    "Nombre",
+                    !isFilterAscending.value
+                )
+            }) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Nombre")
+                    Spacer(Modifier.width(10.dp))
+                    Icon(
+                        if (filterSelected.value == "Nombre" && isFilterAscending.value) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+            DropdownMenuItem(onClick = {
+                projectViewModel.onFilterSelectionChanged(
+                    false,
+                    isSearchExpanded.value,
+                    "Fecha de inicio",
+                    !isFilterAscending.value
+                )
+            }) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Fecha de inicio")
+                    Spacer(Modifier.width(10.dp))
+                    Icon(
+                        if (filterSelected.value == "Fecha de inicio" && isFilterAscending.value) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+            DropdownMenuItem(onClick = {
+                projectViewModel.onFilterSelectionChanged(
+                    false,
+                    isSearchExpanded.value,
+                    "Fecha de finalización",
+                    !isFilterAscending.value
+                )
+            }) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Fecha de finalización")
+                    Spacer(Modifier.width(10.dp))
+                    Icon(
+                        if (filterSelected.value == "Fecha de finalización" && isFilterAscending.value) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+        }
+        Spacer(modifier = Modifier.width(16.dp))
+        FloatingActionButton(
+            onClick = { openAddProjects() },
+            containerColor = myOrangehigh
+        ) {
+            Icon(
+                Icons.Default.Add,
+                contentDescription = "Agregar Proyecto"
+            )
+        }
+    }
+}
+
+@Composable
+fun FilterProjects(
+    projectsList: MutableState<List<Project>>,
+    projectViewModel: ProjectsScreen_ViewModel
+): List<Project> {
+    val filterSelected = projectViewModel.filterSelected.observeAsState("Fecha de inicio")
+    val isFilterAscending = projectViewModel.isFilterAscending.observeAsState(false)
+    val searchQuery = projectViewModel.searchQuery.observeAsState("")
+
+    val filteredProjects =
+        remember(projectsList, filterSelected, isFilterAscending, searchQuery) {
+            derivedStateOf {
+                var filteredList = projectsList.value.filter { project ->
+                    project.projectName.contains(
+                        searchQuery.value,
+                        ignoreCase = true
+                    )
+                }
+
+                when (filterSelected.value) {
+                    "Nombre" -> {
+                        filteredList = if (isFilterAscending.value) {
+                            filteredList.sortedBy { it.projectName }
+                        } else {
+                            filteredList.sortedByDescending { it.projectName }
+                        }
+                    }
+
+                    "Fecha de inicio" -> {
+                        filteredList = if (isFilterAscending.value) {
+                            filteredList.sortedBy { it.startDate }
+                        } else {
+                            filteredList.sortedByDescending { it.startDate }
+                        }
+                    }
+
+                    "Fecha de finalización" -> {
+                        filteredList = if (isFilterAscending.value) {
+                            filteredList.sortedBy { it.endDate }
+                        } else {
+                            filteredList.sortedByDescending { it.endDate }
+                        }
+                    }
+                }
+                filteredList
+            }
+        }
+    return filteredProjects.value
+}
+
+@Composable
+fun RemoveProjectsSelected(userID: String, projectViewModel: ProjectsScreen_ViewModel) {
+    val projectsSelectedToRemove = projectViewModel.projectsSelectedToRemove.observeAsState(
+        emptyList()
+    )
     val context = LocalContext.current
 
-    if(projectsSelectedToRemove.size > 0) {
+    if (projectsSelectedToRemove.value.size > 0) {
         AlertDialog(
-            onDismissRequest = { viewModel.showDeleteProyectsDialog.value = false },
+            onDismissRequest = {
+                projectViewModel.onRemoveProjectsChanged(
+                    projectsSelectedToRemove.value,
+                    false
+                )
+            },
             buttons = {
                 Row(
                     modifier = Modifier
@@ -407,18 +436,18 @@ fun RemoveProjectsSelected(userID: String) {
                     Button(
                         onClick = {
                             val db = FirebaseFirestore.getInstance()
-                            val collection = db.collection("Usuarios").document(userID).collection("Proyectos")
+                            val collection =
+                                db.collection("Usuarios").document(userID).collection("Proyectos")
 
-                            for(proyect in projectsSelectedToRemove) {
-                                collection.document(proyect).delete()
+                            for (proyect in projectsSelectedToRemove.value) {
+                                collection.document(proyect.id.toString()).delete()
                             }
-                            viewModel.showDeleteProyectsDialog.value = false
+                            projectViewModel.onRemoveProjectsChanged(emptyList(), false)
                             Toast.makeText(
                                 context,
                                 "Proyectos removidos",
                                 Toast.LENGTH_LONG
                             ).show()
-                            viewModel.projectsSelectedToRemove.removeAll(projectsSelectedToRemove)
                         },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = myOrangehigh,
@@ -435,8 +464,12 @@ fun RemoveProjectsSelected(userID: String) {
             },
             title = {
                 Row {
-                    Box() {
-                        Icon(Icons.Default.WarningAmber, contentDescription = null, tint = myOrangehigh)
+                    Box {
+                        Icon(
+                            Icons.Default.WarningAmber,
+                            contentDescription = null,
+                            tint = myOrangehigh
+                        )
                     }
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
@@ -466,10 +499,11 @@ fun ProjectCard(
     navController: NavController,
     userID: String,
     authRepository: AuthRepository,
-    projectsList: MutableState<List<Project>>
+    projectsList: List<Project>,
+    projectViewModel: ProjectsScreen_ViewModel
 ) {
-    val viewModel: ProjectViewModel = viewModel()
-    val projectsSelectedToRemove = viewModel.projectsSelectedToRemove
+    val projectsSelectedToRemove = projectViewModel.projectsSelectedToRemove.observeAsState(emptyList())
+    val showDeleteProjectsDialog = projectViewModel.showDeleteProyectsDialog.observeAsState(false)
     val showDatePicker = remember { mutableStateOf(false) }
 
     Spacer(Modifier.height(15.dp))
@@ -489,17 +523,31 @@ fun ProjectCard(
                     indication = LocalIndication.current
                 )
                 .combinedClickable(onClick = {
-                    if (projectsSelectedToRemove.size > 0) {
-                        if (!projectsSelectedToRemove.contains(project.id)) {
-                            projectsSelectedToRemove.add(project.id.toString())
-                        } else projectsSelectedToRemove.remove(project.id.toString())
+                    if (projectsSelectedToRemove.value.size > 0) {
+                        if (!projectsSelectedToRemove.value.contains(project)) {
+                            val newList = projectsSelectedToRemove.value + project
+                            projectViewModel.onRemoveProjectsChanged(
+                                newList,
+                                showDeleteProjectsDialog.value
+                            )
+                        } else projectViewModel.onRemoveProjectsChanged(
+                            projectsSelectedToRemove.value.filter { p -> p !== project },
+                            showDeleteProjectsDialog.value
+                        )
                     } else {
                         navController.navigate("cardview_projects_screen/$userID/${project.id.toString()}")
                     }
                 }, onLongClick = {
-                    if (!projectsSelectedToRemove.contains(project.id)) {
-                        projectsSelectedToRemove.add(project.id.toString())
-                    } else projectsSelectedToRemove.remove(project.id.toString())
+                    if (!projectsSelectedToRemove.value.contains(project)) {
+                        val newList = projectsSelectedToRemove.value + project
+                        projectViewModel.onRemoveProjectsChanged(
+                            newList,
+                            showDeleteProjectsDialog.value
+                        )
+                    } else projectViewModel.onRemoveProjectsChanged(
+                        projectsSelectedToRemove.value.filter { p -> p !== project },
+                        showDeleteProjectsDialog.value
+                    )
                 }),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
             shape = RoundedCornerShape(15.dp),
@@ -522,14 +570,27 @@ fun ProjectCard(
                             modifier = Modifier.align(Alignment.Center)
                         )
                     }
-                    if(projectsSelectedToRemove.contains(project.id.toString())) {
-                        Box() {
-                            Icon(Icons.Default.CheckBox, contentDescription = null, tint = myBlue, modifier = Modifier.align(Alignment.Center))
+                    if (projectsSelectedToRemove.value.contains(project)) {
+                        Box {
+                            Icon(
+                                Icons.Default.CheckBox,
+                                contentDescription = null,
+                                tint = myBlue,
+                                modifier = Modifier.align(Alignment.Center)
+                            )
                         }
                     }
-                    if(projectsSelectedToRemove.size > 0 && !projectsSelectedToRemove.contains(project.id.toString())) {
-                        Box() {
-                            Icon(Icons.Default.CheckBoxOutlineBlank, contentDescription = null, tint = myBlue, modifier = Modifier.align(Alignment.Center))
+                    if (projectsSelectedToRemove.value.size > 0 && !projectsSelectedToRemove.value.contains(
+                            project
+                        )
+                    ) {
+                        Box {
+                            Icon(
+                                Icons.Default.CheckBoxOutlineBlank,
+                                contentDescription = null,
+                                tint = myBlue,
+                                modifier = Modifier.align(Alignment.Center)
+                            )
                         }
                     }
                 }
@@ -577,7 +638,7 @@ fun ProjectCard(
                     }
                     Spacer(modifier = Modifier.width(5.dp))
                     Text(
-                        text = "${project.members.size}",
+                        text = "null",
                         style = MaterialTheme.typography.bodySmall
                     )
 
@@ -600,7 +661,7 @@ fun ProjectCard(
                     }
                     Spacer(modifier = Modifier.width(5.dp))
                     Text(
-                        text = "${project.tasks.size}",
+                        text = "null",
                         style = MaterialTheme.typography.bodySmall
                     )
                     Spacer(modifier = Modifier.width(5.dp))
@@ -622,7 +683,7 @@ fun ProjectCard(
                     }
                     Spacer(modifier = Modifier.width(5.dp))
                     Text(
-                        text = "${project.documents.size}",
+                        text = "null",
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
@@ -676,19 +737,21 @@ fun ProjectCard(
 }
 
 
+@OptIn(InternalCoroutinesApi::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun RegisterCard(
     isAddProjectDialogOpen: MutableState<Boolean>, loggedInUserName: String,
     loggedInUserUID: String,
-    projects: State<List<Project>>
+    projects: List<Project>,
+    projectViewModel: ProjectsScreen_ViewModel
 ) {
-    val startDateText = remember { mutableStateOf("") }
-    val endDateText = remember { mutableStateOf("") }
-    val name = remember { mutableStateOf("") }
-    val description = remember { mutableStateOf("") }
-    val context = LocalContext.current
-    val nameRepliqued = remember {  mutableStateOf(false)}
+    val startDateText = projectViewModel.startDateTextField.observeAsState("")
+    val endDateText = projectViewModel.endDateTextField.observeAsState("")
+    val name = projectViewModel.projectName.observeAsState("")
+    val description = projectViewModel.projectDescription.observeAsState("")
+    val currentContext = LocalContext.current
+    val nameRepliqued = remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier.padding(16.dp),
@@ -712,10 +775,10 @@ fun RegisterCard(
             OutlinedTextField(
                 value = name.value,
                 onValueChange = {
-                    name.value = it
-                    if (projects.value.find {
-                            it.projectName?.trim().equals(name.value.trim(), ignoreCase = true)
-                        } != null) nameRepliqued.value = true else nameRepliqued.value = false
+                    projectViewModel.onFieldsUpdated(it, description.value)
+                    nameRepliqued.value = projects.find {
+                        it.projectName.trim().equals(name.value.trim(), ignoreCase = true)
+                    } != null
                 },
                 label = { Text(text = "Nombre del proyecto") },
                 colors = TextFieldDefaults.outlinedTextFieldColors(
@@ -734,22 +797,31 @@ fun RegisterCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                if(name.value.length < 6) {
+                if (name.value.length < 6) {
                     Text(
                         text = "* Requerido",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light, color = myBlue),
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.Light,
+                            color = myBlue
+                        ),
                         modifier = Modifier.offset(x = 20.dp)
                     )
-                } else if(nameRepliqued.value === true) {
+                } else if (nameRepliqued.value === true) {
                     Text(
                         text = "* Nombre duplicado",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light, color = myBlue),
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.Light,
+                            color = myBlue
+                        ),
                         modifier = Modifier.offset(x = 20.dp)
                     )
                 } else Text(text = " ")
                 Text(
                     text = "${name.value.length}/30",
-                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light, color = if(name.value.length > 30) myBlue else Color.Black),
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Light,
+                        color = if (name.value.length > 30) myBlue else Color.Black
+                    ),
                     modifier = Modifier
                         .offset(x = -20.dp)
                 )
@@ -757,7 +829,7 @@ fun RegisterCard(
             Spacer(modifier = Modifier.height(10.dp))
             OutlinedTextField(
                 value = description.value,
-                onValueChange = { description.value = it },
+                onValueChange = { projectViewModel.onFieldsUpdated(name.value, it) },
                 label = { Text(text = "Descripción del proyecto") },
                 colors = TextFieldDefaults.outlinedTextFieldColors(
                     textColor = Color.Black,
@@ -772,13 +844,16 @@ fun RegisterCard(
             )
             Text(
                 text = "${description.value.length}/200",
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light, color = if(description.value.length > 200) myBlue else Color.Black),
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontWeight = FontWeight.Light,
+                    color = if (description.value.length > 200) myBlue else Color.Black
+                ),
                 modifier = Modifier
                     .offset(x = -20.dp)
                     .align(Alignment.End)
             )
             Spacer(modifier = Modifier.height(15.dp))
-            CalendarSample3(startDateText, endDateText)
+            CalendarSample3(projectViewModel, startDateText.value, endDateText.value)
             Spacer(modifier = Modifier.height(8.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -801,9 +876,7 @@ fun RegisterCard(
                                 loggedInUserUID,
                                 description.value,
                                 startDateText.value,
-                                endDateText.value,
-                                emptyList(),
-                                emptyList()
+                                endDateText.value
                             )
 
                             val db = FirebaseFirestore.getInstance()
@@ -819,14 +892,12 @@ fun RegisterCard(
                                         .document(documentReference.id)
                                         .set(docUpdated)
                                         .addOnSuccessListener {
-                                            name.value = ""
-                                            description.value = ""
-                                            startDateText.value = ""
-                                            endDateText.value = ""
+                                            projectViewModel.onFieldsUpdated("", "")
+                                            projectViewModel.onCalendarUpdated("", "")
                                             isAddProjectDialogOpen.value = false
 
                                             Toast.makeText(
-                                                context,
+                                                currentContext,
                                                 "Proyecto creado correctamente",
                                                 Toast.LENGTH_LONG
                                             ).show()
@@ -862,13 +933,11 @@ fun RegisterCard(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalendarSample3(
-    startDateText: MutableState<String>,
-    endDateText: MutableState<String>
+    projectViewModel: ProjectsScreen_ViewModel,
+    startDateText: String,
+    endDateText: String
 ) {
-    // Establece el límite de tiempo para 10 años atrás y 99 años en el futuro.
     val timeBoundary = LocalDate.now().let { now -> now.minusYears(10)..now.plusYears(99) }
-
-    // Inicializa el rango seleccionado para comenzar desde la fecha actual.
     val selectedRange = remember {
         val default = LocalDate.now().let { time -> time..time.plusDays(8) }
         mutableStateOf(default.toRange())
@@ -905,10 +974,11 @@ fun CalendarSample3(
                     selection = CalendarSelection.Period(
                         selectedRange = selectedRange.value
                     ) { startDate, endDate ->
-                        // Actualiza el rango seleccionado y los textos de inicio y fin.
                         selectedRange.value = Range(startDate, endDate)
-                        startDateText.value = startDate.toString()
-                        endDateText.value = endDate.toString()
+                        projectViewModel.onCalendarUpdated(
+                            startDate.toString(),
+                            endDate.toString()
+                        )
                         showDialog.value = false
                     }
                 )
@@ -916,20 +986,20 @@ fun CalendarSample3(
         }
 
         // Muestra las fechas seleccionadas.
-        if(startDateText.value.isNotEmpty() && endDateText.value.isNotEmpty()) {
+        if (startDateText.isNotEmpty() && endDateText.isNotEmpty()) {
             Row(
                 modifier = Modifier.fillMaxWidth(0.8f),
                 horizontalArrangement = Arrangement.SpaceAround
             ) {
                 Text(
-                    text = "Inicio: ${startDateText.value}",
+                    text = "Inicio: ${startDateText}",
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontWeight = FontWeight.Light,
                         fontSize = 8.sp
                     ),
                 )
                 Text(
-                    text = "Fin: ${endDateText.value}",
+                    text = "Fin: ${endDateText}",
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontWeight = FontWeight.Light,
                         fontSize = 8.sp,
@@ -938,9 +1008,4 @@ fun CalendarSample3(
             }
         }
     }
-}
-
-class ProjectViewModel : ViewModel() {
-    var projectsSelectedToRemove = mutableStateListOf<String>()
-    val showDeleteProyectsDialog = mutableStateOf(false)
 }

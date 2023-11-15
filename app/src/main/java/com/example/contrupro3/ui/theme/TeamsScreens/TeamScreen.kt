@@ -1,8 +1,6 @@
 package com.example.contrupro3.ui.theme.TeamsScreens
 
 
-import androidx.compose.foundation.layout.*
-
 import android.annotation.SuppressLint
 import android.os.Build
 import android.widget.Toast
@@ -11,21 +9,9 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.AlertDialog
@@ -46,9 +32,9 @@ import androidx.compose.material.icons.filled.CheckBoxOutlineBlank
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FilterAlt
+import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -68,7 +54,6 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -83,6 +68,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.contrupro3.R
 import com.example.contrupro3.models.AuthRepository
+import com.example.contrupro3.models.TeamsModels.TeamScreen_ViewModel
 import com.example.contrupro3.models.TeamsModels.Teams
 import com.example.contrupro3.ui.theme.Menu.HamburgueerMenu
 import com.example.contrupro3.ui.theme.myBlue
@@ -92,49 +78,43 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
 import java.util.Locale
+
 @RequiresApi(Build.VERSION_CODES.O)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @ExperimentalMaterial3Api
 @Composable
-fun TeamsScreen(navController: NavController, authRepository: AuthRepository, userID: String) {
-    var selectedFilter by remember { mutableStateOf("Nombre") }
-    var isFilterAscending by remember { mutableStateOf(false) }
-    var isFilterMenuOpen by remember { mutableStateOf(false) }
-    var isSearchExpanded by remember { mutableStateOf(false) }
-    var searchQuery by remember { mutableStateOf("") }
+fun TeamsScreen(
+    navController: NavController,
+    authRepository: AuthRepository,
+    userID: String,
+    TeamScreen_ViewModel: TeamScreen_ViewModel
+) {
     val loggedInUserUID: String by authRepository.getLoggedInUserUID().observeAsState("")
-    val viewModel: TeamViewModel = viewModel()
-    val teamsList = viewModel.teamsList
-    val isAddTeamDialogOpen = remember { mutableStateOf(false) }
     val loggedInUserName: String by authRepository.getLoggedInUserName().observeAsState("")
-    val teamsSelectedToRemove = viewModel.teamsSelectedToRemove
+    val teamsSelectedToRemove =
+        TeamScreen_ViewModel.teamsSelectedToRemove.observeAsState(emptyList())
+    val showTeamDeleteDialog = TeamScreen_ViewModel.showDeleteTeamsDialog.observeAsState(false)
+    val teamsList = remember { mutableStateOf<List<Teams>>(emptyList()) }
+    val projectId = remember { mutableStateOf("") }
+    val isAddTeamDialogOpen = remember { mutableStateOf(false) }
 
-    authRepository.loadEquiposFromFirebase(teamsList)
-    val filteredEquipos = remember(teamsList, selectedFilter, isFilterAscending, searchQuery) {
-        derivedStateOf {
-            var filteredList = teamsList.value.filter { it.name?.contains(searchQuery, ignoreCase = true) == true }
-            when (selectedFilter) {
-                "Nombre" -> {
-                    filteredList = if (isFilterAscending) {
-                        filteredList.sortedBy { it.name }
-                    } else {
-                        filteredList.sortedByDescending { it.name }
-                    }
-                }
-            }
-            filteredList
-        }
-    }
+    authRepository.loadEquiposFromFirebase(teamsList, projectId.value)
+    val filteredTeams = FilterTeams(teamsList, TeamScreen_ViewModel)
 
     Scaffold(
         floatingActionButton = {
             CompositionLocalProvider(
                 LocalContentColor provides colorResource(id = R.color.white)
             ) {
-                if (teamsSelectedToRemove.size > 0) {
+                if (teamsSelectedToRemove.value.size > 0) {
                     Row {
                         FloatingActionButton(
-                            onClick = { viewModel.teamsSelectedToRemove.clear() },
+                            onClick = {
+                                TeamScreen_ViewModel.onRemoveTeamsChanged(
+                                    emptyList(),
+                                    false
+                                )
+                            },
                             containerColor = myOrangehigh
                         ) {
                             Icon(
@@ -144,7 +124,7 @@ fun TeamsScreen(navController: NavController, authRepository: AuthRepository, us
                         }
                         Spacer(modifier = Modifier.width(16.dp))
                         FloatingActionButton(
-                            onClick = { viewModel.showTeamRemoveDialog.value = true },
+                            onClick = { TeamScreen_ViewModel.onRemoveTeamsChanged(teamsSelectedToRemove.value, true) },
                             containerColor = myOrangehigh
                         ) {
                             Icon(
@@ -154,65 +134,7 @@ fun TeamsScreen(navController: NavController, authRepository: AuthRepository, us
                         }
                     }
                 } else {
-                    Row {
-                        FloatingActionButton(
-                            onClick = {
-                                isSearchExpanded = !isSearchExpanded
-                                if (!isSearchExpanded) {
-                                    searchQuery = ""
-                                }
-                            },
-                            containerColor = myOrangehigh
-                        ) {
-                            Icon(
-                                if (isSearchExpanded) Icons.Default.Close else Icons.Default.Search,
-                                contentDescription = "Buscar Equipos",
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(16.dp))
-                        FloatingActionButton(
-                            onClick = { isFilterMenuOpen = true },
-                            containerColor = myOrangehigh
-                        ) {
-                            Icon(
-                                Icons.Default.FilterAlt,
-                                contentDescription = "Filtros"
-                            )
-                        }
-
-                        DropdownMenu(
-                            expanded = isFilterMenuOpen,
-                            onDismissRequest = { isFilterMenuOpen = false }
-                        ) {
-                            DropdownMenuItem(
-                                onClick = {
-                                    selectedFilter = "Nombre"
-                                    isFilterMenuOpen = false
-                                    isFilterAscending = !isFilterAscending
-                                }
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text("Nombre")
-                                    Spacer(Modifier.width(10.dp))
-                                    Icon(
-                                        if (selectedFilter == "Nombre" && isFilterAscending) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
-                            }
-                        }
-                        Spacer(modifier = Modifier.width(16.dp))
-                        FloatingActionButton(
-                            onClick = { isAddTeamDialogOpen.value = true },
-                            containerColor = myOrangehigh
-                        ) {
-                            Icon(
-                                Icons.Default.Add,
-                                contentDescription = "Agregar Equipo"
-                            )
-                        }
-                    }
+                    FiltersDropdowMenu(TeamScreen_ViewModel) { isAddTeamDialogOpen.value = true }
                 }
             }
         },
@@ -239,7 +161,7 @@ fun TeamsScreen(navController: NavController, authRepository: AuthRepository, us
                     )
                     Spacer(modifier = Modifier.height(5.dp))
                     Spacer(modifier = Modifier.height(5.dp))
-                    when (filteredEquipos.value.size) {
+                    when (filteredTeams.size) {
                         0 -> {
                             Text(
                                 text = "No tienes equipos creados.",
@@ -256,19 +178,21 @@ fun TeamsScreen(navController: NavController, authRepository: AuthRepository, us
 
                         else -> {
                             Text(
-                                text = "Tienes ${filteredEquipos.value.size} equipos creados.",
+                                text = "Tienes ${filteredTeams.size} equipos creados.",
                                 modifier = Modifier.padding(bottom = 10.dp)
                             )
                         }
                     }
                     LazyColumn(modifier = Modifier.weight(1f)) {
-                        items(filteredEquipos.value) { equipo ->
+                        items(filteredTeams.size) { index ->
+                            val team = filteredTeams[index]
                             EquipoCard(
-                                team = equipo,
-                                navController = navController,
-                                authRepository = authRepository,
-                                equiposList = teamsList,
-                                userID = userID,
+                                team,
+                                navController,
+                                userID,
+                                authRepository,
+                                teamsList,
+                                TeamScreen_ViewModel
                             )
                             Spacer(Modifier.height(15.dp))
                         }
@@ -278,20 +202,194 @@ fun TeamsScreen(navController: NavController, authRepository: AuthRepository, us
         }
     )
 
+    if(showTeamDeleteDialog.value) RemoveTeamsSelected(userID, projectId, TeamScreen_ViewModel)
     HamburgueerMenu(navController = navController, authRepository = authRepository)
     if (isAddTeamDialogOpen.value) {
         Dialog(onDismissRequest = { isAddTeamDialogOpen.value = false }) {
-            RegisterCardTeam(isAddTeamDialogOpen,loggedInUserName, loggedInUserUID, filteredEquipos.value)
+            RegisterCardTeam(
+                isAddTeamDialogOpen,
+                loggedInUserName,
+                loggedInUserUID,
+                filteredTeams
+            )
+        }
+    }
+}
+
+@Composable
+fun FilterTeams(
+    teamList: MutableState<List<Teams>>,
+    teamViewModel: TeamScreen_ViewModel
+): List<Teams> {
+    val filterSelected = teamViewModel.filterSelected.observeAsState("Fecha de inicio")
+    val isFilterAscending = teamViewModel.isFilterAscending.observeAsState(false)
+    val searchQuery = teamViewModel.searchQuery.observeAsState("")
+
+    val filteredTeams =
+        remember(teamList, filterSelected, isFilterAscending, searchQuery) {
+            derivedStateOf {
+                var filteredList = teamList.value.filter { team ->
+                    team.name.toString().contains(
+                        searchQuery.value,
+                        ignoreCase = true
+                    )
+                }
+
+                when (filterSelected.value) {
+                    "Nombre" -> {
+                        filteredList = if (isFilterAscending.value) {
+                            filteredList.sortedBy { it.name }
+                        } else {
+                            filteredList.sortedByDescending { it.name }
+                        }
+                    }
+
+                    /*"Fecha de inicio" -> {
+                        filteredList = if (isFilterAscending.value) {
+                            filteredList.sortedBy { it. }
+                        } else {
+                            filteredList.sortedByDescending { it.startDate }
+                        }
+                    }*/
+                    /*"Fecha de finalización" -> {
+                        filteredList = if (isFilterAscending.value) {
+                            filteredList.sortedBy { it.endDate }
+                        } else {
+                            filteredList.sortedByDescending { it.endDate }
+                        }
+                    }*/
+                }
+                filteredList
+            }
+        }
+    return filteredTeams.value
+}
+
+@Composable
+fun FiltersDropdowMenu(TeamScreen_ViewModel: TeamScreen_ViewModel, openAddTeams: () -> Unit) {
+    val isFilterMenuOpen = TeamScreen_ViewModel.isFilterMenuOpen.observeAsState(false)
+    val isSearchExpanded = TeamScreen_ViewModel.isSearchExpanded.observeAsState(false)
+    val isFilterAscending = TeamScreen_ViewModel.isFilterAscending.observeAsState(false)
+    val filterSelected = TeamScreen_ViewModel.filterSelected.observeAsState("Fecha de inicio")
+
+    Row {
+        FloatingActionButton(
+            onClick = {  },
+            containerColor = myOrangehigh
+        ) {
+            Icon(
+                Icons.Default.FolderOpen,
+                contentDescription = "Seleccionar Proyecto"
+            )
+        }
+        Spacer(modifier = Modifier.width(16.dp))
+        FloatingActionButton(
+            onClick = {
+                TeamScreen_ViewModel.onFilterSelectionChanged(
+                    true,
+                    isSearchExpanded.value,
+                    "Fecha de inicio",
+                    isFilterAscending.value
+                )
+            },
+            containerColor = myOrangehigh
+        ) {
+            Icon(
+                Icons.Default.FilterAlt,
+                contentDescription = "Filtros"
+            )
+        }
+        DropdownMenu(
+            expanded = isFilterMenuOpen.value,
+            onDismissRequest = {
+                TeamScreen_ViewModel.onFilterSelectionChanged(
+                    false,
+                    isSearchExpanded.value,
+                    "Fecha de inicio",
+                    isFilterAscending.value
+                )
+            }
+        ) {
+            DropdownMenuItem(onClick = {
+                TeamScreen_ViewModel.onFilterSelectionChanged(
+                    false,
+                    isSearchExpanded.value,
+                    "Nombre",
+                    !isFilterAscending.value
+                )
+            }) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Nombre")
+                    Spacer(Modifier.width(10.dp))
+                    Icon(
+                        if (filterSelected.value == "Nombre" && isFilterAscending.value) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+            DropdownMenuItem(onClick = {
+                TeamScreen_ViewModel.onFilterSelectionChanged(
+                    false,
+                    isSearchExpanded.value,
+                    "Fecha de inicio",
+                    !isFilterAscending.value
+                )
+            }) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Fecha de inicio")
+                    Spacer(Modifier.width(10.dp))
+                    Icon(
+                        if (filterSelected.value == "Fecha de inicio" && isFilterAscending.value) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+            DropdownMenuItem(onClick = {
+                TeamScreen_ViewModel.onFilterSelectionChanged(
+                    false,
+                    isSearchExpanded.value,
+                    "Fecha de finalización",
+                    !isFilterAscending.value
+                )
+            }) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Fecha de finalización")
+                    Spacer(Modifier.width(10.dp))
+                    Icon(
+                        if (filterSelected.value == "Fecha de finalización" && isFilterAscending.value) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+        }
+        Spacer(modifier = Modifier.width(16.dp))
+        FloatingActionButton(
+            onClick = { openAddTeams() },
+            containerColor = myOrangehigh
+        ) {
+            Icon(
+                Icons.Default.Add,
+                contentDescription = "Crear Equipo"
+            )
         }
     }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun EquipoCard(team: Teams, navController: NavController, userID: String, authRepository: AuthRepository, equiposList: MutableState<List<Teams>>) {
-    val viewModel: TeamViewModel = viewModel()
-    val teamsSelectedToRemove = viewModel.teamsSelectedToRemove
-    val showTeamRemoveDIalog = viewModel.showTeamRemoveDialog
+fun EquipoCard(
+    team: Teams,
+    navController: NavController,
+    userID: String,
+    authRepository: AuthRepository,
+    teamList: MutableState<List<Teams>>,
+    TeamScreen_ViewModel: TeamScreen_ViewModel
+) {
+    val teamsSelectedToRemove = TeamScreen_ViewModel.teamsSelectedToRemove.observeAsState(emptyList())
+    val showDeleteTeamsDialog = TeamScreen_ViewModel.showDeleteTeamsDialog.observeAsState(false)
 
     Spacer(Modifier.height(15.dp))
     Box(
@@ -307,22 +405,35 @@ fun EquipoCard(team: Teams, navController: NavController, userID: String, authRe
                 .wrapContentSize(Alignment.Center)
                 .combinedClickable(
                     onClick = {
-                        if (teamsSelectedToRemove.size > 0) {
-                            if (!teamsSelectedToRemove.contains(team.id)) {
-                                teamsSelectedToRemove.add(team.id.toString())
-                            } else teamsSelectedToRemove.remove(team.id)
+                        if (teamsSelectedToRemove.value.size > 0) {
+                            if (!teamsSelectedToRemove.value.contains(team)) {
+                                val newList = teamsSelectedToRemove.value + team
+                                TeamScreen_ViewModel.onRemoveTeamsChanged(
+                                    newList,
+                                    showDeleteTeamsDialog.value
+                                )
+                            } else TeamScreen_ViewModel.onRemoveTeamsChanged(
+                                teamsSelectedToRemove.value.filter { p -> p !== team },
+                                showDeleteTeamsDialog.value
+                            )
                         } else navController.navigate("cardview_teams_screen/${userID}/${team.id}")
                     },
                     onLongClick = {
-                        if (!teamsSelectedToRemove.contains(team.id)) {
-                            teamsSelectedToRemove.add(team.id.toString())
-                        } else teamsSelectedToRemove.remove(team.id)
+                        if (!teamsSelectedToRemove.value.contains(team)) {
+                            val newList = teamsSelectedToRemove.value + team
+                            TeamScreen_ViewModel.onRemoveTeamsChanged(
+                                newList,
+                                showDeleteTeamsDialog.value
+                            )
+                        } else TeamScreen_ViewModel.onRemoveTeamsChanged(
+                            teamsSelectedToRemove.value.filter { p -> p !== team },
+                            showDeleteTeamsDialog.value
+                        )
                     }
                 ),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
             shape = RoundedCornerShape(15.dp),
         ) {
-            if (showTeamRemoveDIalog.value === true) RemoveTeamsSelected(userID = userID)
             Column(modifier = Modifier.padding(10.dp)) {
                 Row(
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -338,7 +449,7 @@ fun EquipoCard(team: Teams, navController: NavController, userID: String, authRe
                             modifier = Modifier.align(Alignment.Center)
                         )
                     }
-                    if(teamsSelectedToRemove.contains(team.id)) {
+                    if (teamsSelectedToRemove.value.contains(team)) {
                         Box {
                             Icon(
                                 Icons.Default.CheckBox,
@@ -348,7 +459,7 @@ fun EquipoCard(team: Teams, navController: NavController, userID: String, authRe
                             )
                         }
                     }
-                    if (teamsSelectedToRemove.size > 0 && !teamsSelectedToRemove.contains(team.id)) {
+                    if (teamsSelectedToRemove.value.size > 0 && !teamsSelectedToRemove.value.contains(team)) {
                         Box {
                             Icon(
                                 Icons.Default.CheckBoxOutlineBlank,
@@ -413,15 +524,17 @@ fun EquipoCard(team: Teams, navController: NavController, userID: String, authRe
 }
 
 @Composable
-fun RemoveTeamsSelected(userID: String) {
-    val viewModel: TeamViewModel = viewModel()
-    val teamsSelectedToRemove = viewModel.teamsSelectedToRemove
-    val teamsList = viewModel.teamsList
+fun RemoveTeamsSelected(
+    userID: String,
+    projectId: MutableState<String>,
+    TeamScreen_ViewModel: TeamScreen_ViewModel
+) {
+    val teamsSelectedToRemove = TeamScreen_ViewModel.teamsSelectedToRemove.observeAsState(emptyList())
     val context = LocalContext.current
 
-    if (teamsSelectedToRemove.size > 0) {
+    if (teamsSelectedToRemove.value.size > 0) {
         AlertDialog(
-            onDismissRequest = { viewModel.showTeamRemoveDialog.value = false },
+            onDismissRequest = { TeamScreen_ViewModel.onRemoveTeamsChanged(teamsSelectedToRemove.value, false) },
             buttons = {
                 Row(
                     modifier = Modifier
@@ -431,8 +544,7 @@ fun RemoveTeamsSelected(userID: String) {
                 ) {
                     Button(
                         onClick = {
-                            viewModel.showTeamRemoveDialog.value = false
-                            viewModel.teamsSelectedToRemove.clear()
+                            TeamScreen_ViewModel.onRemoveTeamsChanged(emptyList(), false)
                         },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = myOrangehigh,
@@ -448,19 +560,22 @@ fun RemoveTeamsSelected(userID: String) {
                     Button(
                         onClick = {
                             val db = FirebaseFirestore.getInstance()
-                            val collectionRef = db.collection("Usuarios").document(userID).collection("Equipos")
+                            val collectionRef =
+                                db.collection("Usuarios")
+                                    .document(userID)
+                                    .collection("Proyectos")
+                                    .document(projectId.value)
+                                    .collection("Teams")
 
-                            for (team in teamsSelectedToRemove) {
-                                collectionRef.document("$team").delete()
+                            for (team in teamsSelectedToRemove.value) {
+                                collectionRef.document("${team.id}").delete()
                             }
-                            viewModel.teamsList.value = teamsList.value.filter { d -> !teamsSelectedToRemove.contains(d.id) }
-                            viewModel.showTeamRemoveDialog.value = false
+                            TeamScreen_ViewModel.onRemoveTeamsChanged(emptyList(), false)
                             Toast.makeText(
                                 context,
-                                "Equipos removidos",
+                                "Los Equipos fueron removidos correctamente",
                                 Toast.LENGTH_LONG
                             ).show()
-                            viewModel.teamsSelectedToRemove.clear()
                         },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = myOrangehigh,
@@ -561,22 +676,31 @@ fun RegisterCardTeam(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                if(name.value.length < 6) {
+                if (name.value.length < 6) {
                     Text(
                         text = "* Requerido",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light, color = myBlue),
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.Light,
+                            color = myBlue
+                        ),
                         modifier = Modifier.offset(x = 20.dp)
                     )
-                } else if(nameRepliqued.value === true) {
+                } else if (nameRepliqued.value === true) {
                     Text(
                         text = "* Nombre duplicado",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light, color = myBlue),
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.Light,
+                            color = myBlue
+                        ),
                         modifier = Modifier.offset(x = 20.dp)
                     )
                 } else Text(text = " ")
                 Text(
                     text = "${name.value.length}/30",
-                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light, color = if(name.value.length > 30) myBlue else Color.Black),
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Light,
+                        color = if (name.value.length > 30) myBlue else Color.Black
+                    ),
                     modifier = Modifier
                         .offset(x = -20.dp)
                 )
@@ -599,7 +723,10 @@ fun RegisterCardTeam(
             )
             Text(
                 text = "${description.value.length}/200",
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light, color = if(description.value.length > 200) myBlue else Color.Black),
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontWeight = FontWeight.Light,
+                    color = if (description.value.length > 200) myBlue else Color.Black
+                ),
                 modifier = Modifier
                     .offset(x = -20.dp)
                     .align(Alignment.End)
@@ -690,7 +817,7 @@ fun addMemberToTeam(teamId: String, memberId: String) {
     }
 }
 
-class TeamViewModel: ViewModel() {
+class TeamViewModel : ViewModel() {
     val teamsList = mutableStateOf(emptyList<Teams>())
     val teamsSelectedToRemove = mutableStateListOf<String>()
     val showTeamRemoveDialog = mutableStateOf(false)

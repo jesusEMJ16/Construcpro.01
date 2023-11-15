@@ -38,8 +38,6 @@ class AuthRepository(private val auth: FirebaseAuth) {
                     }
                     projectsList.value = loadedProjects
                 }
-                .addOnFailureListener { exception ->
-                }
         }
     }
     fun loadProject(projectId: String, project: MutableState<Project?>) {
@@ -62,13 +60,16 @@ class AuthRepository(private val auth: FirebaseAuth) {
         }
     }
 
-    fun loadEquiposFromFirebase(equiposList: MutableState<List<Teams>>) {
+    fun loadEquiposFromFirebase(teamList: MutableState<List<Teams>>, projectId: String) {
         val firestore = FirebaseFirestore.getInstance()
         val user = getCurrentUser()
         if (user != null) {
-            val equiposCollection = firestore.collection("Usuarios")
+            val equiposCollection = firestore
+                .collection("Usuarios")
                 .document(user.uid)
-                .collection("Equipos")
+                .collection("Proyectos")
+                .document(projectId)
+                .collection("Teams")
 
             equiposCollection.get()
                 .addOnSuccessListener { documents ->
@@ -76,31 +77,34 @@ class AuthRepository(private val auth: FirebaseAuth) {
                         val equipo = document.toObject(Teams::class.java)
                         equipo.copy(id = document.id)
                     }
-                    equiposList.value = loadedEquipos
+                    teamList.value = loadedEquipos
                 }
         }
     }
-    fun loadEquipo(equipoID: String, equipo: MutableState<Teams?>) {
+    fun loadEquipo(teamId: String, team: MutableState<Teams?>, projectId: String) {
         val firestore = FirebaseFirestore.getInstance()
         val user = getCurrentUser()
 
         if (user != null) {
-            val equipoDocument = firestore.collection("Usuarios")
+            val equipoDocument = firestore
+                .collection("Usuarios")
                 .document(user.uid)
-                .collection("Equipos")
-                .document(equipoID)
+                .collection("Proyectos")
+                .document(projectId)
+                .collection("Teams")
+                .document(teamId)
 
             equipoDocument.get()
                 .addOnSuccessListener { document ->
                     if (document.exists()) {
                         val loadedEquipo = document.toObject(Teams::class.java)
-                        equipo.value = loadedEquipo
+                        team.value = loadedEquipo
                     } else {
-                        equipo.value = null
+                        team.value = null
                     }
                 }
                 .addOnFailureListener { exception ->
-                    equipo.value = null
+                    team.value = null
                 }
         }
     }

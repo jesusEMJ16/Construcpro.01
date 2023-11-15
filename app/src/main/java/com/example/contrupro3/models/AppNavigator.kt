@@ -7,6 +7,8 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.example.contrupro3.models.ProjectsModels.ProjectsScreen_ViewModel
+import com.example.contrupro3.models.TeamsModels.TeamScreen_ViewModel
 import com.example.contrupro3.ui.theme.Budgets_purchasesScreens.Presupuesto_y_Compras
 import com.example.contrupro3.ui.theme.DocumentsScreens.CardViewDocumentsScreen
 import com.example.contrupro3.ui.theme.DocumentsScreens.DocumentsScreen
@@ -15,7 +17,6 @@ import com.example.contrupro3.ui.theme.ProjectsScreens.CardviewProjectsScreen
 import com.example.contrupro3.ui.theme.ProjectsScreens.ProjectView
 import com.example.contrupro3.ui.theme.RegisterScreens.RegisterPage
 import com.example.contrupro3.ui.theme.SplashScreen.SplashScreen
-import com.example.contrupro3.models.TeamsModels.CardviewTeam_ViewModel
 import com.example.contrupro3.ui.theme.TeamsScreens.TeamsScreen
 import com.example.contrupro3.ui.theme.UserProfileScreens.UserProfilePage
 import com.google.firebase.auth.FirebaseAuth
@@ -48,7 +49,7 @@ fun AppNavigator(
             val arguments = backStackEntry.arguments
             val userID = arguments?.getString("userID")
             if (userID != null) {
-                ProjectView(navController = navController, authRepository = authRepository, userID)
+                ProjectView(navController, authRepository, userID, ProjectsScreen_ViewModel())
             }
         }
         composable("cardview_projects_screen/{userId}/{projectId}") { backStackEntry ->
@@ -59,7 +60,7 @@ fun AppNavigator(
         composable("teams_screen/{userID}") { backStackEntry ->
             val userID = backStackEntry.arguments?.getString("userID")
             if (userID != null) {
-                TeamsScreen(navController, authRepository, userID)
+                TeamsScreen(navController, authRepository, userID, TeamScreen_ViewModel())
             }
         }
         /*composable("cardview_teams_screen/{userId}/{teamId}") { backStackEntry ->

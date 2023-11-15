@@ -4,43 +4,45 @@ import android.util.Patterns
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import com.example.contrupro3.models.ProjectsModels.Project
 
-class CardviewTeam_ViewModel : ViewModel() {
-    private val _team = MutableLiveData<Teams?>()
-    val team: LiveData<Teams?> = _team
+class TeamScreen_ViewModel : ViewModel() {
+    /* ===== [ TeamScreen_ViewModel - Filter Projects ] ===== */
+    private val _filterSelected = MutableLiveData<String>()
+    val filterSelected: LiveData<String> = _filterSelected
+    private val _isFilterAscending = MutableLiveData<Boolean>()
+    val isFilterAscending: LiveData<Boolean> = _isFilterAscending
+    private val _isFilterMenuOpen = MutableLiveData<Boolean>()
+    val isFilterMenuOpen: LiveData<Boolean> = _isFilterMenuOpen
+    private val _isSearchExpanded = MutableLiveData<Boolean>()
+    val isSearchExpanded: LiveData<Boolean> = _isSearchExpanded
+    private val _searchQuery = MutableLiveData<String>()
+    val searchQuery: LiveData<String> = _searchQuery
 
-    private val _name = MutableLiveData<String>()
-    val name: LiveData<String> = _name
-
-    private val _description = MutableLiveData<String>()
-    val description: LiveData<String> = _description
-
-    private val _email = MutableLiveData<String>()
-    val email: LiveData<String> = _email
-
-    private val _enableInviteButton = MutableLiveData<Boolean>()
-    val enableInviteButton: LiveData<Boolean> = _enableInviteButton
-
-    private val _saveNameAndDescriptionButtonEnable = MutableLiveData<Boolean>()
-    val saveNameAndDescriptionButtonEnable: LiveData<Boolean> = _saveNameAndDescriptionButtonEnable
-
-    fun onInfoChanged(name: String, description: String, team: Teams?) {
-        _name.value = name
-        _team.value = team
-        _description.value = description
-        _saveNameAndDescriptionButtonEnable.value =
-            isNameValid(name) || isDescriptionValid(description)
+    fun onFilterSelectionChanged(
+        isFilterMenuOpen: Boolean,
+        isSearchExpanded: Boolean,
+        selectedFilter: String,
+        isFilterAscending: Boolean
+    ) {
+        _isFilterMenuOpen.value = isFilterMenuOpen
+        _isSearchExpanded.value = isSearchExpanded
+        if (!isSearchExpanded) _searchQuery.value = ""
+        _filterSelected.value = selectedFilter
+        _isFilterAscending.value = isFilterAscending
     }
 
-    fun onAddDialogChanged(email: String) {
-        _email.value = email
-        _enableInviteButton.value = Patterns.EMAIL_ADDRESS.matcher(email).matches()
+    /* ===== [ ProjectsScreen - Others ] ===== */
+    private val _teamsSelectedToRemove = MutableLiveData<List<Teams>>()
+    val teamsSelectedToRemove: LiveData<List<Teams>> = _teamsSelectedToRemove
+    private val _showDeleteTeamsDialog = MutableLiveData<Boolean>()
+    val showDeleteTeamsDialog: LiveData<Boolean> = _showDeleteTeamsDialog
+
+    fun onRemoveTeamsChanged(
+        teamsSelectedToRemove: List<Teams>,
+        showDeleteTeamsDialog: Boolean
+    ) {
+        _teamsSelectedToRemove.value = teamsSelectedToRemove
+        _showDeleteTeamsDialog.value = showDeleteTeamsDialog
     }
-
-    private fun isDescriptionValid(description: String): Boolean =
-        description.trim() !== _team.value?.description.toString()
-            .trim() && description.length <= 200
-
-    private fun isNameValid(name: String): Boolean =
-        name.trim() !== _team.value?.name.toString().trim() && name.length >= 6 && name.length <= 30
 }

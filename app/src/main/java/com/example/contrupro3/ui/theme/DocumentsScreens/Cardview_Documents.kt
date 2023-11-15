@@ -89,7 +89,7 @@ fun CardViewDocumentsScreen(
     val DocumentList = remember { mutableStateOf<DocumentModel?>(null) }
     authRepository.loadDocument(documentId, DocumentList)
     val document: DocumentModel? = DocumentList.value
-    val projectsList = remember { mutableStateOf(emptyList<Project>()) }
+    val projectsList = remember { mutableStateOf<List<Project>>(emptyList()) }
     authRepository.loadProjectsFromFirebase(projectsList)
     val viewModel: MyViewModel = viewModel()
     val action by viewModel.action

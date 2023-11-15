@@ -75,7 +75,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.contrupro3.R
 import com.example.contrupro3.models.AuthRepository
-import com.example.contrupro3.models.TeamsModels.CardviewTeam_ViewModel
 import com.example.contrupro3.ui.theme.myBlue
 import com.example.contrupro3.ui.theme.myOrangehigh
 import com.google.firebase.firestore.FirebaseFirestore

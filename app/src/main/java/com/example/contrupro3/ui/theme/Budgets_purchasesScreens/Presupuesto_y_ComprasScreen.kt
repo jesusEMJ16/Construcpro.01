@@ -1,5 +1,6 @@
 package com.example.contrupro3.ui.theme.Budgets_purchasesScreens
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -67,10 +69,12 @@ fun Presupuesto_y_Compras(navController: NavController, authRepository: AuthRepo
     var currentSelection by remember { mutableStateOf("Presupuestos") }
     var isProjectDialogOpen by remember { mutableStateOf(false) }
     var selectedProject by remember { mutableStateOf<Project?>(null) }
+    val projectsList = remember { mutableStateOf<List<Project>>(emptyList()) }
 
+    authRepository.loadProjectsFromFirebase(projectsList)
     Surface(modifier = Modifier.fillMaxSize(), color = Color.White) {
         Column {
-            ProyectoSelectionHeader(authRepository) { projectSel -> selectedProject = projectSel }
+            ProyectoSelectionHeader(projectsList.value!!, authRepository) { projectSel -> selectedProject = projectSel }
 
             if(selectedProject !== null) {
                 TabsRow(currentSelection) { selection -> currentSelection = selection }
@@ -88,14 +92,15 @@ fun Presupuesto_y_Compras(navController: NavController, authRepository: AuthRepo
             }
         }
     }
+
     HamburgueerMenu(navController = navController, authRepository = authRepository)
 }
 @Composable
-fun ProyectoSelectionHeader(authRepository: AuthRepository, SendProjectSelected: (Project?) -> Unit) {
+fun ProyectoSelectionHeader(projectsList: List<Project>, authRepository: AuthRepository, SendProjectSelected: (Project) -> Unit) {
     var isDialogVisible by remember { mutableStateOf(false) }
     var selectedProject by remember { mutableStateOf<Project?>(null) }
 
-    if(selectedProject !== null) SendProjectSelected(selectedProject)
+    if(selectedProject !== null) SendProjectSelected(selectedProject!!)
 
     Box(
         modifier = Modifier
@@ -149,118 +154,108 @@ fun ProyectoSelectionHeader(authRepository: AuthRepository, SendProjectSelected:
 
     if (isDialogVisible) {
         ProjectSearchDialog(
+            projectsList,
             authRepository = authRepository,
-            isDialogOpen = isDialogVisible,
-            closeDialog = { isDialogVisible = false },
-            onProjectSelected = { project -> selectedProject = project }
-        )
+            closeDialog = { isDialogVisible = false }
+        ) { project -> selectedProject = project }
     }
 }
 
 @Composable
 fun ProjectSearchDialog(
+    projectsList: List<Project>,
     authRepository: AuthRepository,
-    isDialogOpen: Boolean,
     closeDialog: () -> Unit,
     onProjectSelected: (Project) -> Unit
 ) {
-    val projectsList = remember { mutableStateOf(emptyList<Project>()) }
-
-    LaunchedEffect(Unit) {
-        authRepository.loadProjectsFromFirebase(projectsList)
-    }
-
-    if (isDialogOpen) {
-        if(projectsList.value.size > 0) {
-            Dialog(onDismissRequest = { closeDialog() }) {
-                Card(
-                    modifier = Modifier.padding(10.dp),
-                    shape = RoundedCornerShape(4.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.White
+    Dialog(onDismissRequest = { closeDialog() }) {
+        Card(
+            modifier = Modifier.padding(10.dp),
+            shape = RoundedCornerShape(4.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color.White
+            )
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(if (projectsList.size > 0) 0.7f else 0.35f)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Lista De Proyectos",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = myBlue
+                )
+                Spacer(modifier = Modifier.height(5.dp))
+                Divider(color = Color.Black, thickness = 1.dp)
+                Spacer(modifier = Modifier.height(10.dp))
+                if (projectsList.size > 0) {
+                    Text(
+                        text = "Estos son los proyectos creados actualmente",
+                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Light),
+                        textAlign = TextAlign.Center
                     )
-                ) {
-                    Column(
+                    LazyColumn(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .fillMaxHeight(if (projectsList.value.size > 0) 0.7f else 0.35f)
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.Top,
-                        horizontalAlignment = Alignment.CenterHorizontally
+                            .fillMaxHeight(0.7f),
+                        userScrollEnabled = true
                     ) {
-                        Text(
-                            text = "Lista De Proyectos",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = myBlue
-                        )
-                        Spacer(modifier = Modifier.height(5.dp))
-                        Divider(color = Color.Black, thickness = 1.dp)
-                        Spacer(modifier = Modifier.height(10.dp))
-                        if (projectsList.value.size > 0) {
-                            Text(
-                                text = "Estos son los proyectos creados actualmente",
-                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Light),
-                                textAlign = TextAlign.Center
-                            )
-                        } else {
-                            Text(
-                                text = "No hay proyectos creados",
-                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Light),
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                        if (projectsList.value.size > 0) {
-                            LazyColumn(
+                        items(projectsList.sortedBy { it.projectName }) { proyect ->
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Divider(color = Color.LightGray, thickness = 1.dp)
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .fillMaxHeight(0.7f),
-                                userScrollEnabled = true
-                            ) {
-                                items(projectsList.value.sortedBy { it.projectName }) { proyect ->
-                                    Spacer(modifier = Modifier.height(10.dp))
-                                    Divider(color = Color.LightGray, thickness = 1.dp)
-                                    Spacer(modifier = Modifier.height(10.dp))
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .background(Color.White)
-                                            .clickable {
-                                                onProjectSelected(proyect!!)
-                                                closeDialog()
-                                            },
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically,
-                                    ) {
-                                        Text(
-                                            text = "${proyect.projectName}",
-                                            modifier = Modifier.offset(x = 10.dp),
-                                            style = MaterialTheme.typography.bodyMedium
-                                        )
-                                    }
-                                }
-                            }
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
+                                    .background(Color.White)
+                                    .clickable {
+                                        onProjectSelected(proyect!!)
+                                        closeDialog()
+                                    },
+                                horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.End
                             ) {
-                                Button(
-                                    onClick = { closeDialog() },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = myOrangehigh,
-                                        contentColor = Color.White
-                                    ),
-                                    modifier = Modifier.padding(start = 0.dp, top = 5.dp, end = 5.dp, bottom = 0.dp)
-                                ) {
-                                    Text(
-                                        text = "Cerrar",
-                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
-                                    )
-                                }
+                                Text(
+                                    text = "${proyect.projectName}",
+                                    modifier = Modifier.offset(x = 10.dp),
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
                             }
                         }
                     }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        Button(
+                            onClick = { closeDialog() },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = myOrangehigh,
+                                contentColor = Color.White
+                            ),
+                            modifier = Modifier
+                                .width(100.dp)
+                                .offset(y = 20.dp)
+                                .padding(start = 0.dp, top = 5.dp, end = 5.dp, bottom = 0.dp)
+                        ) {
+                            Text(
+                                text = "Cerrar",
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
+                            )
+                        }
+                    }
+                } else {
+                    Text(
+                        text = "No hay proyectos creados",
+                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Light),
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
         }

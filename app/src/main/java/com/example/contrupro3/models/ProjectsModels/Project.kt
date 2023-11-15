@@ -10,11 +10,7 @@ data class Project(
     val creatorUID: String = "",
     var description: String = "",
     val startDate: String = "",
-    val endDate: String = "",
-    val documents: List<String> = emptyList(),
-    val tasks: List<String> = emptyList(),
-    val teams: List<String> = emptyList(),
-    val members: List<String> = emptyList()
+    val endDate: String = ""
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
         parcel.readString()!!,
@@ -23,11 +19,7 @@ data class Project(
         parcel.readString()!!,
         parcel.readString()!!,
         parcel.readString()!!,
-        parcel.readString()!!,
-        parcel.createStringArrayList() ?: emptyList(),
-        parcel.createStringArrayList() ?: emptyList(),
-        parcel.createStringArrayList() ?: emptyList(),
-        parcel.createStringArrayList() ?: emptyList()
+        parcel.readString()!!
     )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
@@ -38,10 +30,6 @@ data class Project(
         parcel.writeString(description)
         parcel.writeString(startDate)
         parcel.writeString(endDate)
-        parcel.writeStringList(documents)
-        parcel.writeStringList(tasks)
-        parcel.writeStringList(teams)
-        parcel.writeStringList(members)
     }
 
     override fun describeContents(): Int {
