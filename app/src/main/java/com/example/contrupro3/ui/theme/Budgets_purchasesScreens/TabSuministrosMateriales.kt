@@ -41,10 +41,8 @@ import androidx.navigation.NavController
 import com.example.contrupro3.models.AuthRepository
 import com.example.contrupro3.models.BudgetModels.Materialmodel
 import com.example.contrupro3.models.BudgetModels.SuministrosViewModel
-import com.example.contrupro3.ui.theme.Menu.HamburgueerMenu
 import com.example.contrupro3.ui.theme.myBlue
-import com.google.android.filament.Material
-import com.google.firebase.auth.FirebaseAuth
+
 
 @Composable
 fun SuministrosScreen(viewModel: SuministrosViewModel, authRepository: AuthRepository) {

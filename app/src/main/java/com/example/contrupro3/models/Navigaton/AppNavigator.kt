@@ -1,4 +1,4 @@
-package com.example.contrupro3.models
+package com.example.contrupro3.models.Navigaton
 
 import android.os.Build
 import androidx.annotation.RequiresApi
@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.example.contrupro3.models.AuthRepository
 import com.example.contrupro3.models.ProjectsModels.ProjectsScreen_ViewModel
 import com.example.contrupro3.models.TeamsModels.TeamScreen_ViewModel
 import com.example.contrupro3.ui.theme.Budgets_purchasesScreens.Presupuesto_y_Compras
