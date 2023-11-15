@@ -57,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import com.example.contrupro3.models.AuthRepository
+import com.example.contrupro3.models.BudgetModels.SuministrosViewModel
 import com.example.contrupro3.models.ProjectsModels.Project
 import com.example.contrupro3.ui.theme.Menu.HamburgueerMenu
 import com.example.contrupro3.ui.theme.lightblue
@@ -82,7 +83,7 @@ fun Presupuesto_y_Compras(navController: NavController, authRepository: AuthRepo
                     when (currentSelection) {
                         "Resumen del Presupuesto" -> ResumenScreen()
                         "Gestión de Compras" -> ComprasScreen(authRepository, userId, selectedProject!!)
-                        "Gestión de Suministros y Materiales" -> SuministrosScreen()
+                        "Gestión de Suministros y Materiales" -> SuministrosScreen(SuministrosViewModel(), authRepository)
                         "Provedores" -> ProveedoresScreen()
                         "Especificaciones Técnicas" -> EspecificacionesScreen()
                         "Criterios de Cuantificación" -> CriteriosScreen()
