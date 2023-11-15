@@ -37,6 +37,7 @@ class ProjectsScreen_ViewModel : ViewModel() {
     val showDeleteProyectsDialog: LiveData<Boolean> = _showDeleteProyectsDialog
 
 
+
     fun onRemoveProjectsChanged(
         projectsSelectedToRemove: List<Project>,
         showDeleteProjectsDialog: Boolean

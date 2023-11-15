@@ -10,17 +10,22 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Divider
 import androidx.compose.material.Icon
+import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Surface
-import androidx.compose.material.TextField
+import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AssuredWorkload
 import androidx.compose.material.icons.filled.Checklist
@@ -30,8 +35,10 @@ import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.RealEstateAgent
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -45,52 +52,55 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.contrupro3.models.AuthRepository
-import com.example.contrupro3.models.BudgetModels.SuministrosViewModel
 import com.example.contrupro3.models.ProjectsModels.Project
 import com.example.contrupro3.ui.theme.Menu.HamburgueerMenu
 import com.example.contrupro3.ui.theme.lightblue
 import com.example.contrupro3.ui.theme.myBlue
+import com.example.contrupro3.ui.theme.myOrangehigh
 
 @Composable
-fun Presupuesto_y_Compras(navController: NavController, authRepository: AuthRepository) {
+fun Presupuesto_y_Compras(navController: NavController, authRepository: AuthRepository, userId: String) {
     // Variable para almacenar la selección actual (Presupuestos o Compras)
     var currentSelection by remember { mutableStateOf("Presupuestos") }
     var isProjectDialogOpen by remember { mutableStateOf(false) }
-    val suministrosViewModel = viewModel<SuministrosViewModel>() // Crea una instancia del ViewModel
+    var selectedProject by remember { mutableStateOf<Project?>(null) }
+    val projectsList = remember { mutableStateOf<List<Project>>(emptyList()) }
 
+    authRepository.loadProjectsFromFirebase(projectsList)
     Surface(modifier = Modifier.fillMaxSize(), color = Color.White) {
         Column {
-            ProyectoSelectionHeader(authRepository)
-            // Barra de navegación/tabulación
+            ProyectoSelectionHeader(projectsList.value!!, authRepository) { projectSel -> selectedProject = projectSel }
 
-            TabsRow(currentSelection) { selection ->
-                currentSelection = selection
-            }
-            // Contenido principal basado en la selección
-            Box(modifier = Modifier.weight(1f)) {
-                when (currentSelection) {
-                    "Resumen del Presupuesto" -> ResumenScreen()
-                    "Gestión de Compras" -> ComprasScreen(authRepository, userId = "jesusprueba", selectedProject = null)
-                    "Gestión de Suministros y Materiales" -> SuministrosScreen(suministrosViewModel, authRepository)
-                    "Provedores" -> ProveedoresScreen()
-                    "Especificaciones Técnicas" -> EspecificacionesScreen()
-                    "Criterios de Cuantificación" -> CriteriosScreen()
-                    "Historial y Reportes" -> HistorialScreen()
+            if(selectedProject !== null) {
+                TabsRow(currentSelection) { selection -> currentSelection = selection }
+                Box(modifier = Modifier.weight(1f)) {
+                    when (currentSelection) {
+                        "Resumen del Presupuesto" -> ResumenScreen()
+                        "Gestión de Compras" -> ComprasScreen(authRepository, userId, selectedProject!!)
+                        "Gestión de Suministros y Materiales" -> SuministrosScreen()
+                        "Provedores" -> ProveedoresScreen()
+                        "Especificaciones Técnicas" -> EspecificacionesScreen()
+                        "Criterios de Cuantificación" -> CriteriosScreen()
+                        "Historial y Reportes" -> HistorialScreen()
+                    }
                 }
             }
         }
     }
+
     HamburgueerMenu(navController = navController, authRepository = authRepository)
 }
 @Composable
-fun ProyectoSelectionHeader(authRepository: AuthRepository) {
+fun ProyectoSelectionHeader(projectsList: List<Project>, authRepository: AuthRepository, SendProjectSelected: (Project) -> Unit) {
     var isDialogVisible by remember { mutableStateOf(false) }
-    var selectedProject by remember { mutableStateOf("") }
+    var selectedProject by remember { mutableStateOf<Project?>(null) }
+
+    if(selectedProject !== null) SendProjectSelected(selectedProject!!)
 
     Box(
         modifier = Modifier
@@ -109,143 +119,149 @@ fun ProyectoSelectionHeader(authRepository: AuthRepository) {
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
             )
             Spacer(modifier = Modifier.height(5.dp))
-            //Divider(color = Color.LightGray, thickness = 1.dp)
             Spacer(modifier = Modifier.height(10.dp))
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                TextField(
-                    value = selectedProject,
+                OutlinedTextField(
+                    value = selectedProject?.projectName ?: "",
                     onValueChange = { newText ->
-                        selectedProject = newText
+                        selectedProject?.projectName = newText
                     },
                     interactionSource = remember { MutableInteractionSource() }
                         .also { interactionSource ->
                             LaunchedEffect(interactionSource) {
                                 interactionSource.interactions.collect {
                                     if (it is PressInteraction.Release) {
-                                        Log.d("MiApp", "TextField clicked!")
                                         isDialogVisible = true
                                     }
                                 }
                             }
                         },
-                    label = { Text("Selecciona tu proyecto") }
+                    label = { Text("Selecciona tu proyecto") },
+                    colors = TextFieldDefaults.outlinedTextFieldColors(
+                        unfocusedBorderColor = Color.Transparent,
+                        backgroundColor = Color(0x79D8D8D8),
+                        focusedBorderColor = Color(0x79A5A5A5),
+                        cursorColor = Color.Transparent,
+                        disabledBorderColor = Color.Transparent,
+                    )
                 )
             }
         }
     }
 
     if (isDialogVisible) {
-        Log.d("MiApp", "Rendering dialog!")
         ProjectSearchDialog(
+            projectsList,
             authRepository = authRepository,
-            isDialogOpen = isDialogVisible,
-            closeDialog = {
-                isDialogVisible = false
-                Log.d("MiApp", "Dialog dismissed!")
-            },
-            onProjectSelected = { projectId, projectName ->
-                selectedProject = projectName
-                Log.d("MiApp", "Project selected: $projectName with ID: $projectId")
-            }
-        )
+            closeDialog = { isDialogVisible = false }
+        ) { project -> selectedProject = project }
     }
 }
 
 @Composable
 fun ProjectSearchDialog(
+    projectsList: List<Project>,
     authRepository: AuthRepository,
-    isDialogOpen: Boolean,
     closeDialog: () -> Unit,
-    onProjectSelected: (String, String) -> Unit
+    onProjectSelected: (Project) -> Unit
 ) {
-    val projectsList = remember { mutableStateOf(emptyList<Project>()) }
-    var selectedProjectId by remember { mutableStateOf<String?>(null) }
-    var selectedProjectName by remember { mutableStateOf<String?>(null) }
-
-    LaunchedEffect(Unit) {
-        authRepository.loadProjectsFromFirebase(projectsList)
-    }
-
-    if (isDialogOpen) {
-        Dialog(onDismissRequest = closeDialog) {
-            Box(
+    Dialog(onDismissRequest = { closeDialog() }) {
+        Card(
+            modifier = Modifier.padding(10.dp),
+            shape = RoundedCornerShape(4.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color.White
+            )
+        ) {
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)
-                    .background(Color.White, RoundedCornerShape(8.dp))
+                    .fillMaxHeight(if (projectsList.size > 0) 0.7f else 0.35f)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp)
-                ) {
+                Text(
+                    text = "Lista De Proyectos",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = myBlue
+                )
+                Spacer(modifier = Modifier.height(5.dp))
+                Divider(color = Color.Black, thickness = 1.dp)
+                Spacer(modifier = Modifier.height(10.dp))
+                if (projectsList.size > 0) {
                     Text(
-                        text = "Añadir Proyectos",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier
-                            .align(Alignment.CenterHorizontally)
-                            .padding(bottom = 16.dp)
+                        text = "Estos son los proyectos creados actualmente",
+                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Light),
+                        textAlign = TextAlign.Center
                     )
-
                     LazyColumn(
                         modifier = Modifier
-                            .weight(1f)
                             .fillMaxWidth()
+                            .fillMaxHeight(0.7f),
+                        userScrollEnabled = true
                     ) {
-                        items(projectsList.value.sortedBy { it.projectName }) { project ->
+                        items(projectsList.sortedBy { it.projectName }) { proyect ->
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Divider(color = Color.LightGray, thickness = 1.dp)
+                            Spacer(modifier = Modifier.height(10.dp))
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
+                                    .background(Color.White)
                                     .clickable {
-                                        selectedProjectId = project.id.toString()
-                                        selectedProjectName = project.projectName
+                                        onProjectSelected(proyect!!)
+                                        closeDialog()
                                     },
                                 horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                                verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                Text(text = "${project.projectName}")
-                                RadioButton(
-                                    selected = selectedProjectId == project.id.toString(),
-                                    onClick = {
-                                        selectedProjectId = project.id.toString()
-                                        selectedProjectName = project.projectName
-                                    }
+                                Text(
+                                    text = "${proyect.projectName}",
+                                    modifier = Modifier.offset(x = 10.dp),
+                                    style = MaterialTheme.typography.bodyMedium
                                 )
                             }
                         }
                     }
-
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 16.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.End
                     ) {
                         Button(
-                            onClick = closeDialog,
+                            onClick = { closeDialog() },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = myOrangehigh,
+                                contentColor = Color.White
+                            ),
+                            modifier = Modifier
+                                .width(100.dp)
+                                .offset(y = 20.dp)
+                                .padding(start = 0.dp, top = 5.dp, end = 5.dp, bottom = 0.dp)
                         ) {
-                            Text(text = "Cancelar")
-                        }
-                        Button(
-                            onClick = {
-                                if (selectedProjectId != null && selectedProjectName != null) {
-                                    onProjectSelected(selectedProjectId!!, selectedProjectName!!)
-                                    closeDialog()
-                                }
-                            },
-                            enabled = selectedProjectId != null,
-                        ) {
-                            Text(text = "Seleccionar")
+                            Text(
+                                text = "Cerrar",
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
+                            )
                         }
                     }
+                } else {
+                    Text(
+                        text = "No hay proyectos creados",
+                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Light),
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
         }
     }
 }
+
 @Composable
 fun TabsRow(currentSelection: String, onTabSelected: (String) -> Unit) {
     val tabs = listOf(
