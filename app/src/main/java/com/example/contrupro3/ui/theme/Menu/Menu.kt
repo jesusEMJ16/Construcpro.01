@@ -167,7 +167,7 @@ fun HamburgueerMenu(navController: NavController, authRepository: AuthRepository
             Crossfade(targetState = isDrawerOpen, label = "") { state ->
                 if (state) {
                     Icon(
-                        painterResource(R.drawable.back_icon),
+                        painterResource(R.drawable.menu_back),
                         contentDescription = "Close Menu",
                         modifier = Modifier.size(50.dp),// Ajusta el tamaño del ícono
                         tint = Color.Unspecified
@@ -207,7 +207,7 @@ fun MenuOpciones(navController: NavController, authRepository: AuthRepository) {
     CreateOptionButton("Reportes y Analiticas", painterResource(R.drawable.analityc_icon)) {
 
     }
-    CreateOptionButton("Prosupuesto y Compras", painterResource(R.drawable.costs_icon)) {
+    CreateOptionButton("Prosupuesto y Compras", painterResource(R.drawable.coston_icon)) {
         navController.navigate("presucom_screen/$userID")
     }
     CreateOptionButton("Planos y Documentacion", painterResource(R.drawable.documents_icon)) {
