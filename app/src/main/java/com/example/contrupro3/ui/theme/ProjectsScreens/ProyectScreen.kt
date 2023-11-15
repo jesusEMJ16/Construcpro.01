@@ -125,6 +125,7 @@ fun ProjectView(
     authRepository.loadProjectsFromFirebase(projectsList)
     val filteredProjects = FilterProjects(projectsList, projectViewModel)
 
+
     Scaffold(
         floatingActionButton = {
             CompositionLocalProvider(

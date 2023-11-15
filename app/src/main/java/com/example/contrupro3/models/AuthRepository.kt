@@ -81,6 +81,7 @@ class AuthRepository(private val auth: FirebaseAuth) {
                 }
         }
     }
+
     fun loadEquipo(teamId: String, team: MutableState<Teams?>, projectId: String) {
         val firestore = FirebaseFirestore.getInstance()
         val user = getCurrentUser()

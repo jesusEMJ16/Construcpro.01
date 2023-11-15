@@ -101,6 +101,7 @@ fun TeamsScreen(
     authRepository.loadEquiposFromFirebase(teamsList, projectId.value)
     val filteredTeams = FilterTeams(teamsList, TeamScreen_ViewModel)
 
+
     Scaffold(
         floatingActionButton = {
             CompositionLocalProvider(
