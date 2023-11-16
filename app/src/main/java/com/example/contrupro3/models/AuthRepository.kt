@@ -22,7 +22,7 @@ class AuthRepository(private val auth: FirebaseAuth) {
     private val _userName = MutableLiveData<String>()
     val userName: LiveData<String> = _userName
 
-    fun loadProjectsFromFirebase(projectsList: MutableState<List<Project>>) {
+    fun loadProjectsFromFirebase(projectsList: MutableState<List<Project>>, onStatusChanged: ((String) -> Unit)?= null) {
         val firestore = FirebaseFirestore.getInstance()
         val user = getCurrentUser()
         if (user != null) {
@@ -36,7 +36,11 @@ class AuthRepository(private val auth: FirebaseAuth) {
                         val project = document.toObject(Project::class.java)
                         project.copy(id = document.id)
                     }
+                    onStatusChanged?.invoke("Loaded")
                     projectsList.value = loadedProjects
+                }
+                .addOnFailureListener {
+                    onStatusChanged?.invoke("Failed")
                 }
         }
     }
@@ -67,7 +71,7 @@ class AuthRepository(private val auth: FirebaseAuth) {
             val equiposCollection = firestore
                 .collection("Usuarios")
                 .document(user.uid)
-                .collection("Proyectos")
+                .collection("Projects")
                 .document(projectId)
                 .collection("Teams")
 
@@ -82,7 +86,6 @@ class AuthRepository(private val auth: FirebaseAuth) {
         }
     }
 
-
     fun loadEquipo(teamId: String, team: MutableState<Teams?>, projectId: String) {
         val firestore = FirebaseFirestore.getInstance()
         val user = getCurrentUser()
@@ -91,7 +94,7 @@ class AuthRepository(private val auth: FirebaseAuth) {
             val equipoDocument = firestore
                 .collection("Usuarios")
                 .document(user.uid)
-                .collection("Proyectos")
+                .collection("Projects")
                 .document(projectId)
                 .collection("Teams")
                 .document(teamId)

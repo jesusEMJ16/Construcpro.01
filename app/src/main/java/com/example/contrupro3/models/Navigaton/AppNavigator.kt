@@ -1,6 +1,7 @@
 package com.example.contrupro3.models.Navigaton
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
@@ -18,6 +19,7 @@ import com.example.contrupro3.ui.theme.ProjectsScreens.CardviewProjectsScreen
 import com.example.contrupro3.ui.theme.ProjectsScreens.ProjectView
 import com.example.contrupro3.ui.theme.RegisterScreens.RegisterPage
 import com.example.contrupro3.ui.theme.SplashScreen.SplashScreen
+import com.example.contrupro3.ui.theme.TeamsScreens.CardViewTeamsScreen
 import com.example.contrupro3.ui.theme.TeamsScreens.TeamsScreen
 import com.example.contrupro3.ui.theme.UserProfileScreens.UserProfilePage
 import com.google.firebase.auth.FirebaseAuth
@@ -31,7 +33,6 @@ fun AppNavigator(
     navController: NavHostController,
     authRepository: AuthRepository,
 ) {
-
     NavHost(navController = navController, startDestination = "splash_screen") {
         composable("splash_screen") {
             SplashScreen(navController, authRepository)
@@ -39,7 +40,6 @@ fun AppNavigator(
         composable("login_screen") {
             LoginPage(navController = navController, authRepository = authRepository)
         }
-
         composable("register_screen") {
             RegisterPage(navController = navController)
         }
@@ -84,8 +84,6 @@ fun AppNavigator(
                 CardViewDocumentsScreen(navController, authRepository, userID, documentId)
             }
         }
-
-
         composable("presucom_screen/{userId}") { backStackEntry ->
             val arguments = backStackEntry.arguments
             val userID = arguments?.getString("userId")

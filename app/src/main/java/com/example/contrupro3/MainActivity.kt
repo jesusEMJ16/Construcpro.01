@@ -2,12 +2,13 @@ package com.example.contrupro3
 
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.navigation.compose.rememberNavController
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
-import com.example.contrupro3.models.Navigaton.AppNavigator
 import com.example.contrupro3.models.AuthRepository
+import com.example.contrupro3.models.Navigaton.AppNavigator
 import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : ComponentActivity() {
@@ -20,7 +21,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             val navController = rememberNavController()
-
             AppNavigator(auth, navController, authRepository)
         }
     }
