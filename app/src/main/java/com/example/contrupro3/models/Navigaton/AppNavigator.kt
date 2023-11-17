@@ -10,6 +10,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.contrupro3.models.AuthRepository
 import com.example.contrupro3.models.ProjectsModels.ProjectsScreen_ViewModel
+import com.example.contrupro3.models.TeamsModels.TeamCard_ViewModel
 import com.example.contrupro3.models.TeamsModels.TeamScreen_ViewModel
 import com.example.contrupro3.ui.theme.Budgets_purchasesScreens.Presupuesto_y_Compras
 import com.example.contrupro3.ui.theme.DocumentsScreens.CardViewDocumentsScreen
@@ -64,11 +65,12 @@ fun AppNavigator(
                 TeamsScreen(navController, authRepository, userID, TeamScreen_ViewModel())
             }
         }
-        /*composable("cardview_teams_screen/{userId}/{teamId}") { backStackEntry ->
+        composable("cardview_teams_screen/{userId}/{teamId}/{projectId}") { backStackEntry ->
             val teamId = backStackEntry.arguments?.getString("teamId") ?: ""
             val userId = backStackEntry.arguments?.getString("userId") ?: ""
-            CardViewTeamsScreen(navController, authRepository, userId, teamId, CardviewTeam_ViewModel())
-        }*/
+            val projectId = backStackEntry.arguments?.getString("projectId") ?: ""
+            CardViewTeamsScreen(navController, authRepository, userId, teamId, projectId, TeamCard_ViewModel())
+        }
         composable("documents_screen/{userID}") { backStackEntry ->
             val arguments = backStackEntry.arguments
             val userID = arguments?.getString("userID")

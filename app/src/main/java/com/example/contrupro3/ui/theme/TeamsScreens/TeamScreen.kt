@@ -208,6 +208,7 @@ fun TeamsScreen(
                             val team = filteredTeams[index]
                             EquipoCard(
                                 team,
+                                project.value?.id.toString(),
                                 navController,
                                 userID,
                                 authRepository,
@@ -522,6 +523,7 @@ fun FiltersDropdowMenu(
 @Composable
 fun EquipoCard(
     team: Teams,
+    projectId: String,
     navController: NavController,
     userID: String,
     authRepository: AuthRepository,
@@ -557,7 +559,7 @@ fun EquipoCard(
                                 teamsSelectedToRemove.value.filter { p -> p !== team },
                                 showDeleteTeamsDialog.value
                             )
-                        } else navController.navigate("cardview_teams_screen/${userID}/${team.id}")
+                        } else navController.navigate("cardview_teams_screen/${userID}/${team.id}/$projectId")
                     },
                     onLongClick = {
                         if (!teamsSelectedToRemove.value.contains(team)) {

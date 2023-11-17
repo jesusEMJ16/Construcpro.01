@@ -7,7 +7,6 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,28 +18,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.AlertDialog
 import androidx.compose.material.Divider
-import androidx.compose.material.LocalContentColor
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Link
-import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -49,39 +38,30 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.example.contrupro3.R
 import com.example.contrupro3.models.AuthRepository
+import com.example.contrupro3.models.TeamsModels.TeamCard_ViewModel
+import com.example.contrupro3.models.TeamsModels.Teams
 import com.example.contrupro3.ui.theme.myBlue
 import com.example.contrupro3.ui.theme.myOrangehigh
 import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
-/*
+
 @RequiresApi(Build.VERSION_CODES.O)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @ExperimentalMaterial3Api
@@ -91,184 +71,61 @@ fun CardViewTeamsScreen(
     authRepository: AuthRepository,
     userId: String,
     teamId: String,
-    cardviewteamViewmodel: CardviewTeam_ViewModel
+    projectId: String,
+    TeamCard_ViewModel: TeamCard_ViewModel
 ) {
-    val teamsList = remember { mutableStateOf<Equipos?>(null) }
-    val projectsList = remember { mutableStateOf(emptyList<Project>()) }
+    val team = remember { mutableStateOf<Teams?>(null) }
+    authRepository.loadEquipo(teamId, team, projectId)
 
-    LaunchedEffect(Unit) {
-        authRepository.loadEquipo(teamId, teamsList)
-        authRepository.loadProjectsFromFirebase(projectsList)
-    }
-
-    if (teamsList.value === null) {
-        Box(modifier = Modifier.fillMaxSize()) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column {
+                            Text("${team.value?.name}", style = MaterialTheme.typography.titleLarge)
+                            Text(
+                                team.value?.creatorName ?: "",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+                },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(
+                            Icons.Default.ArrowBack,
+                            contentDescription = null,
+                            tint = myBlue
+                        )
+                    }
+                }
+            )
         }
-    } else {
-        val viewModel: CardViewTeamsViewModel = viewModel()
-        val team: Equipos? = teamsList.value
-        val teamName by viewModel.teamName
-        val action by viewModel.action
-        val showProjectsButtons = remember { mutableStateOf(false) }
-        val currentProjectsFiltered =
-            projectsList.value.filter { p -> team?.projectsLinked!!.contains(p.id.toString()) }
-        viewModel.teamName.value = team?.name.toString()
-        viewModel.teamDescription.value = team?.description.toString()
-        viewModel.currentProjects.value = currentProjectsFiltered
-
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = {
-                        Row(
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Column {
-                                Text(teamName, style = MaterialTheme.typography.titleLarge)
-                                Text(
-                                    team?.creatorName ?: "",
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            }
-                            IconButton(
-                                onClick = {
-                                    showProjectsButtons.value = !showProjectsButtons.value
-                                },
-                                modifier = Modifier.padding(5.dp)
-                            ) {
-                                if (showProjectsButtons.value) {
-                                    Icon(
-                                        Icons.Default.Link,
-                                        contentDescription = null,
-                                        tint = myBlue,
-                                        modifier = Modifier
-                                            .size(30.dp)
-                                            .rotate(-45f)
-                                    )
-                                } else Icon(
-                                    Icons.Default.Link,
-                                    contentDescription = null,
-                                    tint = myBlue,
-                                    modifier = Modifier
-                                        .size(30.dp)
-                                )
-                            }
-                        }
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = { navController.popBackStack() }) {
-                            Icon(
-                                Icons.Default.ArrowBack,
-                                contentDescription = null,
-                                tint = myBlue
-                            )
-                        }
-                    }
-                )
-            },
-            floatingActionButton = {
-                CompositionLocalProvider(
-                    LocalContentColor provides colorResource(id = R.color.white)
-                ) {
-                    if (showProjectsButtons.value === true) {
-                        Row {
-                            FloatingActionButton(
-                                onClick = {
-                                    if (showProjectsButtons.value) viewModel.action.value =
-                                        "remove projects"
-                                },
-                                containerColor = myOrangehigh
-                            ) {
-                                androidx.compose.material.Icon(
-                                    Icons.Default.Delete,
-                                    contentDescription = "Eliminar",
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(16.dp))
-                            FloatingActionButton(
-                                onClick = {
-                                    if (showProjectsButtons.value) viewModel.action.value =
-                                        "list projects"
-                                },
-                                containerColor = myOrangehigh
-                            ) {
-                                androidx.compose.material.Icon(
-                                    Icons.Default.List,
-                                    contentDescription = "Ver lista"
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(16.dp))
-                            FloatingActionButton(
-                                onClick = {
-                                    if (showProjectsButtons.value) viewModel.action.value =
-                                        "add projects"
-                                },
-                                containerColor = myOrangehigh
-                            ) {
-                                androidx.compose.material.Icon(
-                                    Icons.Default.Add,
-                                    contentDescription = "Añadir"
-                                )
-                            }
-                        }
-                    }
-                }
-            }
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
         ) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .offset(y = 60.dp),
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                when (action) {
-                    "add projects" -> {
-                        Dialog(onDismissRequest = { viewModel.action.value = "" }) {
-                            AddProyects(
-                                navController,
-                                authRepository,
-                                userId,
-                                team?.id.toString(),
-                                projectsList
-                            )
-                        }
-                    }
-
-                    "remove projects" -> {
-                        Dialog(onDismissRequest = { viewModel.action.value = "" }) {
-                            RemoveProjects(
-                                navController,
-                                authRepository,
-                                userId,
-                                team?.id.toString(),
-                                projectsList
-                            )
-                        }
-                    }
-
-                    "list projects" -> {
-                        Dialog(onDismissRequest = { viewModel.action.value = "" }) {
-                            ListProjects(navController, authRepository, userId)
-                        }
-                    }
-                }
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .offset(y = 60.dp),
-                    verticalArrangement = Arrangement.Top,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Spacer(modifier = Modifier.height(5.dp))
-                    Divider(
-                        color = Color.LightGray,
-                        thickness = 1.dp,
-                        modifier = Modifier.padding(horizontal = 10.dp)
-                    )
-                    InformationCard(navController, authRepository, userId, team)
-                    Spacer(modifier = Modifier.height(10.dp))
-                    MembersCard(navController, authRepository, userId, team)
-                }
+                Spacer(modifier = Modifier.height(5.dp))
+                Divider(
+                    color = Color.LightGray,
+                    thickness = 1.dp,
+                    modifier = Modifier.padding(horizontal = 10.dp)
+                )
+                InformationCard(navController, authRepository, userId, projectId, team)
+                Spacer(modifier = Modifier.height(10.dp))
+                MembersCard(navController, authRepository, userId, projectId, team)
             }
         }
     }
@@ -279,7 +136,8 @@ private fun InformationCard(
     navController: NavHostController,
     authRepository: AuthRepository,
     userId: String,
-    team: Equipos?
+    projectId: String,
+    team: MutableState<Teams?>
 ) {
     val viewModel: CardViewTeamsViewModel = viewModel()
     val teamName by viewModel.teamName
@@ -436,8 +294,12 @@ private fun InformationCard(
                 onClick = {
                     val db = FirebaseFirestore.getInstance()
                     val collection =
-                        db.collection("Usuarios").document(userId).collection("Equipos")
-                            .document(team?.id.toString())
+                        db.collection("Usuarios")
+                            .document(userId)
+                            .collection("Projects")
+                            .document(projectId)
+                            .collection("Teams")
+                            .document(team.value?.id.toString())
 
                     if (name !== teamName) {
                         viewModel.teamName.value = name
@@ -474,7 +336,8 @@ private fun MembersCard(
     navController: NavHostController,
     authRepository: AuthRepository,
     userId: String,
-    team: Equipos?
+    projectId: String,
+    team: MutableState<Teams?>
 ) {
     Box(modifier = Modifier.fillMaxWidth()) {
         Column(
@@ -592,476 +455,11 @@ fun InvitarDialog(
     )
 }
 
-@SuppressLint("UnrememberedMutableState")
-@Composable
-fun AddProyects(
-    navController: NavHostController,
-    authRepository: AuthRepository,
-    userId: String,
-    teamId: String,
-    projectsList: MutableState<List<Project>>
-) {
-    val proyectsSelected = remember { mutableStateListOf<String>() }
-    val viewModel: CardViewTeamsViewModel = viewModel()
-    val context = LocalContext.current
-    val currentProjects by viewModel.currentProjects
-    val teamsList = remember { mutableStateOf<Equipos?>(null) }
-    authRepository.loadEquipo(teamId, teamsList)
-    val team: Equipos? = teamsList.value
-
-    androidx.compose.material.Card(
-        modifier = Modifier.padding(10.dp),
-        shape = RoundedCornerShape(4.dp),
-        elevation = 4.dp
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(if (projectsList.value.size > 0) 0.7f else 0.35f)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "Enlazar Proyectos",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = myBlue
-            )
-            Spacer(modifier = Modifier.height(5.dp))
-            Divider(color = Color.Black, thickness = 1.dp)
-            Spacer(modifier = Modifier.height(10.dp))
-            if (projectsList.value.size > 0) {
-                Text(
-                    text = "Selecciona los proyectos que estaran enlazados con este equipo",
-                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Light),
-                    textAlign = TextAlign.Center
-                )
-            } else Text(
-                text = "No hay proyectos creados para enlazar",
-                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Light),
-                textAlign = TextAlign.Center
-            )
-            Spacer(modifier = Modifier.height(15.dp))
-            if (projectsList.value.size > 0) {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .fillMaxHeight(0.8f)
-                ) {
-                    items(projectsList.value.sortedBy { it.projectName }) { proyect ->
-                        var checked by remember { mutableStateOf(proyectsSelected.contains(proyect.id.toString())) }
-                        var isPressed by remember { mutableStateOf(false) }
-                        val scope = rememberCoroutineScope()
-
-                        Spacer(modifier = Modifier.height(5.dp))
-                        Divider(color = Color.LightGray, thickness = 1.dp)
-                        Spacer(modifier = Modifier.height(5.dp))
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(if (isPressed) Color.LightGray else Color.White)
-                                .clickable(
-                                    onClick = {
-                                        if (team?.projectsLinked
-                                                ?.toList()
-                                                ?.contains(proyect.id.toString()) == false
-                                        ) {
-                                            isPressed = true
-                                            checked = !checked
-                                            scope.launch {
-                                                delay(100)
-                                                isPressed = false
-                                            }
-                                        }
-                                    }
-                                ),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "${proyect.projectName}",
-                                modifier = Modifier.offset(x = 10.dp),
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            Checkbox(
-                                enabled = team?.projectsLinked?.toList()
-                                    ?.contains(proyect.id.toString()) != true,
-                                checked = checked,
-                                onCheckedChange = { newChange ->
-                                    if (!proyectsSelected.contains(proyect.id.toString())) proyectsSelected.add(
-                                        proyect.id.toString()
-                                    ) else proyectsSelected.remove(proyect.id.toString())
-                                    checked = newChange
-                                },
-                                colors = CheckboxDefaults.colors(
-                                    uncheckedColor = myBlue,
-                                    checkedColor = myOrangehigh,
-                                    checkmarkColor = Color.White
-                                )
-                            )
-                        }
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.height(5.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.End
-            ) {
-                Button(
-                    onClick = { viewModel.action.value = "" },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = myOrangehigh,
-                        contentColor = Color.White
-                    ),
-                    modifier = Modifier.padding(start = 0.dp, top = 5.dp, end = 5.dp, bottom = 0.dp)
-                ) {
-                    Text(
-                        text = "Cancelar",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
-                    )
-                }
-                Button(
-                    onClick = {
-                        val projectsNameSelected = proyectsSelected
-                        for (d in team?.projectsLinked!!) {
-                            proyectsSelected.add(d)
-                        }
-                        val db = FirebaseFirestore.getInstance()
-                        val collection = db.collection("Usuarios")
-                            .document(userId)
-                            .collection("Equipos")
-                            .document(team.id.toString())
-
-                        try {
-                            viewModel.action.value = ""
-                            collection
-                                .update("projectsLinked", proyectsSelected)
-                                .addOnSuccessListener {
-                                    val projectsFiltered = projectsList.value.filter { p ->
-                                        projectsNameSelected.contains(p.id.toString()) && !currentProjects.contains(
-                                            p
-                                        )
-                                    }
-                                    val newList = currentProjects + projectsFiltered
-                                    viewModel.currentProjects.value = newList
-                                    proyectsSelected.clear()
-                                    Toast.makeText(
-                                        context,
-                                        "Proyectos enlazados correctamente",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                        } catch (e: Exception) {
-                            Toast.makeText(
-                                context,
-                                "Ocurrio un problema al actualizar el equipo.",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    },
-                    enabled = proyectsSelected.size >= 1,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = myOrangehigh,
-                        contentColor = Color.White
-                    ),
-                    modifier = Modifier.padding(
-                        start = 10.dp,
-                        top = 5.dp,
-                        end = 5.dp,
-                        bottom = 0.dp
-                    )
-                ) {
-                    Text(
-                        text = "Agregar",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun RemoveProjects(
-    navController: NavHostController,
-    authRepository: AuthRepository,
-    userID: String,
-    teamId: String?,
-    projectsList: MutableState<List<Project>>
-) {
-    val proyectsSelected = remember { mutableStateListOf<String>() }
-    val viewModel: CardViewTeamsViewModel = viewModel()
-    val context = LocalContext.current
-    val proyectsCurrent = viewModel.currentProjects
-    val teamsList = remember { mutableStateOf<Equipos?>(null) }
-    authRepository.loadEquipo(teamId.toString(), teamsList)
-    val team: Equipos? = teamsList.value
-
-    androidx.compose.material.Card(
-        modifier = Modifier.padding(10.dp),
-        shape = RoundedCornerShape(4.dp),
-        elevation = 4.dp
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(if (proyectsCurrent.value.size > 0) 0.7f else 0.35f)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "Remover Proyectos",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = myBlue
-            )
-            Spacer(modifier = Modifier.height(5.dp))
-            Divider(color = Color.Black, thickness = 1.dp)
-            Spacer(modifier = Modifier.height(10.dp))
-            if (proyectsCurrent.value.size > 0) {
-                Text(
-                    text = "Selecciona los proyectos que seran removidos de este equipo",
-                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Light),
-                    textAlign = TextAlign.Center
-                )
-            } else Text(
-                text = "No hay proyectos enlazados para remover",
-                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Light),
-                textAlign = TextAlign.Center
-            )
-            Spacer(modifier = Modifier.height(15.dp))
-            if (proyectsCurrent.value.size > 0) {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .fillMaxHeight(0.8f)
-                ) {
-                    items(proyectsCurrent.value.sortedBy { it.projectName }) { proyect ->
-                        var checked by remember { mutableStateOf(false) }
-                        var isPressed by remember { mutableStateOf(false) }
-                        val scope = rememberCoroutineScope()
-
-                        Spacer(modifier = Modifier.height(5.dp))
-                        Divider(color = Color.LightGray, thickness = 1.dp)
-                        Spacer(modifier = Modifier.height(5.dp))
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(if (isPressed) Color.LightGray else Color.White)
-                                .clickable(
-                                    onClick = {
-                                        isPressed = true
-                                        checked = !checked
-                                        scope.launch {
-                                            delay(100)
-                                            isPressed = false
-                                        }
-                                    }
-                                ),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "${proyect.projectName}",
-                                modifier = Modifier.offset(x = 10.dp),
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            Checkbox(
-                                checked = checked,
-                                onCheckedChange = { newChange ->
-                                    if (!proyectsSelected.contains(proyect.id.toString())) proyectsSelected.add(
-                                        proyect.id.toString()
-                                    ) else proyectsSelected.remove(proyect.id.toString())
-                                    checked = newChange
-                                },
-                                colors = CheckboxDefaults.colors(
-                                    uncheckedColor = myBlue,
-                                    checkedColor = myOrangehigh,
-                                    checkmarkColor = Color.White
-                                )
-                            )
-                        }
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.height(5.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.End
-            ) {
-                Button(
-                    onClick = { viewModel.action.value = "" },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = myOrangehigh,
-                        contentColor = Color.White
-                    ),
-                    modifier = Modifier.padding(start = 0.dp, top = 5.dp, end = 5.dp, bottom = 0.dp)
-                ) {
-                    Text(
-                        text = "Cancelar",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
-                    )
-                }
-                Button(
-                    onClick = {
-                        val newList = proyectsCurrent.value.filter {
-                            proyectsSelected.contains(it.id.toString()) === false
-                        }
-                        val db = FirebaseFirestore.getInstance()
-                        val collection = db.collection("Usuarios")
-                            .document(userID)
-                            .collection("Equipos")
-                            .document(team?.id.toString())
-
-                        try {
-                            collection
-                                .update("projectsLinked", newList.map {
-                                    it.id.toString()
-                                })
-                                .addOnSuccessListener {
-                                    viewModel.currentProjects.value = newList
-                                    proyectsSelected.clear()
-                                    viewModel.action.value = ""
-                                    Toast.makeText(
-                                        context,
-                                        "Proyectos removidos correctamente",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                        } catch (e: Exception) {
-                            Toast.makeText(
-                                context,
-                                "Ocurrio un problema al actualizar el equipo.",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    },
-                    enabled = proyectsSelected.size >= 1,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = myOrangehigh,
-                        contentColor = Color.White
-                    ),
-                    modifier = Modifier.padding(
-                        start = 10.dp,
-                        top = 5.dp,
-                        end = 5.dp,
-                        bottom = 0.dp
-                    )
-                ) {
-                    Text(
-                        text = "Eliminar",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
-                    )
-                }
-            }
-        }
-    }
-}
-
-@SuppressLint("UnrememberedMutableState")
-@Composable
-fun ListProjects(
-    navController: NavHostController,
-    authRepository: AuthRepository,
-    userId: String
-) {
-    val viewModel: CardViewTeamsViewModel = viewModel()
-    val currentProjects by viewModel.currentProjects
-
-    androidx.compose.material.Card(
-        modifier = Modifier.padding(10.dp),
-        shape = RoundedCornerShape(4.dp),
-        elevation = 4.dp
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(if (currentProjects.size > 0) 0.7f else 0.35f)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "Lista De Proyectos",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = myBlue
-            )
-            Spacer(modifier = Modifier.height(5.dp))
-            Divider(color = Color.Black, thickness = 1.dp)
-            Spacer(modifier = Modifier.height(10.dp))
-            if (currentProjects.size > 0) {
-                Text(
-                    text = "Estos son los proyectos enlazados actualmente",
-                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Light),
-                    textAlign = TextAlign.Center
-                )
-            } else {
-                Text(
-                    text = "No hay proyectos enlazados actualmente",
-                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Light),
-                    textAlign = TextAlign.Center
-                )
-            }
-            if (currentProjects.size > 0) {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .fillMaxHeight(0.8f)
-                ) {
-                    items(currentProjects.sortedBy { it.projectName }) { proyect ->
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Divider(color = Color.LightGray, thickness = 1.dp)
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(Color.White),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "${proyect.projectName}",
-                                modifier = Modifier.offset(x = 10.dp),
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        }
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.height(5.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.End
-            ) {
-                Button(
-                    onClick = { viewModel.action.value = "" },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = myOrangehigh,
-                        contentColor = Color.White
-                    ),
-                    modifier = Modifier.padding(start = 0.dp, top = 5.dp, end = 5.dp, bottom = 0.dp)
-                ) {
-                    Text(
-                        text = "Cerrar",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
-                    )
-                }
-            }
-        }
-    }
-}
-
 class CardViewTeamsViewModel : ViewModel() {
     val teamName = mutableStateOf("")
     val teamDescription = mutableStateOf("")
     val membersList = mutableListOf<String>()
     val nameEnabled = mutableStateOf(false)
     val descriptionEnabled = mutableStateOf(false)
-    val currentProjects = mutableStateOf(emptyList<Project>())
     val action = mutableStateOf("")
 }
-*/
