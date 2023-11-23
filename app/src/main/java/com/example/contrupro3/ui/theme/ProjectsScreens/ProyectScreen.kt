@@ -439,7 +439,9 @@ fun RemoveProjectsSelected(userID: String, projectViewModel: ProjectsScreen_View
                         onClick = {
                             val db = FirebaseFirestore.getInstance()
                             val collection =
-                                db.collection("Usuarios").document(userID).collection("Proyectos")
+                                db.collection("Users")
+                                    .document(userID)
+                                    .collection("Projects")
 
                             for (proyect in projectsSelectedToRemove.value) {
                                 collection.document(proyect.id.toString()).delete()
@@ -882,9 +884,9 @@ fun RegisterCard(
                             )
 
                             val db = FirebaseFirestore.getInstance()
-                            val collectionReference = db.collection("Usuarios")
+                            val collectionReference = db.collection("Users")
                                 .document(loggedInUserUID)
-                                .collection("Proyectos")
+                                .collection("Projects")
 
                             collectionReference
                                 .add(newDoc)

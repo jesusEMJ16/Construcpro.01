@@ -3,15 +3,19 @@ package com.example.contrupro3.models.TeamsModels
 import android.os.Parcel
 import android.os.Parcelable
 
-data class Teams(
+data class TeamMember(
     val id: String? = null,
     val name: String? = "",
-    val creatorName: String? = "",
-    val creatorUID: String? = "",
-    val description: String? = ""
+    val lastName: String? = "",
+    val email: String? = "",
+    val role: String? = "",
+    val phoneNumber: String? = "",
+    val inviteStatus: String? = ""
 
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
+        parcel.readString(),
+        parcel.readString(),
         parcel.readString(),
         parcel.readString(),
         parcel.readString(),
@@ -22,9 +26,11 @@ data class Teams(
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeString(id)
         parcel.writeString(name)
-        parcel.writeString(creatorName)
-        parcel.writeString(creatorUID)
-        parcel.writeString(description)
+        parcel.writeString(lastName)
+        parcel.writeString(email)
+        parcel.writeString(role)
+        parcel.writeString(phoneNumber)
+        parcel.writeString(inviteStatus)
     }
 
     override fun describeContents(): Int {

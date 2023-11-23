@@ -294,7 +294,10 @@ private fun InformationCard(
             Button(
                 onClick = {
                     val db = FirebaseFirestore.getInstance()
-                    val collection = db.collection("Usuarios").document(userID).collection("Proyectos").document(project?.id.toString())
+                    val collection = db.collection("Users")
+                        .document(userID)
+                        .collection("Projects")
+                        .document(project?.id.toString())
 
                     if(name.length > 0) {
                         viewModel.projectName.value = name

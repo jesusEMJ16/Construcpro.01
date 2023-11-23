@@ -1,72 +1,77 @@
 package com.example.contrupro3.ui.theme.RegisterScreens
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.material.OutlinedTextField
-import androidx.compose.material.TextFieldDefaults
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.OutlinedTextField
+import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
 import com.example.contrupro3.R
-import com.example.contrupro3.models.AuthRepository
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.ktx.Firebase
-import androidx.compose.material.icons.filled.Visibility
+import com.example.contrupro3.models.LoginModels.Register_ViewModel
 import com.example.contrupro3.ui.theme.myBlue
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthUserCollisionException
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.delay
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RegisterPage(navController: NavController) {
-
+fun RegisterPage(navController: NavController, Register_ViewModel: Register_ViewModel) {
     val registrationSuccessState = remember { mutableStateOf(false) }
-    val authRepository = AuthRepository(Firebase.auth)
-    val auth: FirebaseAuth = Firebase.auth
-    var name by remember { mutableStateOf("") }
-    var lastName by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var phonenumber by remember { mutableStateOf("") }
-    var role by remember { mutableStateOf("Selecciona un rol...") }
-    var password by remember { mutableStateOf("") }
-    var repeatPassword by remember { mutableStateOf("") }
     var isPasswordVisible by remember { mutableStateOf(false) }
     var isRepeatPasswordVisible by remember { mutableStateOf(false) }
     val snackbarVisibleState = remember { mutableStateOf(false) }
-    val snackbarMessageState = remember { mutableStateOf("") }
-    val showMessageState = remember { mutableStateOf(false) }
+    val snackbarMessage = remember { mutableStateOf("") }
 
+    val name = Register_ViewModel.name.observeAsState("")
+    val lastName = Register_ViewModel.lastName.observeAsState("")
+    val email = Register_ViewModel.email.observeAsState("")
+    val phoneNumber = Register_ViewModel.phoneNumber.observeAsState("")
+    val password = Register_ViewModel.password.observeAsState("")
+    val repeatPassword = Register_ViewModel.repeatPassword.observeAsState("")
+    val isMailValid = Register_ViewModel.isMailValid.observeAsState(false)
+    val isPhoneNumberValid = Register_ViewModel.isPhoneNumberValid.observeAsState(false)
+    val enableRegisterButton = Register_ViewModel.enableRegisterButton.observeAsState(false)
+    val focusManager = LocalFocusManager.current
 
     Box(
         modifier = Modifier
@@ -77,7 +82,7 @@ fun RegisterPage(navController: NavController) {
             painter = painterResource(R.drawable.logo_name),
             contentDescription = "App Logo",
             modifier = Modifier
-                .size(150.dp) // Ajusta el tamaño del logo si es necesario
+                .size(150.dp)
                 .align(Alignment.TopCenter)
                 .offset(y = 20.dp)
         )
@@ -89,81 +94,277 @@ fun RegisterPage(navController: NavController) {
                 .offset(y = 80.dp)
         ) {
             OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text("Nombre") },
+                value = name.value,
+                onValueChange = {
+                    Register_ViewModel.onRegisterFieldsChanged(
+                        name = it,
+                        lastName = lastName.value,
+                        phoneNumber = phoneNumber.value,
+                        email = email.value,
+                        password = password.value,
+                        repeatPassword = repeatPassword.value
+                    )
+                },
+                label = { Text(text = "Nombre") },
                 colors = TextFieldDefaults.outlinedTextFieldColors(
-                    textColor = Color.Black,
-                    cursorColor = Color.Black,
-                    focusedBorderColor = Color.Transparent,
                     unfocusedBorderColor = Color.Transparent,
+                    backgroundColor = Color(0x79D8D8D8),
+                    focusedBorderColor = Color.Transparent,
+                    cursorColor = myBlue,
+                    disabledBorderColor = Color.Transparent,
                 ),
+                singleLine = true,
+                maxLines = 1,
                 modifier = Modifier
-                    .fillMaxWidth(0.8f)
-                    .shadow(5.dp)
-                    .background(Color.White)
+                    .fillMaxWidth(0.8f),
+                keyboardOptions = KeyboardOptions.Default.copy(
+                    imeAction = ImeAction.Next
+                ),
+                keyboardActions = KeyboardActions(
+                    onNext = {
+                        focusManager.moveFocus(FocusDirection.Down)
+                    }
+                )
             )
-            Spacer(modifier = Modifier.height(10.dp))
+            if (name.value.isEmpty()) {
+                Text(
+                    text = "* Requerido",
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Light,
+                        color = Color.Red,
+                        fontStyle = FontStyle.Italic
+                    ),
+                    modifier = Modifier
+                        .align(Alignment.Start)
+                        .offset(x = 50.dp)
+                )
+            } else {
+                Text(
+                    text = "${name.value.length}/20",
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Light,
+                        color = if (name.value.length > 20 || name.value.isEmpty()) Color.Red else Color.Black,
+                        fontStyle = FontStyle.Italic
+                    ),
+                    modifier = Modifier
+                        .align(Alignment.End)
+                        .offset(x = -50.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(5.dp))
             OutlinedTextField(
-                value = lastName,
-                onValueChange = { lastName = it },
-                label = { Text("Apellido") },
+                value = lastName.value,
+                onValueChange = {
+                    Register_ViewModel.onRegisterFieldsChanged(
+                        name = name.value,
+                        lastName = it,
+                        phoneNumber = phoneNumber.value,
+                        email = email.value,
+                        password = password.value,
+                        repeatPassword = repeatPassword.value
+                    )
+                },
+                label = { Text(text = "Apellido") },
                 colors = TextFieldDefaults.outlinedTextFieldColors(
-                    textColor = Color.Black,
-                    cursorColor = Color.Black,
-                    focusedBorderColor = Color.Transparent,
                     unfocusedBorderColor = Color.Transparent,
+                    backgroundColor = Color(0x79D8D8D8),
+                    focusedBorderColor = Color.Transparent,
+                    cursorColor = myBlue,
+                    disabledBorderColor = Color.Transparent,
                 ),
+                singleLine = true,
+                maxLines = 1,
                 modifier = Modifier
-                    .fillMaxWidth(0.8f)
-                    .shadow(5.dp)
-                    .background(Color.White)
+                    .fillMaxWidth(0.8f),
+                keyboardOptions = KeyboardOptions.Default.copy(
+                    imeAction = ImeAction.Next
+                ),
+                keyboardActions = KeyboardActions(
+                    onNext = {
+                        focusManager.moveFocus(FocusDirection.Down)
+                    }
+                )
             )
-            Spacer(modifier = Modifier.height(10.dp))
+            if (lastName.value.isEmpty()) {
+                Text(
+                    text = "* Requerido",
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Light,
+                        color = Color.Red,
+                        fontStyle = FontStyle.Italic
+                    ),
+                    modifier = Modifier
+                        .align(Alignment.Start)
+                        .offset(x = 50.dp)
+                )
+            } else {
+                Text(
+                    text = "${lastName.value.length}/20",
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Light,
+                        color = if (lastName.value.length > 20 || lastName.value.isEmpty()) Color.Red else Color.Black,
+                        fontStyle = FontStyle.Italic
+                    ),
+                    modifier = Modifier
+                        .align(Alignment.End)
+                        .offset(x = -50.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(5.dp))
             OutlinedTextField(
-                value = email,
-                onValueChange = { email = it },
-                label = { Text("Email") },
+                value = email.value,
+                onValueChange = {
+                    Register_ViewModel.onRegisterFieldsChanged(
+                        name = name.value,
+                        lastName = lastName.value,
+                        phoneNumber = phoneNumber.value,
+                        email = it,
+                        password = password.value,
+                        repeatPassword = repeatPassword.value
+                    )
+                },
+                label = { Text(text = "Email") },
                 colors = TextFieldDefaults.outlinedTextFieldColors(
-                    textColor = Color.Black,
-                    cursorColor = Color.Black,
-                    focusedBorderColor = Color.Transparent,
                     unfocusedBorderColor = Color.Transparent,
+                    backgroundColor = Color(0x79D8D8D8),
+                    focusedBorderColor = Color.Transparent,
+                    cursorColor = myBlue,
+                    disabledBorderColor = Color.Transparent,
                 ),
+                singleLine = true,
+                maxLines = 1,
                 modifier = Modifier
-                    .fillMaxWidth(0.8f)
-                    .shadow(5.dp)
-                    .background(Color.White)
+                    .fillMaxWidth(0.8f),
+                keyboardOptions = KeyboardOptions.Default.copy(
+                    keyboardType = KeyboardType.Email,
+                    imeAction = ImeAction.Next
+                ),
+                keyboardActions = KeyboardActions(
+                    onNext = {
+                        focusManager.moveFocus(FocusDirection.Down)
+                    }
+                )
             )
-            Spacer(modifier = Modifier.height(10.dp))
-
+            if (email.value.isEmpty()) {
+                Text(
+                    text = "* Requerido",
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Light,
+                        color = Color.Red,
+                        fontStyle = FontStyle.Italic
+                    ),
+                    modifier = Modifier
+                        .align(Alignment.Start)
+                        .offset(x = 50.dp)
+                )
+            } else if (!isMailValid.value) {
+                Text(
+                    text = "* Email no valido",
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Light,
+                        color = Color.Red,
+                        fontStyle = FontStyle.Italic
+                    ),
+                    modifier = Modifier
+                        .align(Alignment.Start)
+                        .offset(x = 50.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(5.dp))
             OutlinedTextField(
-                value = phonenumber,
-                onValueChange = { newValue -> phonenumber = newValue },
-                label = { Text("Numero de telefono") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                value = phoneNumber.value,
+                onValueChange = {
+                    Register_ViewModel.onRegisterFieldsChanged(
+                        name = name.value,
+                        lastName = lastName.value,
+                        phoneNumber = it,
+                        email = email.value,
+                        password = password.value,
+                        repeatPassword = repeatPassword.value
+                    )
+                },
+                label = { Text(text = "Numero de telefono") },
                 colors = TextFieldDefaults.outlinedTextFieldColors(
-                    textColor = Color.Black,
-                    cursorColor = Color.Black,
-                    focusedBorderColor = Color.Transparent,
                     unfocusedBorderColor = Color.Transparent,
+                    backgroundColor = Color(0x79D8D8D8),
+                    focusedBorderColor = Color.Transparent,
+                    cursorColor = myBlue,
+                    disabledBorderColor = Color.Transparent,
                 ),
+                singleLine = true,
+                maxLines = 1,
                 modifier = Modifier
-                    .fillMaxWidth(0.8f)
-                    .shadow(5.dp)
-                    .background(Color.White)
+                    .fillMaxWidth(0.8f),
+                keyboardOptions = KeyboardOptions.Default.copy(
+                    keyboardType = KeyboardType.Phone,
+                    imeAction = ImeAction.Next
+                ),
+                keyboardActions = KeyboardActions(
+                    onNext = {
+                        focusManager.moveFocus(FocusDirection.Down)
+                    }
+                )
             )
-            Spacer(modifier = Modifier.height(10.dp))
-
+            if (phoneNumber.value.isEmpty()) {
+                Text(
+                    text = "* Requerido",
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Light,
+                        color = Color.Red,
+                        fontStyle = FontStyle.Italic
+                    ),
+                    modifier = Modifier
+                        .align(Alignment.Start)
+                        .offset(x = 50.dp)
+                )
+            } else if (!isPhoneNumberValid.value) {
+                Text(
+                    text = "* Numero no valido",
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Light,
+                        color = Color.Red,
+                        fontStyle = FontStyle.Italic
+                    ),
+                    modifier = Modifier
+                        .align(Alignment.Start)
+                        .offset(x = 50.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(5.dp))
             OutlinedTextField(
-                value = password,
-                onValueChange = { newValue -> password = newValue },
-                label = { Text("Contraseña") },
-                visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(), // Transformación visual para ocultar la contraseña
-                keyboardOptions = KeyboardOptions(
+                value = password.value,
+                onValueChange = {
+                    Register_ViewModel.onRegisterFieldsChanged(
+                        name = name.value,
+                        lastName = lastName.value,
+                        phoneNumber = phoneNumber.value,
+                        email = email.value,
+                        password = it,
+                        repeatPassword = repeatPassword.value
+                    )
+                },
+                label = { Text(text = "Contraseña") },
+                colors = TextFieldDefaults.outlinedTextFieldColors(
+                    unfocusedBorderColor = Color.Transparent,
+                    backgroundColor = Color(0x79D8D8D8),
+                    focusedBorderColor = Color.Transparent,
+                    cursorColor = myBlue,
+                    disabledBorderColor = Color.Transparent,
+                ),
+                singleLine = true,
+                maxLines = 1,
+                modifier = Modifier
+                    .fillMaxWidth(0.8f),
+                keyboardOptions = KeyboardOptions.Default.copy(
                     keyboardType = KeyboardType.Password,
-                    imeAction = ImeAction.Done
-                ), // Configuración del teclado para el campo de contraseña
+                    imeAction = ImeAction.Next
+                ),
+                keyboardActions = KeyboardActions(
+                    onNext = {
+                        focusManager.moveFocus(FocusDirection.Down)
+                    }
+                ),
+                visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
                     IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
                         Icon(
@@ -171,29 +372,63 @@ fun RegisterPage(navController: NavController) {
                             contentDescription = "Toggle password visibility"
                         )
                     }
-                }, // Icono para alternar la visibilidad de la contraseña
-                colors = TextFieldDefaults.outlinedTextFieldColors(
-                    textColor = Color.Black,
-                    cursorColor = Color.Black,
-                    focusedBorderColor = Color.Transparent,
-                    unfocusedBorderColor = Color.Transparent,
-                ),
-                modifier = Modifier
-                    .fillMaxWidth(0.8f)
-                    .shadow(5.dp)
-                    .background(Color.White)
+                },
             )
-
-            Spacer(modifier = Modifier.height(10.dp))
+            if (password.value.isEmpty()) {
+                Text(
+                    text = "* Requerido",
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Light,
+                        color = Color.Red,
+                        fontStyle = FontStyle.Italic
+                    ),
+                    modifier = Modifier
+                        .align(Alignment.Start)
+                        .offset(x = 50.dp)
+                )
+            } else {
+                Text(
+                    text = "${password.value.length}/30",
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Light,
+                        color = if (password.value.length < 6 || password.value.length > 30) Color.Red else Color.Black,
+                        fontStyle = FontStyle.Italic
+                    ),
+                    modifier = Modifier
+                        .align(Alignment.End)
+                        .offset(x = -50.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(5.dp))
             OutlinedTextField(
-                value = repeatPassword,
-                onValueChange = { newValue -> repeatPassword = newValue },
-                label = { Text("Repetir contraseña") },
-                visualTransformation = if (isRepeatPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(
+                value = repeatPassword.value,
+                onValueChange = {
+                    Register_ViewModel.onRegisterFieldsChanged(
+                        name = name.value,
+                        lastName = lastName.value,
+                        phoneNumber = phoneNumber.value,
+                        email = email.value,
+                        password = password.value,
+                        repeatPassword = it
+                    )
+                },
+                label = { Text(text = "Repetir Contraseña") },
+                colors = TextFieldDefaults.outlinedTextFieldColors(
+                    unfocusedBorderColor = Color.Transparent,
+                    backgroundColor = Color(0x79D8D8D8),
+                    focusedBorderColor = Color.Transparent,
+                    cursorColor = myBlue,
+                    disabledBorderColor = Color.Transparent,
+                ),
+                singleLine = true,
+                maxLines = 1,
+                modifier = Modifier
+                    .fillMaxWidth(0.8f),
+                keyboardOptions = KeyboardOptions.Default.copy(
                     keyboardType = KeyboardType.Password,
                     imeAction = ImeAction.Done
                 ),
+                visualTransformation = if (isRepeatPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
                     IconButton(onClick = { isRepeatPasswordVisible = !isRepeatPasswordVisible }) {
                         Icon(
@@ -202,93 +437,140 @@ fun RegisterPage(navController: NavController) {
                         )
                     }
                 },
-                colors = TextFieldDefaults.outlinedTextFieldColors(
-                    textColor = Color.Black,
-                    cursorColor = Color.Black,
-                    focusedBorderColor = Color.Transparent,
-                    unfocusedBorderColor = Color.Transparent,
-                ),
-                modifier = Modifier
-                    .fillMaxWidth(0.8f)
-                    .shadow(5.dp)
-                    .background(Color.White)
             )
+            if (repeatPassword.value.isEmpty()) {
+                Text(
+                    text = "* Requerido",
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Light,
+                        color = Color.Red,
+                        fontStyle = FontStyle.Italic
+                    ),
+                    modifier = Modifier
+                        .align(Alignment.Start)
+                        .offset(x = 50.dp)
+                )
+            } else if (repeatPassword.value != password.value) {
+                Text(
+                    text = "* Contraseña desigual",
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Light,
+                        color = Color.Red,
+                        fontStyle = FontStyle.Italic
+                    ),
+                    modifier = Modifier
+                        .align(Alignment.Start)
+                        .offset(x = 50.dp)
+                )
+            }
 
-            if (snackbarVisibleState.value) {
-                Snackbar(
-                    action = {
-                        Button(onClick = { snackbarVisibleState.value = false }) {
-                            Text("Aceptar")
-                        }
-                    },
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Text(snackbarMessageState.value)
+            LaunchedEffect(snackbarVisibleState.value) {
+                if (snackbarVisibleState.value) {
+                    delay(1500)
+                    snackbarVisibleState.value = false
+
+                    if(snackbarMessage.value == "Se ha registrado correctamente.") {
+                        navController.navigate("login_screen")
+                    }
                 }
             }
 
+            if(snackbarVisibleState.value) Snackbar(
+                action = {},
+                modifier = Modifier
+                    .padding(16.dp)
+                    .zIndex(10f)
+            ) { Text("${snackbarMessage.value}") }
+
             Button(
                 onClick = {
-                    val validationMessage = authRepository.validateInput(
-                        name,
-                        lastName,
-                        email,
-                        phonenumber,
-                        role,
-                        password,
-                        repeatPassword
-                    )
-                    if (validationMessage.isEmpty()) {
-                        authRepository.registerUser(
-                            name,
-                            lastName,
-                            email,
-                            phonenumber,
-                            password,
-                            role,
-                            onFail = { errorMessage ->
-                                if (errorMessage == "EMAIL_ALREADY_IN_USE") {
-                                    snackbarMessageState.value = "El correo electrónico ya está en uso."
-                                } else {
-                                    snackbarMessageState.value = "La autenticación falló."
-                                }
+                    Register_ViewModel.changeEnableRegisterButton(false)
+                    RegisterUser(
+                        name.value,
+                        lastName.value,
+                        email.value,
+                        phoneNumber.value,
+                        password.value,
+                        {
+                            snackbarMessage.value = "Se ha registrado correctamente."
+                            snackbarVisibleState.value = true
+                        },
+                        { errorMessage ->
+                            if (errorMessage === "EMAIL_ALREADY_IN_USE") {
+                                snackbarMessage.value = "El correo electronico ya esta en uso."
                                 snackbarVisibleState.value = true
-                                registrationSuccessState.value = false
-                            },
-                            onSuccess = {
-                                registrationSuccessState.value = true
+                            } else if (errorMessage === "EMAIL_VERIFICATION_FAILED") {
+                                snackbarMessage.value =
+                                    "Ocurrio un problema al registrarte, intente de nuevo mas tarde."
+                                snackbarVisibleState.value = true
                             }
-                        )
-                    } else {
-                        snackbarMessageState.value = validationMessage
-                        snackbarVisibleState.value = true
-                    }
+                        }
+                    )
                 },
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 5.dp),
                 colors = ButtonDefaults.buttonColors(myBlue, contentColor = Color.White),
                 modifier = Modifier
-                    .offset(y = 20.dp)
                     .fillMaxWidth(0.6f)
-                    .padding(8.dp)
+                    .height(60.dp)
+                    .padding(8.dp),
+                enabled = enableRegisterButton.value
             ) {
                 Text("Registrarse")
             }
+        }
+    }
+}
 
-            if (registrationSuccessState.value) {
-                Snackbar(
-                    action = {
-                        Button(onClick = {
-                            registrationSuccessState.value = false
-                            navController.navigate("login_screen")
-                        }) {
-                            Text("Aceptar")
+fun RegisterUser(
+    name: String,
+    lastName: String,
+    email: String,
+    phoneNumber: String,
+    password: String,
+    onSucces: () -> Unit,
+    onFail: (String) -> Unit
+) {
+    val auth = FirebaseAuth.getInstance()
+
+    auth.createUserWithEmailAndPassword(email, password)
+        .addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val user = auth.currentUser
+                val capitalizedFirstName = name.capitalize()
+                val capitalizedLastName = lastName.capitalize()
+
+                val userData = hashMapOf(
+                    "name" to capitalizedFirstName,
+                    "lastName" to capitalizedLastName,
+                    "email" to email,
+                    "phoneNumber" to phoneNumber
+                )
+
+                if (user != null) {
+                    val firestore = FirebaseFirestore.getInstance()
+
+                    firestore.collection("Users")
+                        .document(user.uid)
+                        .set(userData)
+                        .addOnSuccessListener {
+                            user.sendEmailVerification().addOnCompleteListener { emailTask ->
+                                if (emailTask.isSuccessful) {
+                                    onSucces()
+                                } else {
+                                    onFail("EMAIL_VERIFICATION_FAILED")
+                                }
+                            }
                         }
-                    },
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Text("Registro exitoso. Por favor, confirma tu correo electrónico.")
+                        .addOnFailureListener { exception: Exception ->
+                            onFail("FIRESTORE_ERROR")
+                        }
+                }
+            } else {
+                val exception = task.exception
+                if (exception is FirebaseAuthUserCollisionException) {
+                    onFail("EMAIL_ALREADY_IN_USE")
+                } else {
                 }
             }
         }
-    }
 }

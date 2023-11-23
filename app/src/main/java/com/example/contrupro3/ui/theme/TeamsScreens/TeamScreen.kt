@@ -75,7 +75,6 @@ import com.example.contrupro3.ui.theme.Menu.HamburgueerMenu
 import com.example.contrupro3.ui.theme.myBlue
 import com.example.contrupro3.ui.theme.myOrangehigh
 import com.example.contrupro3.ui.theme.myOrangelow
-import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -172,7 +171,7 @@ fun TeamsScreen(
                             fontSize = 32.sp
                         )
                     )
-                    if(project.value !== null) Text(
+                    if (project.value !== null) Text(
                         text = "(${project.value?.projectName})",
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontWeight = FontWeight.Bold,
@@ -254,12 +253,16 @@ fun ProjectSelection(
     var projectLoadedStatus by remember { mutableStateOf("Loading") }
 
     LaunchedEffect(userID) {
-        authRepository.loadProjectsFromFirebase(projectList, { status ->  projectLoadedStatus = status })
+        authRepository.loadProjectsFromFirebase(
+            projectList,
+            { status -> projectLoadedStatus = status })
     }
 
     Dialog(onDismissRequest = { onDismiss() }) {
         androidx.compose.material3.Card(
-            modifier = Modifier.padding(10.dp).fillMaxHeight(0.6f),
+            modifier = Modifier
+                .padding(10.dp)
+                .fillMaxHeight(0.6f),
             shape = RoundedCornerShape(4.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
             colors = CardDefaults.cardColors(
@@ -281,7 +284,7 @@ fun ProjectSelection(
                 Spacer(modifier = Modifier.height(5.dp))
                 Divider(color = Color.Black, thickness = 1.dp)
                 Spacer(modifier = Modifier.height(10.dp))
-                if(projectLoadedStatus == "Loaded") {
+                if (projectLoadedStatus == "Loaded") {
                     if (projectList.value.isNotEmpty()) {
                         Text(
                             text = "Estos son los proyectos creados actualmente",
@@ -347,13 +350,13 @@ fun ProjectSelection(
                             textAlign = TextAlign.Center
                         )
                     }
-                } else if(projectLoadedStatus == "Loading") {
+                } else if (projectLoadedStatus == "Loading") {
                     Text(
                         text = "Cargando Proyectos...",
                         style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Light),
                         textAlign = TextAlign.Center
                     )
-                } else if(projectLoadedStatus == "Failed") {
+                } else if (projectLoadedStatus == "Failed") {
                     Text(
                         text = "Error al cargar proyectos...",
                         style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Light),
@@ -421,7 +424,7 @@ fun FiltersDropdowMenu(
                 contentDescription = "Seleccionar Proyecto"
             )
         }
-        if(project.value !== null) {
+        if (project.value !== null) {
             Spacer(modifier = Modifier.width(16.dp))
             FloatingActionButton(
                 onClick = {
@@ -660,7 +663,7 @@ fun EquipoCard(
                     }
                     Spacer(modifier = Modifier.width(5.dp))
                     Text(
-                        text = team.members?.size.toString(),
+                        text = "null",
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
@@ -713,7 +716,7 @@ fun RemoveTeamsSelected(
                         onClick = {
                             val db = FirebaseFirestore.getInstance()
                             val collectionRef =
-                                db.collection("Usuarios")
+                                db.collection("Users")
                                     .document(userID)
                                     .collection("Projects")
                                     .document(project.value?.id!!)
@@ -904,12 +907,11 @@ fun RegisterCardTeam(
                                     },
                                 loggedInUserName,
                                 loggedInUserUID,
-                                description.value,
-                                emptyList()
+                                description.value
                             )
 
                             val db = FirebaseFirestore.getInstance()
-                            val collectionReference = db.collection("Usuarios")
+                            val collectionReference = db.collection("Users")
                                 .document(loggedInUserUID)
                                 .collection("Projects")
                                 .document(project.value?.id!!)
@@ -955,19 +957,6 @@ fun RegisterCardTeam(
                 }
             }
             Spacer(modifier = Modifier.height(5.dp))
-        }
-    }
-}
-
-fun addMemberToTeam(teamId: String, memberId: String) {
-    val db = FirebaseFirestore.getInstance()
-    val usersCollection = db.collection("Usuarios")
-    val query = usersCollection.whereEqualTo("correo", memberId)
-
-    query.get().addOnSuccessListener { querySnapshot ->
-        if (!querySnapshot.isEmpty) {
-            val teamRef = db.collection("Equipos").document(teamId)
-            teamRef.update("members", FieldValue.arrayUnion(memberId))
         }
     }
 }

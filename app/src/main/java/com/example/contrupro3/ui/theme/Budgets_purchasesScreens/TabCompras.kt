@@ -264,9 +264,9 @@ fun DeletePurchasesFromDatabase(
 ) {
     val firebase = FirebaseFirestore.getInstance()
     val collection =
-        firebase.collection("Usuarios")
+        firebase.collection("Users")
             .document(userId)
-            .collection("Proyectos")
+            .collection("Projects")
             .document(projectId)
             .collection("Purchases")
 
@@ -358,9 +358,9 @@ fun CompraDialog(userId: String, projectId: String?, onDismissRequest: () -> Uni
                         onClick = {
                             val firebase = FirebaseFirestore.getInstance()
                             val collection = firebase
-                                .collection("Usuarios")
+                                .collection("Users")
                                 .document(userId)
-                                .collection("Proyectos")
+                                .collection("Projects")
                                 .document(projectId!!)
                                 .collection("Purchases")
 

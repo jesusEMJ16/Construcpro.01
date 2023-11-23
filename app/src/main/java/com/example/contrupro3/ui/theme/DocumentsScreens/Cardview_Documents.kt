@@ -590,9 +590,9 @@ fun AddProyects(
                             proyectsSelected.add(d)
                         }
                         val db = FirebaseFirestore.getInstance()
-                        val collection = db.collection("Usuarios")
+                        val collection = db.collection("Users")
                             .document(userId)
-                            .collection("Documentos")
+                            .collection("Documents")
                             .document(document?.id.toString())
 
                         try {
@@ -749,9 +749,9 @@ fun RemoveProjects(
                             proyectsSelected.contains(it.id.toString()) === false
                         }
                         val db = FirebaseFirestore.getInstance()
-                        val collection = db.collection("Usuarios")
+                        val collection = db.collection("Users")
                             .document(userID)
-                            .collection("Documentos")
+                            .collection("Documents")
                             .document(document?.id.toString())
 
                         try {

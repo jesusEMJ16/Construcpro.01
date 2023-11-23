@@ -3,6 +3,7 @@ package com.example.contrupro3.ui.theme.TeamsScreens
 import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
+import android.util.Log
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.annotation.RequiresApi
@@ -20,7 +21,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.AlertDialog
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Divider
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.TextFieldDefaults
@@ -29,37 +30,40 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.toLowerCase
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.zIndex
 import androidx.navigation.NavHostController
 import com.example.contrupro3.models.AuthRepository
 import com.example.contrupro3.models.TeamsModels.TeamCard_ViewModel
+import com.example.contrupro3.models.TeamsModels.TeamMember
 import com.example.contrupro3.models.TeamsModels.Teams
 import com.example.contrupro3.ui.theme.myBlue
 import com.example.contrupro3.ui.theme.myOrangehigh
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.tasks.await
 
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -75,7 +79,8 @@ fun CardViewTeamsScreen(
     TeamCard_ViewModel: TeamCard_ViewModel
 ) {
     val team = remember { mutableStateOf<Teams?>(null) }
-    authRepository.loadEquipo(teamId, team, projectId)
+    val teamLoadingStatus = remember { mutableStateOf("Loading") }
+    authRepository.loadEquipo(teamId, team, projectId, { teamLoadingStatus.value = it })
 
     Scaffold(
         topBar = {
@@ -106,26 +111,28 @@ fun CardViewTeamsScreen(
             )
         }
     ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .offset(y = 60.dp),
-                verticalArrangement = Arrangement.Top,
-                horizontalAlignment = Alignment.CenterHorizontally
+        if (teamLoadingStatus.value === "Loaded") {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
             ) {
-                Spacer(modifier = Modifier.height(5.dp))
-                Divider(
-                    color = Color.LightGray,
-                    thickness = 1.dp,
-                    modifier = Modifier.padding(horizontal = 10.dp)
-                )
-                InformationCard(navController, authRepository, userId, projectId, team)
-                Spacer(modifier = Modifier.height(10.dp))
-                MembersCard(navController, authRepository, userId, projectId, team)
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .offset(y = 60.dp),
+                    verticalArrangement = Arrangement.Top,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Spacer(modifier = Modifier.height(5.dp))
+                    Divider(
+                        color = Color.LightGray,
+                        thickness = 1.dp,
+                        modifier = Modifier.padding(horizontal = 10.dp)
+                    )
+                    InformationCard(userId, projectId, team, TeamCard_ViewModel)
+                    Spacer(modifier = Modifier.height(10.dp))
+                    MembersCard(userId, projectId, team, TeamCard_ViewModel)
+                }
             }
         }
     }
@@ -133,17 +140,14 @@ fun CardViewTeamsScreen(
 
 @Composable
 private fun InformationCard(
-    navController: NavHostController,
-    authRepository: AuthRepository,
     userId: String,
     projectId: String,
-    team: MutableState<Teams?>
+    team: MutableState<Teams?>,
+    TeamCard_ViewModel: TeamCard_ViewModel
 ) {
-    val viewModel: CardViewTeamsViewModel = viewModel()
-    val teamName by viewModel.teamName
-    val teamDescription by viewModel.teamDescription
-    var name by remember { mutableStateOf("$teamName") }
-    var description by remember { mutableStateOf("$teamDescription") }
+    val name = TeamCard_ViewModel.teamName.observeAsState("${team.value?.name}")
+    val description =
+        TeamCard_ViewModel.teamDescription.observeAsState("${team.value?.description}")
     val context = LocalContext.current
     val currentLocalView = LocalView.current
     val inputMethodManager =
@@ -171,8 +175,8 @@ private fun InformationCard(
                     .padding(5.dp)
             )
             OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
+                value = name.value,
+                onValueChange = { TeamCard_ViewModel.onFieldsUpdated(it, description.value) },
                 maxLines = 1,
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
@@ -185,7 +189,7 @@ private fun InformationCard(
                 ),
                 trailingIcon = {
                     IconButton(onClick = {
-                        name = ""
+                        TeamCard_ViewModel.onFieldsUpdated("", description.value)
                     }) {
                         Icon(
                             Icons.Default.Close,
@@ -194,12 +198,12 @@ private fun InformationCard(
                     }
                 }
             )
-            if (name !== teamName) {
+            if (name.value !== team.value?.name) {
                 Row(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    if (name.length < 6) {
+                    if (name.value.length < 6) {
                         Text(
                             text = "* Requerido",
                             style = MaterialTheme.typography.labelMedium.copy(
@@ -210,10 +214,10 @@ private fun InformationCard(
                         )
                     } else Spacer(modifier = Modifier.width(0.dp))
                     Text(
-                        text = "${name.length}/30",
+                        text = "${name.value.length}/30",
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontWeight = FontWeight.Light,
-                            color = if (name.length < 6 || name.length > 30) myBlue else Color.Black
+                            color = if (name.value.length < 6 || name.value.length > 30) myBlue else Color.Black
                         )
                     )
                 }
@@ -227,12 +231,12 @@ private fun InformationCard(
                     .padding(5.dp)
             )
             OutlinedTextField(
-                value = description,
-                onValueChange = { description = it },
+                value = description.value,
+                onValueChange = { TeamCard_ViewModel.onFieldsUpdated(name.value, it) },
                 maxLines = 1,
                 placeholder = {
-                    if (teamDescription != null && teamDescription.length > 0) {
-                        Text("${teamDescription}")
+                    if (team.value?.description != null && team.value?.description != null) {
+                        Text("${description.value}")
                     } else {
                         Text("No hay descripción establecida.")
                     }
@@ -248,7 +252,7 @@ private fun InformationCard(
                 ),
                 trailingIcon = {
                     IconButton(onClick = {
-                        description = ""
+                        TeamCard_ViewModel.onFieldsUpdated(name.value, "")
                     }) {
                         Icon(
                             Icons.Default.Close,
@@ -257,19 +261,19 @@ private fun InformationCard(
                     }
                 }
             )
-            if (description !== teamDescription) {
+            if (description.value !== team.value?.description) {
                 Text(
-                    text = "${description.length}/200",
+                    text = "${description.value.length}/200",
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontWeight = FontWeight.Light,
-                        color = if (description.length > 200) myBlue else Color.Black
+                        color = if (description.value.length > 200) myBlue else Color.Black
                     ),
                     modifier = Modifier.align(Alignment.End)
                 )
             }
         }
     }
-    if (name !== teamName || description !== teamDescription) {
+    if (name.value !== team.value?.name || description.value !== team.value?.description) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -278,8 +282,10 @@ private fun InformationCard(
         ) {
             Button(
                 onClick = {
-                    name = "$teamName"
-                    description = "$teamDescription"
+                    TeamCard_ViewModel.onFieldsUpdated(
+                        "${team.value?.name}",
+                        "${team.value?.description}"
+                    )
                 },
                 colors = ButtonDefaults.buttonColors(
                     contentColor = Color.White,
@@ -294,31 +300,43 @@ private fun InformationCard(
                 onClick = {
                     val db = FirebaseFirestore.getInstance()
                     val collection =
-                        db.collection("Usuarios")
+                        db.collection("Users")
                             .document(userId)
                             .collection("Projects")
                             .document(projectId)
                             .collection("Teams")
                             .document(team.value?.id.toString())
 
-                    if (name !== teamName) {
-                        viewModel.teamName.value = name
-                        collection.update("name", "$name")
+                    if (name.value !== team.value?.name) {
+                        val newTeam = Teams(
+                            team.value?.id,
+                            name.value,
+                            team.value?.creatorName,
+                            team.value?.creatorUID,
+                            team.value?.description
+                        )
+                        team.value = newTeam
+                        collection.update("name", "${name.value}")
                     }
-                    if (description !== teamDescription) {
-                        viewModel.teamDescription.value = description
-                        collection.update("description", "$description")
+                    if (description.value !== team.value?.description) {
+                        val newTeam = Teams(
+                            team.value?.id,
+                            team.value?.name,
+                            team.value?.creatorName,
+                            team.value?.creatorUID,
+                            description.value
+                        )
+                        team.value = newTeam
+                        collection.update("description", "${description.value}")
                     }
                     inputMethodManager.hideSoftInputFromWindow(currentLocalView.windowToken, 0)
-                    name = teamName
-                    description = teamDescription
                     Toast.makeText(
                         context,
-                        "Datos Actualizados",
+                        "Información Actualizada",
                         Toast.LENGTH_LONG
                     ).show()
                 },
-                enabled = name.length >= 6 && name.length <= 30 && description.length <= 200,
+                enabled = name.value.length >= 6 && name.value.length <= 30 && description.value.length <= 200,
                 colors = ButtonDefaults.buttonColors(
                     contentColor = Color.White,
                     containerColor = myOrangehigh
@@ -333,12 +351,13 @@ private fun InformationCard(
 
 @Composable
 private fun MembersCard(
-    navController: NavHostController,
-    authRepository: AuthRepository,
     userId: String,
     projectId: String,
-    team: MutableState<Teams?>
+    team: MutableState<Teams?>,
+    TeamCard_ViewModel: TeamCard_ViewModel
 ) {
+    val showInviteDialog = remember { mutableStateOf(false) }
+
     Box(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier
@@ -361,30 +380,33 @@ private fun MembersCard(
             ) {
 
             }
-        }
-    }
-}
-
-fun getInvitesFromFirebase(
-    teamId: String,
-    onSuccess: (List<String>) -> Unit,
-    onFailure: (Exception) -> Unit
-) {
-    val firestore = FirebaseFirestore.getInstance()
-
-    firestore.collectionGroup("Invitaciones")
-        .whereEqualTo("teamId", teamId)
-        .get()
-        .addOnSuccessListener { querySnapshot ->
-            val integrantes = querySnapshot.documents
-
-            if (integrantes.isNotEmpty()) {
-//                onSuccess(integrantes)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Button(
+                    onClick = { showInviteDialog.value = true },
+                    colors = ButtonDefaults.buttonColors(
+                        contentColor = Color.White,
+                        containerColor = myOrangehigh
+                    ),
+                    elevation = ButtonDefaults.buttonElevation(4.dp)
+                ) {
+                    Text(text = "Invitar")
+                }
             }
         }
-        .addOnFailureListener { exception ->
-            onFailure(exception)
-        }
+    }
+
+    if (showInviteDialog.value) InviteDialog(
+        userId,
+        team.value?.id,
+        projectId,
+        TeamCard_ViewModel
+    ) {
+        showInviteDialog.value = false
+    }
 }
 
 fun isValidEmail(email: String): Boolean {
@@ -393,73 +415,166 @@ fun isValidEmail(email: String): Boolean {
 }
 
 @Composable
-fun InvitarDialog(
-    onInvite: (String) -> Unit,
-    onDismiss: () -> Unit,
+fun InviteDialog(
+    userId: String,
+    teamId: String?,
+    projectId: String,
+    TeamCard_ViewModel1: TeamCard_ViewModel,
+    onDismiss: () -> Unit
 ) {
-    var email by remember { mutableStateOf("") }
-    var isEmailValid by remember { mutableStateOf(true) }
+    val email = remember { mutableStateOf("") }
+    val context = LocalContext.current
 
-    AlertDialog(
-        onDismissRequest = { onDismiss() },
-        title = { Text("Invitar a un nuevo miembro") },
-        text = {
-            Column {
-                TextField(
-                    value = email,
-                    onValueChange = {
-                        email = it
-                        isEmailValid = isValidEmail(it) // Validar el correo al cambiarlo
-                    },
-                    label = { Text("Dirección de correo electrónico") }
+    Dialog(onDismissRequest = { onDismiss() }) {
+        Card(
+            modifier = Modifier
+                .padding(10.dp),
+            shape = RoundedCornerShape(4.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color.White
+            )
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Invitar Usuario",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = myBlue
                 )
-                if (!isEmailValid) {
+                Spacer(modifier = Modifier.height(5.dp))
+                Divider(color = Color.Black, thickness = 1.dp)
+                Spacer(modifier = Modifier.height(10.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Start
+                ) {
                     Text(
-                        text = "Correo electrónico no válido",
-                        color = Color.Red,
-                        fontSize = 12.sp,
-                        modifier = Modifier.padding(top = 4.dp)
+                        text = "Email del usuario",
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                        modifier = Modifier
+                            .offset(x = 5.dp)
+                            .padding(5.dp)
                     )
                 }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    if (isEmailValid) {
-                        onInvite(email)
-                        onDismiss()
+                OutlinedTextField(
+                    value = email.value,
+                    onValueChange = { email.value = it },
+                    maxLines = 1,
+                    placeholder = {
+                        Text(text = "example@gmail.com")
+                    },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = TextFieldDefaults.outlinedTextFieldColors(
+                        unfocusedBorderColor = Color.Transparent,
+                        backgroundColor = Color(0x79D8D8D8),
+                        focusedBorderColor = Color.Transparent,
+                        cursorColor = myBlue,
+                        disabledBorderColor = Color.Transparent,
+                    ),
+                    trailingIcon = {
+                        IconButton(onClick = {
+                            email.value = ""
+                        }) {
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = "Borrar email"
+                            )
+                        }
                     }
-                },
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 5.dp),
-                colors = ButtonDefaults.buttonColors(
-                    myBlue,
-                    contentColor = Color.White
-                ),
-            ) {
-                Text("Invitar")
-            }
-        },
-        dismissButton = {
-            Button(
-                onClick = { onDismiss() },
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 5.dp),
-                colors = ButtonDefaults.buttonColors(
-                    myBlue,
-                    contentColor = Color.White
-                ),
-            ) {
-                Text("Cancelar")
+                )
+                if (email.value.length > 0 && !isValidEmail(email.value)) {
+                    Text(
+                        text = "Email no valido",
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.Light,
+                            color = myBlue
+                        ),
+                        modifier = Modifier.align(Alignment.End)
+                    )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    Button(
+                        onClick = { onDismiss() },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = myOrangehigh,
+                            contentColor = Color.White
+                        ),
+                        modifier = Modifier
+                            .width(100.dp)
+                            .padding(start = 0.dp, top = 5.dp, end = 5.dp, bottom = 0.dp)
+                    ) {
+                        Text(
+                            text = "Cerrar",
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
+                        )
+                    }
+                    Button(
+                        onClick = {
+                            AddMemberToDatabase(userId, teamId.toString(), projectId, email.value)
+                            onDismiss()
+                            Toast.makeText(
+                                context,
+                                "Usuario Invitado",
+                                Toast.LENGTH_LONG
+                            ).show()
+                            email.value = ""
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = myOrangehigh,
+                            contentColor = Color.White
+                        ),
+                        enabled = isValidEmail(email.value),
+                        modifier = Modifier
+                            .width(100.dp)
+                            .padding(start = 0.dp, top = 5.dp, end = 5.dp, bottom = 0.dp)
+                    ) {
+                        Text(
+                            text = "Invitar",
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
+                        )
+                    }
+                }
             }
         }
-    )
+    }
 }
 
-class CardViewTeamsViewModel : ViewModel() {
-    val teamName = mutableStateOf("")
-    val teamDescription = mutableStateOf("")
-    val membersList = mutableListOf<String>()
-    val nameEnabled = mutableStateOf(false)
-    val descriptionEnabled = mutableStateOf(false)
-    val action = mutableStateOf("")
+fun AddMemberToDatabase(userId: String, teamId: String, projectId: String, email: String) {
+    val firebase = FirebaseFirestore.getInstance()
+    val collection = firebase
+        .collection("Users")
+        .document(userId)
+        .collection("Projects")
+        .document(projectId)
+        .collection("Teams")
+        .document(teamId)
+        .collection("Members")
+
+    val newMember = TeamMember(
+        id = null,
+        name = null,
+        lastName = null,
+        email = email,
+        role = null,
+        phoneNumber = null,
+        inviteStatus = "Pending"
+    )
+
+    collection.add(newMember)
+        .addOnSuccessListener { userDoc ->
+            val newDoc = newMember.copy(id = userDoc.id)
+            collection.document(userDoc.id)
+                .set(newDoc)
+        }
 }

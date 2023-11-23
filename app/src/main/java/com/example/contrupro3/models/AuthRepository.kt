@@ -26,9 +26,10 @@ class AuthRepository(private val auth: FirebaseAuth) {
         val firestore = FirebaseFirestore.getInstance()
         val user = getCurrentUser()
         if (user != null) {
-            val projectsCollection = firestore.collection("Usuarios")
+            val projectsCollection = firestore
+                .collection("Users")
                 .document(user.uid)
-                .collection("Proyectos")
+                .collection("Projects")
 
             projectsCollection.get()
                 .addOnSuccessListener { documents ->
@@ -49,9 +50,9 @@ class AuthRepository(private val auth: FirebaseAuth) {
         val user = getCurrentUser()
 
         if (user != null) {
-            val docProject = firestore.collection("Usuarios")
+            val docProject = firestore.collection("Users")
                 .document(user.uid)
-                .collection("Proyectos")
+                .collection("Projects")
                 .document(projectId)
 
             docProject.get()
@@ -69,7 +70,7 @@ class AuthRepository(private val auth: FirebaseAuth) {
         val user = getCurrentUser()
         if (user != null) {
             val equiposCollection = firestore
-                .collection("Usuarios")
+                .collection("Users")
                 .document(user.uid)
                 .collection("Projects")
                 .document(projectId)
@@ -86,13 +87,13 @@ class AuthRepository(private val auth: FirebaseAuth) {
         }
     }
 
-    fun loadEquipo(teamId: String, team: MutableState<Teams?>, projectId: String) {
+    fun loadEquipo(teamId: String, team: MutableState<Teams?>, projectId: String, onStatusChanged: ((String) -> Unit)?= null) {
         val firestore = FirebaseFirestore.getInstance()
         val user = getCurrentUser()
 
         if (user != null) {
             val equipoDocument = firestore
-                .collection("Usuarios")
+                .collection("Users")
                 .document(user.uid)
                 .collection("Projects")
                 .document(projectId)
@@ -104,12 +105,15 @@ class AuthRepository(private val auth: FirebaseAuth) {
                     if (document.exists()) {
                         val loadedEquipo = document.toObject(Teams::class.java)
                         team.value = loadedEquipo
+                        onStatusChanged?.invoke("Loaded")
                     } else {
                         team.value = null
+                        onStatusChanged?.invoke("Loaded")
                     }
                 }
                 .addOnFailureListener { exception ->
                     team.value = null
+                    onStatusChanged?.invoke("Failed")
                 }
         }
     }
@@ -118,9 +122,10 @@ class AuthRepository(private val auth: FirebaseAuth) {
         val firestore = FirebaseFirestore.getInstance()
         val user = getCurrentUser()
         if (user != null) {
-            val documentsCollection = firestore.collection("Usuarios")
+            val documentsCollection = firestore
+                .collection("Users")
                 .document(user.uid)
-                .collection("Documentos")
+                .collection("Documents")
 
             documentsCollection.get()
                 .addOnSuccessListener { documents ->
@@ -140,9 +145,10 @@ class AuthRepository(private val auth: FirebaseAuth) {
         val user = getCurrentUser()
 
         if (user != null) {
-            val docDocument = firestore.collection("Usuarios")
+            val docDocument = firestore
+                .collection("Users")
                 .document(user.uid)
-                .collection("Documentos")
+                .collection("Documents")
                 .document(documentoId)
 
             docDocument.get()
@@ -176,9 +182,10 @@ class AuthRepository(private val auth: FirebaseAuth) {
         val user = getCurrentUser()
 
         if (user != null && projectId != null) {
-            val budgetsCollection = firestore.collection("Usuarios")
+            val budgetsCollection = firestore
+                .collection("Users")
                 .document(user.uid)
-                .collection("Proyectos")
+                .collection("Projects")
                 .document(projectId)
                 .collection("Purchases")
 
@@ -205,89 +212,28 @@ class AuthRepository(private val auth: FirebaseAuth) {
         val user = auth.currentUser
         if (user != null) {
             val firestore = FirebaseFirestore.getInstance()
-            val docRef: DocumentReference = firestore.collection("Usuarios").document(user.uid)
+            val docRef: DocumentReference = firestore.collection("Users")
+                .document(user.uid)
 
             docRef.get()
                 .addOnSuccessListener { document ->
                     if (document != null) {
-                        val name = document.getString("Nombre") ?: "Nombre desconocido"
-                        val lastName = document.getString("Apellido") ?: "Apellido desconocido"
+                        val name = document.getString("name") ?: "Nombre desconocido"
+                        val lastName = document.getString("lastName") ?: "Apellido desconocido"
                         val fullName = "${name.capitalize()} ${lastName.capitalize()}"
                         val truncatedFullName = if (fullName.length > 18) {
                             fullName.substring(0, 18) + "..."
-                        } else {
-                            fullName
-                        }
+                        } else fullName
 
                         userNameLiveData.value = truncatedFullName
-                        Log.d("MyApp", "Documento del usuario: $document")
-                        Log.d("MyApp", "Nombre del usuario: $truncatedFullName")
-                    } else {
-                        userNameLiveData.value = "Usuario no autenticado"
-                    }
+                    } else userNameLiveData.value = "Usuario no autenticado"
                 }
                 .addOnFailureListener { exception ->
                     userNameLiveData.value = "Error al obtener el nombre del usuario"
                     Log.e("MyApp", "Error al obtener el nombre del usuario", exception)
                 }
-        } else {
-            userNameLiveData.value = "Usuario no autenticado"
-        }
+        } else userNameLiveData.value = "Usuario no autenticado"
         return userNameLiveData
-    }
-
-
-    fun validateInput(
-        name: String,
-        lastName: String,
-        email: String,
-        phonenumber: String,
-        role: String,
-        password: String,
-        repeatPassword: String
-
-    ): String {
-        // Comprueba si los campos están vacíos
-        if (name.isEmpty() || lastName.isEmpty() || email.isEmpty() || phonenumber.isEmpty() || role.isEmpty() || password.isEmpty() || repeatPassword.isEmpty()) {
-            return "Todos los campos son obligatorios."
-        }
-
-        // Validar que el nombre y apellido sólo contengan letras
-        if (!name.matches(Regex("^[a-zA-Z]+$")) || !lastName.matches(Regex("^[a-zA-Z]+$"))) {
-            return "El nombre y apellido deben contener sólo letras."
-        }
-
-        // Validar que el número de teléfono sólo contenga números
-        if (!phonenumber.matches(Regex("^[0-9]+$"))) {
-            return "El número de teléfono debe contener sólo números."
-        }
-
-        // Validar que el telefono contenga 10 digitos
-        if (phonenumber.length != 10) {
-            return "El numero de telefono no es valido"
-        }
-
-        // Validar que el correo electrónico termine en @hotmail.com o @gmail.com
-        if (!email.matches(Regex("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\$"))) {
-            return "El correo electrónico no es válido."
-        }
-
-        // Validar que se haya seleccionado un rol
-        if (role == "Selecciona un rol...") {
-            return "Debe seleccionar un rol."
-        }
-
-        // Validar que la contraseña y la repetición de la contraseña coincidan
-        if (password != repeatPassword) {
-            return "Las contraseñas no coinciden."
-        }
-
-        // Validar que la contraseña tenga al menos 6 caracteres
-        if (password.length < 6) {
-            return "La contraseña debe tener al menos 6 caracteres."
-        }
-
-        return ""
     }
 
     fun getAuth(): FirebaseAuth {
@@ -298,71 +244,6 @@ class AuthRepository(private val auth: FirebaseAuth) {
         val user = auth.currentUser
         return user?.isEmailVerified ?: false
     }
-
-    fun registerUser(
-        name: String,
-        lastName: String,
-        email: String,
-        phonenumber: String,
-        password: String,
-        role: String,
-        onFail: (String) -> Unit,
-        onSuccess: () -> Unit // Nuevo parámetro
-    ) {
-        auth.createUserWithEmailAndPassword(email, password)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    val user = auth.currentUser
-                    val capitalizedFirstName = name.capitalize()
-                    val capitalizedLastName = lastName.capitalize()
-
-                    val userData = hashMapOf(
-                        "Nombre" to capitalizedFirstName,
-                        "Apellido" to capitalizedLastName,
-                        "Correo electrónico" to email,
-                        "Numero de telefono" to phonenumber,
-                        "Rol" to role
-                        // Agrega otros campos que desees almacenar en Firestore
-                    )
-
-                    if (user != null) {
-                        val firestore = FirebaseFirestore.getInstance()
-                        firestore.collection("Usuarios")
-                            .document(user.uid)
-                            .set(userData)
-                            .addOnSuccessListener {
-                                // Los datos del usuario se guardaron en Firestore correctamente
-                                user.sendEmailVerification().addOnCompleteListener { emailTask ->
-                                    if (emailTask.isSuccessful) {
-                                        // El correo electrónico se envió con éxito
-                                        onSuccess() // Llamada al callback de éxito
-                                    } else {
-                                        // El envío del correo electrónico falló
-                                        onFail("EMAIL_VERIFICATION_FAILED")
-                                    }
-                                }
-                            }
-                            .addOnFailureListener { exception: Exception ->
-                                // Error al guardar los datos del usuario en Firestore
-                                onFail("FIRESTORE_ERROR")
-                            }
-                    }
-
-                    // ... (puedes hacer algo con el usuario, como navegar a la página principal)
-                } else {
-                    // La autenticación falló
-                    val exception = task.exception
-                    if (exception is FirebaseAuthUserCollisionException) {
-                        // Correo electrónico ya en uso
-                        onFail("EMAIL_ALREADY_IN_USE")
-                    } else {
-                        // Otro error de autenticación
-                        // ...
-                    }
-                }
-            }
-    }
-
 
     fun logoutUser(onComplete: (Boolean) -> Unit) {
         auth.signOut()
@@ -377,55 +258,5 @@ class AuthRepository(private val auth: FirebaseAuth) {
                 onFail()
             }
         }
-    }
-
-
-    fun loginUser(
-        email: String,
-        password: String,
-        onSuccess: (String) -> Unit,
-        onFail: (String) -> Unit
-    ) {
-        // Verificar el formato del correo electrónico
-        val emailRegex = Regex("^[A-Za-z](.*)([@]{1})(.{1,})(\\.)(.{1,})")
-        if (!email.matches(emailRegex)) {
-            onFail("EMAIL_INVALID")
-            return
-        }
-
-        auth.signInWithEmailAndPassword(email, password)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    // Inicio de sesión exitoso, ahora obtenemos el nombre del usuario de Firestore
-                    val db = FirebaseFirestore.getInstance()
-                    val docRef = db.collection("Usuarios").document(auth.currentUser?.uid ?: "")
-                    docRef.get().addOnSuccessListener { document ->
-                        if (document != null) {
-                            // Aquí, asumo que tienes un campo "Nombre" y "Apellido" en tu documento.
-                            val nombre = document.getString("Nombre") ?: ""
-                            val apellido = document.getString("Apellido") ?: ""
-                            val fullName = "$nombre $apellido"
-                            onSuccess(fullName)
-                        } else {
-                            onFail("Failed to get user document.")
-                        }
-                    }.addOnFailureListener {
-                        onFail(it.message ?: "Unknown error.")
-                    }
-                } else {
-                    // Error en el inicio de sesión
-                    val exception = task.exception
-                    if (exception is FirebaseAuthInvalidUserException) {
-                        // Usuario no existente
-                        onFail("USER_NOT_FOUND")
-                    } else if (exception is FirebaseAuthInvalidCredentialsException) {
-                        // Contraseña no válida
-                        onFail("PASSWORD_INVALID")
-                    } else {
-                        // Otro error
-                        onFail("UNKNOWN_ERROR")
-                    }
-                }
-            }
     }
 }

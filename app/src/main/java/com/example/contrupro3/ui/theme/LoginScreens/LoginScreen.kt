@@ -1,9 +1,6 @@
 package com.example.contrupro3.ui.theme.LoginScreens
 
-import androidx.compose.material.AlertDialog
-import com.example.contrupro3.models.AuthRepository
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,7 +11,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.AlertDialog
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Button
@@ -22,43 +22,58 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
-import com.example.contrupro3.R
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
+import androidx.navigation.NavController
+import com.example.contrupro3.R
+import com.example.contrupro3.models.AuthRepository
+import com.example.contrupro3.models.LoginModels.Login_ViewModel
 import com.example.contrupro3.ui.theme.myBlue
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.auth.FirebaseAuthInvalidUserException
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.delay
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
 @Composable
-fun LoginPage(navController: NavController, authRepository: AuthRepository) {
-    var loginErrorState by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf("") }
+fun LoginPage(
+    navController: NavController,
+    authRepository: AuthRepository,
+    LoginViewModel: Login_ViewModel
+) {
+    val email = LoginViewModel.email.observeAsState("")
+    val password = LoginViewModel.password.observeAsState("")
+    val enabledLoginButton = LoginViewModel.enabledLoginButton.observeAsState(false)
+    val isMailValid = LoginViewModel.isMailValid.observeAsState(false)
+    val focusManager = LocalFocusManager.current
+
     var isPasswordVisible by remember { mutableStateOf(false) }
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
     val snackbarVisibleState = remember { mutableStateOf(false) }
     val snackbarMessageState = remember { mutableStateOf("") }
-    val loginSuccessState = remember { mutableStateOf(false) }
-    val incorrectPasswordState = remember { mutableStateOf(false) }
-    val emailNotFoundState = remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -84,31 +99,80 @@ fun LoginPage(navController: NavController, authRepository: AuthRepository) {
                 .fillMaxWidth()
                 .offset(y = 100.dp)
         ) {
-            OutlinedTextField(
-                value = email,
-                onValueChange = { email = it },
-                label = { Text("Email") },
-                colors = TextFieldDefaults.outlinedTextFieldColors(
-                    cursorColor = Color.Black,
-                    focusedBorderColor = Color.Transparent,
+            androidx.compose.material.OutlinedTextField(
+                value = email.value,
+                onValueChange = {
+                    LoginViewModel.onFieldsChanged(it, password.value)
+                },
+                label = { Text(text = "Email") },
+                colors = androidx.compose.material.TextFieldDefaults.outlinedTextFieldColors(
                     unfocusedBorderColor = Color.Transparent,
+                    backgroundColor = Color(0x79D8D8D8),
+                    focusedBorderColor = Color.Transparent,
+                    cursorColor = myBlue,
+                    disabledBorderColor = Color.Transparent,
                 ),
+                singleLine = true,
+                maxLines = 1,
                 modifier = Modifier
-                    .fillMaxWidth(0.8f)
-                    .shadow(5.dp)
-                    .background(Color.White)
+                    .fillMaxWidth(0.8f),
+                keyboardOptions = KeyboardOptions.Default.copy(
+                    imeAction = ImeAction.Next
+                ),
+                keyboardActions = KeyboardActions(
+                    onNext = {
+                        focusManager.moveFocus(FocusDirection.Down)
+                    }
+                )
             )
+            if (email.value.isEmpty()) {
+                Text(
+                    text = "* Requerido",
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Light,
+                        color = Color.Red,
+                        fontStyle = FontStyle.Italic
+                    ),
+                    modifier = Modifier
+                        .align(Alignment.Start)
+                        .offset(x = 50.dp)
+                )
+            } else if (!isMailValid.value) {
+                Text(
+                    text = "* Email no valido",
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Light,
+                        color = Color.Red,
+                        fontStyle = FontStyle.Italic
+                    ),
+                    modifier = Modifier
+                        .align(Alignment.Start)
+                        .offset(x = 50.dp)
+                )
+            }
             Spacer(modifier = Modifier.height(10.dp))
-
-            OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
-                label = { Text("Contraseña") },
-                visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(), // Transformación visual para ocultar la contraseña
-                keyboardOptions = KeyboardOptions(
+            androidx.compose.material.OutlinedTextField(
+                value = password.value,
+                onValueChange = {
+                    LoginViewModel.onFieldsChanged(email.value, it)
+                },
+                label = { Text(text = "Contraseña") },
+                colors = androidx.compose.material.TextFieldDefaults.outlinedTextFieldColors(
+                    unfocusedBorderColor = Color.Transparent,
+                    backgroundColor = Color(0x79D8D8D8),
+                    focusedBorderColor = Color.Transparent,
+                    cursorColor = myBlue,
+                    disabledBorderColor = Color.Transparent,
+                ),
+                singleLine = true,
+                maxLines = 1,
+                modifier = Modifier
+                    .fillMaxWidth(0.8f),
+                keyboardOptions = KeyboardOptions.Default.copy(
                     keyboardType = KeyboardType.Password,
                     imeAction = ImeAction.Done
-                ), // Configuración del teclado para el campo de contraseña
+                ),
+                visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
                     IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
                         Icon(
@@ -116,54 +180,81 @@ fun LoginPage(navController: NavController, authRepository: AuthRepository) {
                             contentDescription = "Toggle password visibility"
                         )
                     }
-                }, // Icono para alternar la visibilidad de la contraseña
-                colors = TextFieldDefaults.outlinedTextFieldColors(
-                    cursorColor = Color.Black,
-                    focusedBorderColor = Color.Transparent,
-                    unfocusedBorderColor = Color.Transparent,
-                ),
-                modifier = Modifier
-                    .fillMaxWidth(0.8f)
-                    .shadow(5.dp)
-                    .background(Color.White)
+                },
             )
+            if (password.value.isEmpty()) {
+                Text(
+                    text = "* Requerido",
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Light,
+                        color = Color.Red,
+                        fontStyle = FontStyle.Italic
+                    ),
+                    modifier = Modifier
+                        .align(Alignment.Start)
+                        .offset(x = 50.dp)
+                )
+            } else {
+                Text(
+                    text = "${password.value.length}/30",
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Light,
+                        color = if (password.value.length < 6 || password.value.length > 30) Color.Red else Color.Black,
+                        fontStyle = FontStyle.Italic
+                    ),
+                    modifier = Modifier
+                        .align(Alignment.End)
+                        .offset(x = -50.dp)
+                )
+            }
+
+            LaunchedEffect(snackbarVisibleState.value) {
+                delay(2500)
+                snackbarVisibleState.value = false
+            }
 
             Button(
                 onClick = {
-                    if (email.isEmpty() || password.isEmpty()) {
-                        loginErrorState = true
-                        errorMessage = "Por favor, completa todos los campos."
-                    } else {
-                        authRepository.loginUser(email, password,
-                            onSuccess = {
-                                loginSuccessState.value = true
-                            },
-                            onFail = { errorMessage ->
-                                when (errorMessage) {
-                                    "PASSWORD_INVALID" -> {
-                                        incorrectPasswordState.value = true
-                                    }
-
-                                    "EMAIL_INVALID" -> {
-                                        emailNotFoundState.value = true
-                                    }
-
-                                    else -> {
-                                        snackbarMessageState.value =
-                                            "Inicio de sesión fallido. Verifica tus credenciales."
-                                        snackbarVisibleState.value = true
-                                    }
+                    SignInUser(
+                        email.value,
+                        password.value,
+                        {
+                            val userID = authRepository.getCurrentUser()?.uid
+                            if (userID != null) {
+                                navController.navigate("projects_screen/$userID") {
+                                    popUpTo("login_screen") { inclusive = true }
                                 }
                             }
-                        )
-                    }
+                        },
+                        { errorMessage ->
+                            when(errorMessage) {
+                                "USER_NOT_FOUND" -> {
+                                    snackbarMessageState.value = "No se pudo encontrar el email ingresado."
+                                    snackbarVisibleState.value = true
+                                }
+                                "PASSWORD_INVALID" -> {
+                                    snackbarMessageState.value = "La contraseña no coincide con nuestros registros."
+                                    snackbarVisibleState.value = true
+                                }
+                                "UNKNOWN_ERROR" -> {
+                                    snackbarMessageState.value = "Ha ocurrido un problema. Porfavor, intentelo de nuevo."
+                                    snackbarVisibleState.value = true
+                                }
+                                "FAILED_TO_GET_USER_DOCUMENT" -> {
+                                    snackbarMessageState.value = "No fue posible obtener los datos del usuario. Porfavor, intentelo de nuevo mas tarde."
+                                    snackbarVisibleState.value = true
+                                }
+                            }
+                        }
+                    )
                 },
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 5.dp),
                 colors = ButtonDefaults.buttonColors(myBlue, contentColor = Color.White),
                 modifier = Modifier
                     .offset(y = 30.dp)
                     .fillMaxWidth(0.6f)
-                    .padding(8.dp)
+                    .padding(8.dp),
+                enabled = enabledLoginButton.value
             ) {
                 Text("Ingresar")
             }
@@ -193,77 +284,45 @@ fun LoginPage(navController: NavController, authRepository: AuthRepository) {
             }
         }
 
-        if (loginErrorState) {
-            AlertDialog(
-                onDismissRequest = {
-                    loginErrorState = false
-                },
-                title = { Text("Error de inicio de sesión") },
-                text = { Text(errorMessage) },
-                confirmButton = {
-                    Button(onClick = {
-                        loginErrorState = false
-                    }) {
-                        Text("Cerrar")
-                    }
-                }
-            )
-        }
-        if (emailNotFoundState.value) {
-            AlertDialog(
-                onDismissRequest = {
-                    emailNotFoundState.value = false
-                },
-                title = { Text("Error de inicio de sesión") },
-                text = { Text("Correo electrónico no encontrado. Por favor, verifica tu correo electrónico.") },
-                confirmButton = {
-                    Button(onClick = {
-                        emailNotFoundState.value = false
-                    }) {
-                        Text("Cerrar")
-                    }
-                }
-            )
-        }
-        if (incorrectPasswordState.value) {
-            AlertDialog(
-                onDismissRequest = {
-                    incorrectPasswordState.value = false
-                },
-                title = { Text("Error de inicio de sesión") },
-                text = { Text("Contraseña incorrecta. Por favor, verifica tu contraseña.") },
-                confirmButton = {
-                    Button(onClick = {
-                        incorrectPasswordState.value = false
-                    }) {
-                        Text("Cerrar")
-                    }
-                }
-            )
-        }
         if (snackbarVisibleState.value) {
             Snackbar(
-                modifier = Modifier.padding(8.dp),
-                action = {
-                    Button(onClick = { snackbarVisibleState.value = false }) {
-                        Text("Cerrar")
-                    }
-                }
-            ) {
-                Text(snackbarMessageState.value)
-            }
-        }
-        if (loginSuccessState.value) {
-            val userID = authRepository.getCurrentUser()?.uid // Obtén el userID
-            if (userID != null) { // Asegúrate de que el userID no sea nulo
-                navController.navigate("projects_screen/$userID") {
-                    popUpTo("login_screen") {
-                        inclusive = true
-                    } // Asegúrate de que esto coincida con la ruta definida en tu gráfico de navegación
-                }
-            } else {
-                // Manejar el caso en que el userID sea nulo, quizás mostrando un error al usuario
-            }
+                modifier = Modifier.padding(8.dp).zIndex(10f),
+                action = {}
+            ) { Text(snackbarMessageState.value) }
         }
     }
+}
+
+fun SignInUser(email: String, password: String, onSuccess: () -> Unit, onFailed: (String) -> Unit) {
+    val auth = FirebaseAuth.getInstance()
+    val firebase = FirebaseFirestore.getInstance()
+
+    auth.signInWithEmailAndPassword(email, password)
+        .addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val docRef = firebase
+                    .collection("Users")
+                    .document(auth.currentUser?.uid ?: "")
+
+                docRef.get()
+                    .addOnSuccessListener { document ->
+                        if (document != null) {
+                            onSuccess()
+                        } else {
+                            onFailed("FAILED_TO_GET_USER_DOCUMENT")
+                        }
+                    }.addOnFailureListener {
+                        onFailed(it.message ?: "UNKNOWN_ERROR")
+                    }
+            } else {
+                val exception = task.exception
+                if (exception is FirebaseAuthInvalidUserException) {
+                    onFailed("USER_NOT_FOUND")
+                } else if (exception is FirebaseAuthInvalidCredentialsException) {
+                    onFailed("PASSWORD_INVALID")
+                } else {
+                    onFailed("UNKNOWN_ERROR")
+                }
+            }
+        }
 }

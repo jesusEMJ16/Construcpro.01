@@ -630,9 +630,9 @@ fun RegisterCardDocument(
                                     )
 
                                     val db = FirebaseFirestore.getInstance()
-                                    val collectionReference = db.collection("Usuarios")
+                                    val collectionReference = db.collection("Users")
                                         .document(loggedInUserUID)
-                                        .collection("Documentos")
+                                        .collection("Documents")
 
                                     collectionReference
                                         .add(newDoc)
@@ -835,7 +835,9 @@ fun RemoveDocumentsSelected(userID: String) {
                             val db = FirebaseFirestore.getInstance()
                             val storage = Firebase.storage
                             val collectionRef =
-                                db.collection("Usuarios").document(userID).collection("Documentos")
+                                db.collection("Users")
+                                    .document(userID)
+                                    .collection("Documents")
 
                             for (document in documentsSelectedToRemove) {
                                 storage.getReferenceFromUrl("${document.fileRef}").delete()

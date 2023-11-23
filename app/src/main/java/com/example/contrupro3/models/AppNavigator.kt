@@ -1,14 +1,14 @@
-package com.example.contrupro3.models.Navigaton
+package com.example.contrupro3.models
 
 import android.os.Build
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.contrupro3.models.AuthRepository
+import com.example.contrupro3.models.LoginModels.Login_ViewModel
+import com.example.contrupro3.models.LoginModels.Register_ViewModel
 import com.example.contrupro3.models.ProjectsModels.ProjectsScreen_ViewModel
 import com.example.contrupro3.models.TeamsModels.TeamCard_ViewModel
 import com.example.contrupro3.models.TeamsModels.TeamScreen_ViewModel
@@ -39,10 +39,10 @@ fun AppNavigator(
             SplashScreen(navController, authRepository)
         }
         composable("login_screen") {
-            LoginPage(navController = navController, authRepository = authRepository)
+            LoginPage(navController, authRepository, Login_ViewModel())
         }
         composable("register_screen") {
-            RegisterPage(navController = navController)
+            RegisterPage(navController, Register_ViewModel())
         }
         composable("user_screen") {
             UserProfilePage(navController = navController, authRepository)
