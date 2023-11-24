@@ -1,9 +1,10 @@
-package com.example.contrupro3.ui.theme.RegisterScreens
+package com.example.contrupro3.ui.theme.LoginScreens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,6 +18,7 @@ import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -48,6 +50,8 @@ import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
 import com.example.contrupro3.R
 import com.example.contrupro3.models.LoginModels.Register_ViewModel
+import com.example.contrupro3.models.LoginModels.isPhoneNumberValid
+import com.example.contrupro3.models.LoginModels.isValidEmail
 import com.example.contrupro3.ui.theme.myBlue
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
@@ -93,6 +97,39 @@ fun RegisterPage(navController: NavController, Register_ViewModel: Register_View
                 .fillMaxWidth()
                 .offset(y = 80.dp)
         ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(0.8f)
+                    .padding(horizontal = 5.dp, vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Start
+            ) {
+                Text(
+                    text = "Nombre",
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                )
+                if (name.value.isEmpty()) {
+                    Text(
+                        text = "(Requerido)",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontWeight = FontWeight.Light,
+                            color = Color.Red,
+                            fontStyle = FontStyle.Italic
+                        ),
+                        modifier = Modifier
+                            .padding(horizontal = 7.dp)
+                    )
+                } else Text(
+                    text = "(${name.value.length}/20)",
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        fontWeight = FontWeight.Light,
+                        color = if (name.value.length > 20 || name.value.isEmpty()) Color.Red else Color.Black,
+                        fontStyle = FontStyle.Italic
+                    ),
+                    modifier = Modifier
+                        .padding(horizontal = 7.dp)
+                )
+            }
             OutlinedTextField(
                 value = name.value,
                 onValueChange = {
@@ -105,7 +142,7 @@ fun RegisterPage(navController: NavController, Register_ViewModel: Register_View
                         repeatPassword = repeatPassword.value
                     )
                 },
-                label = { Text(text = "Nombre") },
+                placeholder = { Text(text = "Nombre del usuario") },
                 colors = TextFieldDefaults.outlinedTextFieldColors(
                     unfocusedBorderColor = Color.Transparent,
                     backgroundColor = Color(0x79D8D8D8),
@@ -126,32 +163,42 @@ fun RegisterPage(navController: NavController, Register_ViewModel: Register_View
                     }
                 )
             )
-            if (name.value.isEmpty()) {
+            Spacer(modifier = Modifier.height(10.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(0.8f)
+                    .padding(horizontal = 5.dp, vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Start
+            ) {
                 Text(
-                    text = "* Requerido",
-                    style = MaterialTheme.typography.labelMedium.copy(
-                        fontWeight = FontWeight.Light,
-                        color = Color.Red,
-                        fontStyle = FontStyle.Italic
-                    ),
-                    modifier = Modifier
-                        .align(Alignment.Start)
-                        .offset(x = 50.dp)
+                    text = "Apellido",
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
                 )
-            } else {
-                Text(
-                    text = "${name.value.length}/20",
-                    style = MaterialTheme.typography.labelMedium.copy(
-                        fontWeight = FontWeight.Light,
-                        color = if (name.value.length > 20 || name.value.isEmpty()) Color.Red else Color.Black,
-                        fontStyle = FontStyle.Italic
-                    ),
-                    modifier = Modifier
-                        .align(Alignment.End)
-                        .offset(x = -50.dp)
-                )
+                if (lastName.value.isEmpty()) {
+                    Text(
+                        text = "(Requerido)",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontWeight = FontWeight.Light,
+                            color = Color.Red,
+                            fontStyle = FontStyle.Italic
+                        ),
+                        modifier = Modifier
+                            .padding(horizontal = 7.dp)
+                    )
+                } else {
+                    Text(
+                        text = "(${lastName.value.length}/20)",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontWeight = FontWeight.Light,
+                            color = if (lastName.value.length > 20 || lastName.value.isEmpty()) Color.Red else Color.Black,
+                            fontStyle = FontStyle.Italic
+                        ),
+                        modifier = Modifier
+                            .padding(horizontal = 7.dp)
+                    )
+                }
             }
-            Spacer(modifier = Modifier.height(5.dp))
             OutlinedTextField(
                 value = lastName.value,
                 onValueChange = {
@@ -164,7 +211,7 @@ fun RegisterPage(navController: NavController, Register_ViewModel: Register_View
                         repeatPassword = repeatPassword.value
                     )
                 },
-                label = { Text(text = "Apellido") },
+                placeholder = { Text(text = "Apellido del usuario") },
                 colors = TextFieldDefaults.outlinedTextFieldColors(
                     unfocusedBorderColor = Color.Transparent,
                     backgroundColor = Color(0x79D8D8D8),
@@ -185,32 +232,40 @@ fun RegisterPage(navController: NavController, Register_ViewModel: Register_View
                     }
                 )
             )
-            if (lastName.value.isEmpty()) {
+            Spacer(modifier = Modifier.height(10.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(0.8f)
+                    .padding(horizontal = 5.dp, vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Start
+            ) {
                 Text(
-                    text = "* Requerido",
-                    style = MaterialTheme.typography.labelMedium.copy(
+                    text = "Email",
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                )
+                if (email.value.isEmpty()) {
+                    Text(
+                        text = "(Requerido)",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontWeight = FontWeight.Light,
+                            color = Color.Red,
+                            fontStyle = FontStyle.Italic
+                        ),
+                        modifier = Modifier
+                            .padding(horizontal = 7.dp)
+                    )
+                } else if(!isValidEmail(email.value)) Text(
+                    text = "(Email no válido)",
+                    style = MaterialTheme.typography.bodySmall.copy(
                         fontWeight = FontWeight.Light,
                         color = Color.Red,
                         fontStyle = FontStyle.Italic
                     ),
                     modifier = Modifier
-                        .align(Alignment.Start)
-                        .offset(x = 50.dp)
-                )
-            } else {
-                Text(
-                    text = "${lastName.value.length}/20",
-                    style = MaterialTheme.typography.labelMedium.copy(
-                        fontWeight = FontWeight.Light,
-                        color = if (lastName.value.length > 20 || lastName.value.isEmpty()) Color.Red else Color.Black,
-                        fontStyle = FontStyle.Italic
-                    ),
-                    modifier = Modifier
-                        .align(Alignment.End)
-                        .offset(x = -50.dp)
+                        .padding(horizontal = 7.dp)
                 )
             }
-            Spacer(modifier = Modifier.height(5.dp))
             OutlinedTextField(
                 value = email.value,
                 onValueChange = {
@@ -223,7 +278,7 @@ fun RegisterPage(navController: NavController, Register_ViewModel: Register_View
                         repeatPassword = repeatPassword.value
                     )
                 },
-                label = { Text(text = "Email") },
+                placeholder = { Text(text = "Tu Correo electrónico") },
                 colors = TextFieldDefaults.outlinedTextFieldColors(
                     unfocusedBorderColor = Color.Transparent,
                     backgroundColor = Color(0x79D8D8D8),
@@ -245,32 +300,40 @@ fun RegisterPage(navController: NavController, Register_ViewModel: Register_View
                     }
                 )
             )
-            if (email.value.isEmpty()) {
+            Spacer(modifier = Modifier.height(10.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(0.8f)
+                    .padding(horizontal = 5.dp, vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Start
+            ) {
                 Text(
-                    text = "* Requerido",
-                    style = MaterialTheme.typography.labelMedium.copy(
-                        fontWeight = FontWeight.Light,
-                        color = Color.Red,
-                        fontStyle = FontStyle.Italic
-                    ),
-                    modifier = Modifier
-                        .align(Alignment.Start)
-                        .offset(x = 50.dp)
+                    text = "Numero de telefono",
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
                 )
-            } else if (!isMailValid.value) {
-                Text(
-                    text = "* Email no valido",
-                    style = MaterialTheme.typography.labelMedium.copy(
+                if (phoneNumber.value.isEmpty()) {
+                    Text(
+                        text = "(Requerido)",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontWeight = FontWeight.Light,
+                            color = Color.Red,
+                            fontStyle = FontStyle.Italic
+                        ),
+                        modifier = Modifier
+                            .padding(horizontal = 7.dp)
+                    )
+                } else if(!isPhoneNumberValid(phoneNumber.value)) Text(
+                    text = "(Numero no válido)",
+                    style = MaterialTheme.typography.bodySmall.copy(
                         fontWeight = FontWeight.Light,
                         color = Color.Red,
                         fontStyle = FontStyle.Italic
                     ),
                     modifier = Modifier
-                        .align(Alignment.Start)
-                        .offset(x = 50.dp)
+                        .padding(horizontal = 7.dp)
                 )
             }
-            Spacer(modifier = Modifier.height(5.dp))
             OutlinedTextField(
                 value = phoneNumber.value,
                 onValueChange = {
@@ -283,7 +346,7 @@ fun RegisterPage(navController: NavController, Register_ViewModel: Register_View
                         repeatPassword = repeatPassword.value
                     )
                 },
-                label = { Text(text = "Numero de telefono") },
+                placeholder = { Text(text = "Numero de telefono") },
                 colors = TextFieldDefaults.outlinedTextFieldColors(
                     unfocusedBorderColor = Color.Transparent,
                     backgroundColor = Color(0x79D8D8D8),
@@ -305,32 +368,40 @@ fun RegisterPage(navController: NavController, Register_ViewModel: Register_View
                     }
                 )
             )
-            if (phoneNumber.value.isEmpty()) {
+            Spacer(modifier = Modifier.height(10.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(0.8f)
+                    .padding(horizontal = 5.dp, vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Start
+            ) {
                 Text(
-                    text = "* Requerido",
-                    style = MaterialTheme.typography.labelMedium.copy(
-                        fontWeight = FontWeight.Light,
-                        color = Color.Red,
-                        fontStyle = FontStyle.Italic
-                    ),
-                    modifier = Modifier
-                        .align(Alignment.Start)
-                        .offset(x = 50.dp)
+                    text = "Contraseña",
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
                 )
-            } else if (!isPhoneNumberValid.value) {
-                Text(
-                    text = "* Numero no valido",
-                    style = MaterialTheme.typography.labelMedium.copy(
+                if (password.value.isEmpty()) {
+                    Text(
+                        text = "(Requerido)",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontWeight = FontWeight.Light,
+                            color = Color.Red,
+                            fontStyle = FontStyle.Italic
+                        ),
+                        modifier = Modifier
+                            .padding(horizontal = 7.dp)
+                    )
+                } else Text(
+                    text = "(${password.value.length}/30)",
+                    style = MaterialTheme.typography.bodySmall.copy(
                         fontWeight = FontWeight.Light,
-                        color = Color.Red,
+                        color = if (password.value.length > 30 || password.value.length < 6) Color.Red else Color.Black,
                         fontStyle = FontStyle.Italic
                     ),
                     modifier = Modifier
-                        .align(Alignment.Start)
-                        .offset(x = 50.dp)
+                        .padding(horizontal = 7.dp)
                 )
             }
-            Spacer(modifier = Modifier.height(5.dp))
             OutlinedTextField(
                 value = password.value,
                 onValueChange = {
@@ -343,7 +414,7 @@ fun RegisterPage(navController: NavController, Register_ViewModel: Register_View
                         repeatPassword = repeatPassword.value
                     )
                 },
-                label = { Text(text = "Contraseña") },
+                placeholder = { Text(text = "Contraseña del usuario") },
                 colors = TextFieldDefaults.outlinedTextFieldColors(
                     unfocusedBorderColor = Color.Transparent,
                     backgroundColor = Color(0x79D8D8D8),
@@ -367,39 +438,50 @@ fun RegisterPage(navController: NavController, Register_ViewModel: Register_View
                 visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
                     IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
-                        Icon(
+                        if(isPasswordVisible) Icon(
                             Icons.Default.Visibility,
+                            contentDescription = "Toggle password visibility"
+                        ) else Icon(
+                            Icons.Default.VisibilityOff,
                             contentDescription = "Toggle password visibility"
                         )
                     }
                 },
             )
-            if (password.value.isEmpty()) {
+            Spacer(modifier = Modifier.height(10.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(0.8f)
+                    .padding(horizontal = 5.dp, vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Start
+            ) {
                 Text(
-                    text = "* Requerido",
-                    style = MaterialTheme.typography.labelMedium.copy(
+                    text = "Repetir Contraseña",
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                )
+                if (repeatPassword.value.isEmpty()) {
+                    Text(
+                        text = "(Requerido)",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontWeight = FontWeight.Light,
+                            color = Color.Red,
+                            fontStyle = FontStyle.Italic
+                        ),
+                        modifier = Modifier
+                            .padding(horizontal = 7.dp)
+                    )
+                } else if(repeatPassword.value != password.value) Text(
+                    text = "(Contraseña desigual)",
+                    style = MaterialTheme.typography.bodySmall.copy(
                         fontWeight = FontWeight.Light,
                         color = Color.Red,
                         fontStyle = FontStyle.Italic
                     ),
                     modifier = Modifier
-                        .align(Alignment.Start)
-                        .offset(x = 50.dp)
-                )
-            } else {
-                Text(
-                    text = "${password.value.length}/30",
-                    style = MaterialTheme.typography.labelMedium.copy(
-                        fontWeight = FontWeight.Light,
-                        color = if (password.value.length < 6 || password.value.length > 30) Color.Red else Color.Black,
-                        fontStyle = FontStyle.Italic
-                    ),
-                    modifier = Modifier
-                        .align(Alignment.End)
-                        .offset(x = -50.dp)
+                        .padding(horizontal = 7.dp)
                 )
             }
-            Spacer(modifier = Modifier.height(5.dp))
             OutlinedTextField(
                 value = repeatPassword.value,
                 onValueChange = {
@@ -412,7 +494,7 @@ fun RegisterPage(navController: NavController, Register_ViewModel: Register_View
                         repeatPassword = it
                     )
                 },
-                label = { Text(text = "Repetir Contraseña") },
+                placeholder = { Text(text = "Repetir Contraseña") },
                 colors = TextFieldDefaults.outlinedTextFieldColors(
                     unfocusedBorderColor = Color.Transparent,
                     backgroundColor = Color(0x79D8D8D8),
@@ -431,51 +513,29 @@ fun RegisterPage(navController: NavController, Register_ViewModel: Register_View
                 visualTransformation = if (isRepeatPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
                     IconButton(onClick = { isRepeatPasswordVisible = !isRepeatPasswordVisible }) {
-                        Icon(
+                        if(isRepeatPasswordVisible) Icon(
                             Icons.Default.Visibility,
+                            contentDescription = "Toggle password visibility"
+                        ) else Icon(
+                            Icons.Default.VisibilityOff,
                             contentDescription = "Toggle password visibility"
                         )
                     }
                 },
             )
-            if (repeatPassword.value.isEmpty()) {
-                Text(
-                    text = "* Requerido",
-                    style = MaterialTheme.typography.labelMedium.copy(
-                        fontWeight = FontWeight.Light,
-                        color = Color.Red,
-                        fontStyle = FontStyle.Italic
-                    ),
-                    modifier = Modifier
-                        .align(Alignment.Start)
-                        .offset(x = 50.dp)
-                )
-            } else if (repeatPassword.value != password.value) {
-                Text(
-                    text = "* Contraseña desigual",
-                    style = MaterialTheme.typography.labelMedium.copy(
-                        fontWeight = FontWeight.Light,
-                        color = Color.Red,
-                        fontStyle = FontStyle.Italic
-                    ),
-                    modifier = Modifier
-                        .align(Alignment.Start)
-                        .offset(x = 50.dp)
-                )
-            }
 
             LaunchedEffect(snackbarVisibleState.value) {
                 if (snackbarVisibleState.value) {
                     delay(1500)
                     snackbarVisibleState.value = false
 
-                    if(snackbarMessage.value == "Se ha registrado correctamente.") {
+                    if (snackbarMessage.value == "Se ha registrado correctamente.") {
                         navController.navigate("login_screen")
                     }
                 }
             }
 
-            if(snackbarVisibleState.value) Snackbar(
+            if (snackbarVisibleState.value) Snackbar(
                 action = {},
                 modifier = Modifier
                     .padding(16.dp)

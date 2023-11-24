@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,10 +14,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.AlertDialog
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -99,12 +100,47 @@ fun LoginPage(
                 .fillMaxWidth()
                 .offset(y = 100.dp)
         ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(0.8f)
+                    .padding(horizontal = 5.dp, vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Start
+            ) {
+                Text(
+                    text = "Email",
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                )
+                if (email.value.isEmpty()) {
+                    Text(
+                        text = "(Requerido)",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontWeight = FontWeight.Light,
+                            color = Color.Red,
+                            fontStyle = FontStyle.Italic
+                        ),
+                        modifier = Modifier
+                            .padding(horizontal = 7.dp)
+                    )
+                } else if (!isMailValid.value) {
+                    Text(
+                        text = "(Email no valido)",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontWeight = FontWeight.Light,
+                            color = Color.Red,
+                            fontStyle = FontStyle.Italic
+                        ),
+                        modifier = Modifier
+                            .padding(horizontal = 7.dp)
+                    )
+                }
+            }
             androidx.compose.material.OutlinedTextField(
                 value = email.value,
                 onValueChange = {
                     LoginViewModel.onFieldsChanged(it, password.value)
                 },
-                label = { Text(text = "Email") },
+                placeholder = { Text(text = "Tu Correo electrónico") },
                 colors = androidx.compose.material.TextFieldDefaults.outlinedTextFieldColors(
                     unfocusedBorderColor = Color.Transparent,
                     backgroundColor = Color(0x79D8D8D8),
@@ -125,38 +161,46 @@ fun LoginPage(
                     }
                 )
             )
-            if (email.value.isEmpty()) {
+            Spacer(modifier = Modifier.height(20.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(0.8f)
+                    .padding(horizontal = 5.dp, vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Start
+            ) {
                 Text(
-                    text = "* Requerido",
-                    style = MaterialTheme.typography.labelMedium.copy(
-                        fontWeight = FontWeight.Light,
-                        color = Color.Red,
-                        fontStyle = FontStyle.Italic
-                    ),
-                    modifier = Modifier
-                        .align(Alignment.Start)
-                        .offset(x = 50.dp)
+                    text = "Contraseña",
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
                 )
-            } else if (!isMailValid.value) {
-                Text(
-                    text = "* Email no valido",
-                    style = MaterialTheme.typography.labelMedium.copy(
+                if(password.value.isEmpty()) {
+                    Text(
+                        text = "(Requerido)",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontWeight = FontWeight.Light,
+                            color = Color.Red,
+                            fontStyle = FontStyle.Italic
+                        ),
+                        modifier = Modifier
+                            .padding(horizontal = 7.dp)
+                    )
+                } else if(password.value.length < 6) Text(
+                    text = "(Demasiado pequeña)",
+                    style = MaterialTheme.typography.bodySmall.copy(
                         fontWeight = FontWeight.Light,
                         color = Color.Red,
                         fontStyle = FontStyle.Italic
                     ),
                     modifier = Modifier
-                        .align(Alignment.Start)
-                        .offset(x = 50.dp)
+                        .padding(horizontal = 7.dp)
                 )
             }
-            Spacer(modifier = Modifier.height(10.dp))
             androidx.compose.material.OutlinedTextField(
                 value = password.value,
                 onValueChange = {
                     LoginViewModel.onFieldsChanged(email.value, it)
                 },
-                label = { Text(text = "Contraseña") },
+                placeholder = { Text(text = "Tu Contraseña registrada") },
                 colors = androidx.compose.material.TextFieldDefaults.outlinedTextFieldColors(
                     unfocusedBorderColor = Color.Transparent,
                     backgroundColor = Color(0x79D8D8D8),
@@ -175,38 +219,18 @@ fun LoginPage(
                 visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
                     IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
-                        Icon(
-                            Icons.Default.Visibility,
+                        if(isPasswordVisible) {
+                            Icon(
+                                Icons.Default.Visibility,
+                                contentDescription = "Toggle password visibility"
+                            )
+                        } else Icon(
+                            Icons.Default.VisibilityOff,
                             contentDescription = "Toggle password visibility"
                         )
                     }
                 },
             )
-            if (password.value.isEmpty()) {
-                Text(
-                    text = "* Requerido",
-                    style = MaterialTheme.typography.labelMedium.copy(
-                        fontWeight = FontWeight.Light,
-                        color = Color.Red,
-                        fontStyle = FontStyle.Italic
-                    ),
-                    modifier = Modifier
-                        .align(Alignment.Start)
-                        .offset(x = 50.dp)
-                )
-            } else {
-                Text(
-                    text = "${password.value.length}/30",
-                    style = MaterialTheme.typography.labelMedium.copy(
-                        fontWeight = FontWeight.Light,
-                        color = if (password.value.length < 6 || password.value.length > 30) Color.Red else Color.Black,
-                        fontStyle = FontStyle.Italic
-                    ),
-                    modifier = Modifier
-                        .align(Alignment.End)
-                        .offset(x = -50.dp)
-                )
-            }
 
             LaunchedEffect(snackbarVisibleState.value) {
                 delay(2500)
@@ -227,21 +251,28 @@ fun LoginPage(
                             }
                         },
                         { errorMessage ->
-                            when(errorMessage) {
+                            when (errorMessage) {
                                 "USER_NOT_FOUND" -> {
-                                    snackbarMessageState.value = "No se pudo encontrar el email ingresado."
+                                    snackbarMessageState.value =
+                                        "No se pudo encontrar el email ingresado."
                                     snackbarVisibleState.value = true
                                 }
+
                                 "PASSWORD_INVALID" -> {
-                                    snackbarMessageState.value = "La contraseña no coincide con nuestros registros."
+                                    snackbarMessageState.value =
+                                        "La contraseña no coincide con nuestros registros."
                                     snackbarVisibleState.value = true
                                 }
+
                                 "UNKNOWN_ERROR" -> {
-                                    snackbarMessageState.value = "Ha ocurrido un problema. Porfavor, intentelo de nuevo."
+                                    snackbarMessageState.value =
+                                        "Ha ocurrido un problema. Porfavor, intentelo de nuevo."
                                     snackbarVisibleState.value = true
                                 }
+
                                 "FAILED_TO_GET_USER_DOCUMENT" -> {
-                                    snackbarMessageState.value = "No fue posible obtener los datos del usuario. Porfavor, intentelo de nuevo mas tarde."
+                                    snackbarMessageState.value =
+                                        "No fue posible obtener los datos del usuario. Porfavor, intentelo de nuevo mas tarde."
                                     snackbarVisibleState.value = true
                                 }
                             }
@@ -286,7 +317,9 @@ fun LoginPage(
 
         if (snackbarVisibleState.value) {
             Snackbar(
-                modifier = Modifier.padding(8.dp).zIndex(10f),
+                modifier = Modifier
+                    .padding(8.dp)
+                    .zIndex(10f),
                 action = {}
             ) { Text(snackbarMessageState.value) }
         }

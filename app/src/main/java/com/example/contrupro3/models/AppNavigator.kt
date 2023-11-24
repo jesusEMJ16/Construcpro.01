@@ -18,7 +18,7 @@ import com.example.contrupro3.ui.theme.DocumentsScreens.DocumentsScreen
 import com.example.contrupro3.ui.theme.LoginScreens.LoginPage
 import com.example.contrupro3.ui.theme.ProjectsScreens.CardviewProjectsScreen
 import com.example.contrupro3.ui.theme.ProjectsScreens.ProjectView
-import com.example.contrupro3.ui.theme.RegisterScreens.RegisterPage
+import com.example.contrupro3.ui.theme.LoginScreens.RegisterPage
 import com.example.contrupro3.ui.theme.SplashScreen.SplashScreen
 import com.example.contrupro3.ui.theme.TeamsScreens.CardViewTeamsScreen
 import com.example.contrupro3.ui.theme.TeamsScreens.TeamsScreen
