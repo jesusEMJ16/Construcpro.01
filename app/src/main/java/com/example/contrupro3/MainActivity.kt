@@ -9,6 +9,7 @@ import androidx.annotation.RequiresApi
 import com.example.contrupro3.models.AuthRepository
 import com.example.contrupro3.models.AppNavigator
 import com.google.firebase.auth.FirebaseAuth
+import com.jakewharton.threetenabp.AndroidThreeTen
 
 class MainActivity : ComponentActivity() {
     private val auth by lazy { FirebaseAuth.getInstance() }
@@ -18,6 +19,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(R.style.Theme_ContruPro3)
         super.onCreate(savedInstanceState)
+        AndroidThreeTen.init(this)
         setContent {
             val navController = rememberNavController()
             AppNavigator(auth, navController, authRepository)

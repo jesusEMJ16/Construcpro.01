@@ -60,20 +60,16 @@ import kotlinx.coroutines.delay
 
 @Composable
 fun RegisterPage(navController: NavController, Register_ViewModel: Register_ViewModel) {
-    val registrationSuccessState = remember { mutableStateOf(false) }
     var isPasswordVisible by remember { mutableStateOf(false) }
     var isRepeatPasswordVisible by remember { mutableStateOf(false) }
     val snackbarVisibleState = remember { mutableStateOf(false) }
     val snackbarMessage = remember { mutableStateOf("") }
-
     val name = Register_ViewModel.name.observeAsState("")
     val lastName = Register_ViewModel.lastName.observeAsState("")
     val email = Register_ViewModel.email.observeAsState("")
     val phoneNumber = Register_ViewModel.phoneNumber.observeAsState("")
     val password = Register_ViewModel.password.observeAsState("")
     val repeatPassword = Register_ViewModel.repeatPassword.observeAsState("")
-    val isMailValid = Register_ViewModel.isMailValid.observeAsState(false)
-    val isPhoneNumberValid = Register_ViewModel.isPhoneNumberValid.observeAsState(false)
     val enableRegisterButton = Register_ViewModel.enableRegisterButton.observeAsState(false)
     val focusManager = LocalFocusManager.current
 
@@ -113,7 +109,7 @@ fun RegisterPage(navController: NavController, Register_ViewModel: Register_View
                         text = "(Requerido)",
                         style = MaterialTheme.typography.bodySmall.copy(
                             fontWeight = FontWeight.Light,
-                            color = Color.Red,
+                            color = Color.Gray,
                             fontStyle = FontStyle.Italic
                         ),
                         modifier = Modifier
@@ -123,7 +119,7 @@ fun RegisterPage(navController: NavController, Register_ViewModel: Register_View
                     text = "(${name.value.length}/20)",
                     style = MaterialTheme.typography.bodySmall.copy(
                         fontWeight = FontWeight.Light,
-                        color = if (name.value.length > 20 || name.value.isEmpty()) Color.Red else Color.Black,
+                        color = if (name.value.length > 20 || name.value.isEmpty()) Color.Red else Color.Gray,
                         fontStyle = FontStyle.Italic
                     ),
                     modifier = Modifier
@@ -163,7 +159,7 @@ fun RegisterPage(navController: NavController, Register_ViewModel: Register_View
                     }
                 )
             )
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(15.dp))
             Row(
                 modifier = Modifier
                     .fillMaxWidth(0.8f)
@@ -180,7 +176,7 @@ fun RegisterPage(navController: NavController, Register_ViewModel: Register_View
                         text = "(Requerido)",
                         style = MaterialTheme.typography.bodySmall.copy(
                             fontWeight = FontWeight.Light,
-                            color = Color.Red,
+                            color = Color.Gray,
                             fontStyle = FontStyle.Italic
                         ),
                         modifier = Modifier
@@ -191,7 +187,7 @@ fun RegisterPage(navController: NavController, Register_ViewModel: Register_View
                         text = "(${lastName.value.length}/20)",
                         style = MaterialTheme.typography.bodySmall.copy(
                             fontWeight = FontWeight.Light,
-                            color = if (lastName.value.length > 20 || lastName.value.isEmpty()) Color.Red else Color.Black,
+                            color = if (lastName.value.length > 20 || lastName.value.isEmpty()) Color.Red else Color.Gray,
                             fontStyle = FontStyle.Italic
                         ),
                         modifier = Modifier
@@ -232,7 +228,7 @@ fun RegisterPage(navController: NavController, Register_ViewModel: Register_View
                     }
                 )
             )
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(15.dp))
             Row(
                 modifier = Modifier
                     .fillMaxWidth(0.8f)
@@ -249,7 +245,7 @@ fun RegisterPage(navController: NavController, Register_ViewModel: Register_View
                         text = "(Requerido)",
                         style = MaterialTheme.typography.bodySmall.copy(
                             fontWeight = FontWeight.Light,
-                            color = Color.Red,
+                            color = Color.Gray,
                             fontStyle = FontStyle.Italic
                         ),
                         modifier = Modifier
@@ -259,7 +255,7 @@ fun RegisterPage(navController: NavController, Register_ViewModel: Register_View
                     text = "(Email no válido)",
                     style = MaterialTheme.typography.bodySmall.copy(
                         fontWeight = FontWeight.Light,
-                        color = Color.Red,
+                        color = Color.Gray,
                         fontStyle = FontStyle.Italic
                     ),
                     modifier = Modifier
@@ -300,75 +296,7 @@ fun RegisterPage(navController: NavController, Register_ViewModel: Register_View
                     }
                 )
             )
-            Spacer(modifier = Modifier.height(10.dp))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth(0.8f)
-                    .padding(horizontal = 5.dp, vertical = 2.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Start
-            ) {
-                Text(
-                    text = "Numero de telefono",
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
-                )
-                if (phoneNumber.value.isEmpty()) {
-                    Text(
-                        text = "(Requerido)",
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            fontWeight = FontWeight.Light,
-                            color = Color.Red,
-                            fontStyle = FontStyle.Italic
-                        ),
-                        modifier = Modifier
-                            .padding(horizontal = 7.dp)
-                    )
-                } else if(!isPhoneNumberValid(phoneNumber.value)) Text(
-                    text = "(Numero no válido)",
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        fontWeight = FontWeight.Light,
-                        color = Color.Red,
-                        fontStyle = FontStyle.Italic
-                    ),
-                    modifier = Modifier
-                        .padding(horizontal = 7.dp)
-                )
-            }
-            OutlinedTextField(
-                value = phoneNumber.value,
-                onValueChange = {
-                    Register_ViewModel.onRegisterFieldsChanged(
-                        name = name.value,
-                        lastName = lastName.value,
-                        phoneNumber = it,
-                        email = email.value,
-                        password = password.value,
-                        repeatPassword = repeatPassword.value
-                    )
-                },
-                placeholder = { Text(text = "Numero de telefono") },
-                colors = TextFieldDefaults.outlinedTextFieldColors(
-                    unfocusedBorderColor = Color.Transparent,
-                    backgroundColor = Color(0x79D8D8D8),
-                    focusedBorderColor = Color.Transparent,
-                    cursorColor = myBlue,
-                    disabledBorderColor = Color.Transparent,
-                ),
-                singleLine = true,
-                maxLines = 1,
-                modifier = Modifier
-                    .fillMaxWidth(0.8f),
-                keyboardOptions = KeyboardOptions.Default.copy(
-                    keyboardType = KeyboardType.Phone,
-                    imeAction = ImeAction.Next
-                ),
-                keyboardActions = KeyboardActions(
-                    onNext = {
-                        focusManager.moveFocus(FocusDirection.Down)
-                    }
-                )
-            )
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(15.dp))
             Row(
                 modifier = Modifier
                     .fillMaxWidth(0.8f)
@@ -385,7 +313,7 @@ fun RegisterPage(navController: NavController, Register_ViewModel: Register_View
                         text = "(Requerido)",
                         style = MaterialTheme.typography.bodySmall.copy(
                             fontWeight = FontWeight.Light,
-                            color = Color.Red,
+                            color = Color.Gray,
                             fontStyle = FontStyle.Italic
                         ),
                         modifier = Modifier
@@ -395,7 +323,7 @@ fun RegisterPage(navController: NavController, Register_ViewModel: Register_View
                     text = "(${password.value.length}/30)",
                     style = MaterialTheme.typography.bodySmall.copy(
                         fontWeight = FontWeight.Light,
-                        color = if (password.value.length > 30 || password.value.length < 6) Color.Red else Color.Black,
+                        color = if (password.value.length > 30 || password.value.length < 6) Color.Red else Color.Gray,
                         fontStyle = FontStyle.Italic
                     ),
                     modifier = Modifier
@@ -448,7 +376,7 @@ fun RegisterPage(navController: NavController, Register_ViewModel: Register_View
                     }
                 },
             )
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(15.dp))
             Row(
                 modifier = Modifier
                     .fillMaxWidth(0.8f)
@@ -465,7 +393,7 @@ fun RegisterPage(navController: NavController, Register_ViewModel: Register_View
                         text = "(Requerido)",
                         style = MaterialTheme.typography.bodySmall.copy(
                             fontWeight = FontWeight.Light,
-                            color = Color.Red,
+                            color = Color.Gray,
                             fontStyle = FontStyle.Italic
                         ),
                         modifier = Modifier
@@ -475,7 +403,7 @@ fun RegisterPage(navController: NavController, Register_ViewModel: Register_View
                     text = "(Contraseña desigual)",
                     style = MaterialTheme.typography.bodySmall.copy(
                         fontWeight = FontWeight.Light,
-                        color = Color.Red,
+                        color = Color.Gray,
                         fontStyle = FontStyle.Italic
                     ),
                     modifier = Modifier
@@ -549,7 +477,7 @@ fun RegisterPage(navController: NavController, Register_ViewModel: Register_View
                         name.value,
                         lastName.value,
                         email.value,
-                        phoneNumber.value,
+                        null,
                         password.value,
                         {
                             snackbarMessage.value = "Se ha registrado correctamente."
@@ -585,7 +513,7 @@ fun RegisterUser(
     name: String,
     lastName: String,
     email: String,
-    phoneNumber: String,
+    phoneNumber: String?,
     password: String,
     onSucces: () -> Unit,
     onFail: (String) -> Unit

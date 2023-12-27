@@ -3,11 +3,12 @@ package com.example.contrupro3.ui.theme.TeamsScreens
 import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
-import android.util.Log
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -49,21 +51,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.toLowerCase
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.zIndex
 import androidx.navigation.NavHostController
+import com.example.contrupro3.R
+import com.example.contrupro3.SendNotificationToUser
 import com.example.contrupro3.models.AuthRepository
 import com.example.contrupro3.models.TeamsModels.TeamCard_ViewModel
 import com.example.contrupro3.models.TeamsModels.TeamMember
 import com.example.contrupro3.models.TeamsModels.Teams
+import com.example.contrupro3.models.UserModels.ActionButton
+import com.example.contrupro3.models.UserModels.IconModel
 import com.example.contrupro3.ui.theme.myBlue
 import com.example.contrupro3.ui.theme.myOrangehigh
-import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.tasks.await
 
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -131,7 +134,7 @@ fun CardViewTeamsScreen(
                     )
                     InformationCard(userId, projectId, team, TeamCard_ViewModel)
                     Spacer(modifier = Modifier.height(10.dp))
-                    MembersCard(userId, projectId, team, TeamCard_ViewModel)
+                    MembersCard(authRepository, userId, projectId, team, TeamCard_ViewModel)
                 }
             }
         }
@@ -351,12 +354,15 @@ private fun InformationCard(
 
 @Composable
 private fun MembersCard(
+    authRepository: AuthRepository,
     userId: String,
     projectId: String,
     team: MutableState<Teams?>,
     TeamCard_ViewModel: TeamCard_ViewModel
 ) {
     val showInviteDialog = remember { mutableStateOf(false) }
+    val membersList = remember { mutableStateOf<List<TeamMember>>(emptyList()) }
+    authRepository.loadMembersOfTeam(membersList, userId, projectId, team.value?.id.toString())
 
     Box(modifier = Modifier.fillMaxWidth()) {
         Column(
@@ -366,7 +372,7 @@ private fun MembersCard(
             verticalArrangement = Arrangement.Top
         ) {
             Text(
-                text = "Lista De Usuarios",
+                text = "Miembros del equipo",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold),
                 color = myBlue,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -378,7 +384,49 @@ private fun MembersCard(
                     .fillMaxHeight(0.6f)
                     .background(Color(0x79D8D8D8))
             ) {
-
+                items(membersList.value.filter { a -> a.inviteStatus == "Accepted" }.size) { index ->
+                    val member =
+                        membersList.value.filter { a -> a.inviteStatus == "Accepted" }[index]
+                    Box(
+                        modifier = Modifier
+                            .padding(10.dp)
+                            .clickable { }
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Start,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(50.dp)
+                                    .padding(end = 3.dp)
+                            ) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.user_icon),
+                                    contentDescription = "Icono del usuario",
+                                    modifier = Modifier.offset(y = 3.dp)
+                                )
+                            }
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalAlignment = Alignment.Start,
+                                verticalArrangement = Arrangement.Top
+                            ) {
+                                Text(
+                                    text = "${member.name} ${member.lastName}",
+                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+                                )
+                                Text(
+                                    text = "${member.email}",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    modifier = Modifier.padding(start = 3.dp)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.padding(vertical = 10.dp))
+                    }
+                }
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -400,10 +448,12 @@ private fun MembersCard(
     }
 
     if (showInviteDialog.value) InviteDialog(
+        authRepository,
         userId,
         team.value?.id,
         projectId,
-        TeamCard_ViewModel
+        TeamCard_ViewModel,
+        team.value!!.name.toString()
     ) {
         showInviteDialog.value = false
     }
@@ -416,14 +466,17 @@ fun isValidEmail(email: String): Boolean {
 
 @Composable
 fun InviteDialog(
+    authRepository: AuthRepository,
     userId: String,
     teamId: String?,
     projectId: String,
     TeamCard_ViewModel1: TeamCard_ViewModel,
+    teamName: String,
     onDismiss: () -> Unit
 ) {
     val email = remember { mutableStateOf("") }
     val context = LocalContext.current
+    val ownerName = authRepository.getLoggedInUserName().observeAsState("")
 
     Dialog(onDismissRequest = { onDismiss() }) {
         Card(
@@ -522,6 +575,19 @@ fun InviteDialog(
                     Button(
                         onClick = {
                             AddMemberToDatabase(userId, teamId.toString(), projectId, email.value)
+                            SendNotificationToUser(
+                                title = "Has sido invitado a un grupo.",
+                                description = "Has sido invitado a un grupo llamado '$teamName' de ${ownerName.value}.",
+                                actionButton = ActionButton("Aceptar", "accept"),
+                                additionalInfo = mapOf<String, Any>(
+                                    "ownerId" to authRepository.getLoggedInUserUID().value.toString(),
+                                    "teamId" to teamId.toString(),
+                                    "projectId" to projectId,
+                                    "email" to email.value
+                                ),
+                                icon = IconModel("GroupAdd", "Green"),
+                                methodToGetUserId = "email"
+                            )
                             onDismiss()
                             Toast.makeText(
                                 context,

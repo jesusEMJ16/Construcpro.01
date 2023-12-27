@@ -1,9 +1,12 @@
 package com.example.contrupro3.ui.theme.Menu
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,12 +24,17 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.AlertDialog
+import androidx.compose.material.Badge
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Card
 import androidx.compose.material.Divider
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.TextButton
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.NotificationsNone
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -48,16 +56,24 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
 import com.example.contrupro3.R
 import com.example.contrupro3.models.AuthRepository
 import com.example.contrupro3.ui.theme.lightblue
+import com.example.contrupro3.ui.theme.myBlue
+import com.google.firebase.firestore.FirebaseFirestore
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun HamburgueerMenu(navController: NavController, authRepository: AuthRepository) {
     var isDrawerOpen by remember { mutableStateOf(false) }
     val offsetX by animateDpAsState(if (isDrawerOpen) 0.dp else (-330).dp, label = "")
     val loggedInUserName: String by authRepository.getLoggedInUserName().observeAsState("")
+    val loggedInUserUID: String by authRepository.getLoggedInUserUID().observeAsState("")
+    val notificationsDialogEnabled = remember { mutableStateOf(false) }
+    val newNotificationsCount = remember { mutableStateOf("0") }
+    GetNotificationsCounter(loggedInUserUID) { notifys -> newNotificationsCount.value = notifys }
 
     LaunchedEffect(key1 = navController.currentBackStackEntry) {
         isDrawerOpen = false
@@ -92,7 +108,6 @@ fun HamburgueerMenu(navController: NavController, authRepository: AuthRepository
                         horizontalAlignment = Alignment.Start
                     ) {
                         Spacer(modifier = Modifier.height(30.dp))
-
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -106,23 +121,18 @@ fun HamburgueerMenu(navController: NavController, authRepository: AuthRepository
                                         fontSize = 16.sp,
                                         fontWeight = FontWeight.Bold
                                     )
-                                ) {
-                                    append("Bienvenido: ")
-
-                                }
+                                ) { append("Bienvenido: ") }
                                 withStyle(
                                     style = SpanStyle(
                                         color = lightblue,
                                         fontSize = 16.sp,
                                         fontWeight = FontWeight.Bold
                                     )
-                                ) {
-                                    append(loggedInUserName)
-                                }
+                                ) { append(loggedInUserName) }
                             }
                             Box(
                                 modifier = Modifier
-                                    .fillMaxWidth()
+                                    .fillMaxWidth(0.8f)
                                     .padding(vertical = 5.dp)
                                     .wrapContentHeight(align = Alignment.Bottom)
                             ) {
@@ -133,6 +143,38 @@ fun HamburgueerMenu(navController: NavController, authRepository: AuthRepository
                                     fontWeight = FontWeight.Bold,
                                     modifier = Modifier.align(Alignment.Center)
                                 )
+                                Icon(
+                                    if (notificationsDialogEnabled.value) Icons.Default.Notifications else Icons.Default.NotificationsNone,
+                                    contentDescription = "Notificaciones",
+                                    modifier = Modifier
+                                        .size(30.dp)
+                                        .align(Alignment.TopEnd)
+                                        .offset(x = 20.dp, y = -25.dp)
+                                        .clickable(
+                                            onClick = {
+                                                notificationsDialogEnabled.value =
+                                                    !notificationsDialogEnabled.value
+                                            }
+                                        ),
+                                    tint = myBlue
+                                )
+
+                                if(newNotificationsCount.value.toInt() > 0) {
+                                    Badge(
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .padding(4.dp)
+                                            .offset(x = if(newNotificationsCount.value == "+9") 27.dp else 22.dp, y = -15.dp)
+                                            .zIndex(1f),
+                                        backgroundColor = myBlue
+                                    ) {
+                                        Text(
+                                            text = newNotificationsCount.value.toString(),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = Color.White
+                                        )
+                                    }
+                                }
                             }
                         }
                         Spacer(modifier = Modifier.height(5.dp))
@@ -183,6 +225,26 @@ fun HamburgueerMenu(navController: NavController, authRepository: AuthRepository
             }
         }
     }
+    if (notificationsDialogEnabled.value) NotificationsDialog(authRepository, loggedInUserUID, newNotificationsCount.value) {
+        notificationsDialogEnabled.value = false
+    }
+}
+
+fun GetNotificationsCounter(loggedInUserUID: String, onSuccess: (String) -> Unit) {
+    val firebase = FirebaseFirestore.getInstance()
+    val notificationsCollection = firebase
+        .collection("Users")
+        .document(loggedInUserUID)
+        .collection("Notifications")
+
+    notificationsCollection.whereEqualTo("status", "unread")
+        .get().addOnSuccessListener { QuerySnapshot ->
+            if(!QuerySnapshot.isEmpty) {
+                if(QuerySnapshot.documents.size > 9) {
+                    onSuccess("+9")
+                } else onSuccess(QuerySnapshot.documents.size.toString())
+            } else onSuccess("0")
+        }
 }
 
 @Composable
@@ -198,19 +260,19 @@ fun MenuOpciones(navController: NavController, authRepository: AuthRepository) {
     CreateOptionButton("Calendario", painterResource(R.drawable.calender_icon)) {
 
     }
-    CreateOptionButton("Comunicacion", painterResource(R.drawable.comunication_icon)) {
+    CreateOptionButton("Comunicación", painterResource(R.drawable.comunication_icon)) {
 
     }
     CreateOptionButton("Equipos", painterResource(R.drawable.task_icon)) {
         navController.navigate("teams_screen/$userID")
     }
-    CreateOptionButton("Reportes y Analiticas", painterResource(R.drawable.analityc_icon)) {
+    CreateOptionButton("Reportes y Analíticas", painterResource(R.drawable.analityc_icon)) {
 
     }
-    CreateOptionButton("Prosupuesto y Compras", painterResource(R.drawable.coston_icon)) {
+    CreateOptionButton("Presupuestos y Compras", painterResource(R.drawable.coston_icon)) {
         navController.navigate("presucom_screen/$userID")
     }
-    CreateOptionButton("Planos y Documentacion", painterResource(R.drawable.documents_icon)) {
+    CreateOptionButton("Planos y Documentación", painterResource(R.drawable.documents_icon)) {
         navController.navigate("documents_screen/$userID")
     }
     CreateOptionButton("Soporte y Ayuda", painterResource(R.drawable.help_icon)) {
@@ -246,7 +308,7 @@ fun SectionDown(navController: NavController, authRepository: AuthRepository) {
                 Icon(
                     painterResource(R.drawable.config_icon),
                     modifier = Modifier.size(35.dp),
-                    contentDescription = null ,
+                    contentDescription = null,
                     tint = Color.Unspecified
                 )
             }

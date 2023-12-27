@@ -8,7 +8,12 @@ import androidx.lifecycle.MutableLiveData
 import com.example.contrupro3.models.BudgetModels.PurchasesModel
 import com.example.contrupro3.models.DocumentsModels.DocumentModel
 import com.example.contrupro3.models.ProjectsModels.Project
+import com.example.contrupro3.models.TeamsModels.TeamMember
 import com.example.contrupro3.models.TeamsModels.Teams
+import com.example.contrupro3.models.UserModels.NotificationModel
+import com.example.contrupro3.models.UserModels.UserModel
+import com.google.android.gms.tasks.Task
+import com.google.android.gms.tasks.Tasks
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
@@ -16,6 +21,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.firestore.DocumentSnapshot
 
 class AuthRepository(private val auth: FirebaseAuth) {
 
@@ -113,6 +119,72 @@ class AuthRepository(private val auth: FirebaseAuth) {
                 }
                 .addOnFailureListener { exception ->
                     team.value = null
+                    onStatusChanged?.invoke("Failed")
+                }
+        }
+    }
+
+    fun loadMembersOfTeam(
+        membersList: MutableState<List<TeamMember>>,
+        userId: String,
+        projectId: String,
+        teamId: String,
+        onStatusChanged: ((String) -> Unit)?= null) {
+        val firestore = FirebaseFirestore.getInstance()
+        val user = getCurrentUser()
+        if (user != null) {
+            val collection = firestore
+                .collection("Users")
+                .document(userId)
+                .collection("Projects")
+                .document(projectId)
+                .collection("Teams")
+                .document(teamId)
+                .collection("Members")
+
+            collection.get()
+                .addOnSuccessListener { documents ->
+                    val loadedMembers = documents.map { document ->
+                        val team = document.toObject(TeamMember::class.java)
+                        team.copy(id = document.id)
+                    }
+                    onStatusChanged?.invoke("Loaded")
+                    membersList.value = loadedMembers
+                }
+                .addOnFailureListener {
+                    onStatusChanged?.invoke("Failed")
+                }
+        }
+    }
+
+    fun loadNotifications(
+        notificationsList: MutableState<List<NotificationModel>>,
+        onStatusChanged: ((String) -> Unit)?= null
+    ) {
+        val firestore = FirebaseFirestore.getInstance()
+        val user = getCurrentUser()
+        if (user != null) {
+            val collection = firestore
+                .collection("Users")
+                .document(user.uid)
+                .collection("Notifications")
+
+            collection.get()
+                .addOnSuccessListener { documents ->
+                    val loadedNotifys = documents.mapNotNull { document ->
+                        try {
+                            val notify = document.toObject(NotificationModel::class.java)
+                            notify?.copy(id = document.id)
+                        } catch (e: Exception) {
+                             Log.e("ERROR", "Error al convertir el documento", e)
+                            onStatusChanged?.invoke("Failed")
+                            null
+                        }
+                    }
+                    onStatusChanged?.invoke("Loaded")
+                    notificationsList.value = loadedNotifys
+                }
+                .addOnFailureListener {
                     onStatusChanged?.invoke("Failed")
                 }
         }

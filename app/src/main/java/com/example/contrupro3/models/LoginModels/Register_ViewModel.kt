@@ -44,7 +44,6 @@ class Register_ViewModel: ViewModel() {
         if(name.isNotEmpty() && name.length <= 20 &&
             lastName.isNotEmpty() && lastName.length <= 20 &&
             isValidEmail(email) &&
-            isPhoneNumberValid(phoneNumber) &&
             password.length >= 6 && password.length <= 30 &&
             repeatPassword == password) _enableRegisterButton.value = true else _enableRegisterButton.value = false
     }

@@ -740,7 +740,6 @@ fun ProjectCard(
     }
 }
 
-
 @OptIn(InternalCoroutinesApi::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable

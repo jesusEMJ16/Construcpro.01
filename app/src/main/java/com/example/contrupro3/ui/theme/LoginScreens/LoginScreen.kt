@@ -40,7 +40,6 @@ import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -111,12 +110,12 @@ fun LoginPage(
                     text = "Email",
                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
                 )
-                if (email.value.isEmpty()) {
+                /*if (email.value.isEmpty()) {
                     Text(
                         text = "(Requerido)",
                         style = MaterialTheme.typography.bodySmall.copy(
                             fontWeight = FontWeight.Light,
-                            color = Color.Red,
+                            color = Color.Gray,
                             fontStyle = FontStyle.Italic
                         ),
                         modifier = Modifier
@@ -127,13 +126,13 @@ fun LoginPage(
                         text = "(Email no valido)",
                         style = MaterialTheme.typography.bodySmall.copy(
                             fontWeight = FontWeight.Light,
-                            color = Color.Red,
+                            color = Color.Gray,
                             fontStyle = FontStyle.Italic
                         ),
                         modifier = Modifier
                             .padding(horizontal = 7.dp)
                     )
-                }
+                }*/
             }
             androidx.compose.material.OutlinedTextField(
                 value = email.value,
@@ -173,12 +172,12 @@ fun LoginPage(
                     text = "Contraseña",
                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
                 )
-                if(password.value.isEmpty()) {
+                /*if(password.value.isEmpty()) {
                     Text(
                         text = "(Requerido)",
                         style = MaterialTheme.typography.bodySmall.copy(
                             fontWeight = FontWeight.Light,
-                            color = Color.Red,
+                            color = Color.Gray,
                             fontStyle = FontStyle.Italic
                         ),
                         modifier = Modifier
@@ -188,12 +187,12 @@ fun LoginPage(
                     text = "(Demasiado pequeña)",
                     style = MaterialTheme.typography.bodySmall.copy(
                         fontWeight = FontWeight.Light,
-                        color = Color.Red,
+                        color = Color.Gray,
                         fontStyle = FontStyle.Italic
                     ),
                     modifier = Modifier
                         .padding(horizontal = 7.dp)
-                )
+                )*/
             }
             androidx.compose.material.OutlinedTextField(
                 value = password.value,
@@ -219,7 +218,7 @@ fun LoginPage(
                 visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
                     IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
-                        if(isPasswordVisible) {
+                        if (isPasswordVisible) {
                             Icon(
                                 Icons.Default.Visibility,
                                 contentDescription = "Toggle password visibility"
@@ -239,45 +238,63 @@ fun LoginPage(
 
             Button(
                 onClick = {
-                    SignInUser(
-                        email.value,
-                        password.value,
-                        {
-                            val userID = authRepository.getCurrentUser()?.uid
-                            if (userID != null) {
-                                navController.navigate("projects_screen/$userID") {
-                                    popUpTo("login_screen") { inclusive = true }
+                    if (email.value.isEmpty()) {
+                        snackbarMessageState.value = "Ingresa un correo electronico."
+                        snackbarVisibleState.value = true
+                    } else if (!isMailValid.value) {
+                        snackbarMessageState.value = "El correo electronico no es valido."
+                        snackbarVisibleState.value = true
+                    } else if (password.value.isEmpty()) {
+                        snackbarMessageState.value = "Ingresa tu contraseña."
+                        snackbarVisibleState.value = true
+                    } else if (password.value.length < 6) {
+                        snackbarMessageState.value =
+                            "La contraseña debe contener 6 o mas más caracteres."
+                        snackbarVisibleState.value = true
+                    }
+
+                    if (email.value.isNotEmpty() && isMailValid.value && password.value.isNotEmpty() && password.value.length >= 6) {
+                        SignInUser(
+                            email.value,
+                            password.value,
+                            {
+                                val userID = authRepository.getCurrentUser()?.uid
+                                if (userID != null) {
+                                    navController.navigate("projects_screen/$userID") {
+                                        popUpTo("login_screen") { inclusive = true }
+                                    }
+                                }
+                            },
+                            { errorMessage ->
+                                when (errorMessage) {
+                                    "USER_NOT_FOUND" -> {
+                                        snackbarMessageState.value =
+                                            "No se pudo encontrar el email ingresado."
+                                        snackbarVisibleState.value = true
+                                    }
+
+                                    "PASSWORD_INVALID" -> {
+                                        snackbarMessageState.value =
+                                            "La contraseña no coincide con nuestros registros."
+                                        snackbarVisibleState.value = true
+                                    }
+
+                                    "UNKNOWN_ERROR" -> {
+                                        snackbarMessageState.value =
+                                            "Ha ocurrido un problema. Porfavor, intentelo de nuevo."
+                                        snackbarVisibleState.value = true
+                                    }
+
+                                    "FAILED_TO_GET_USER_DOCUMENT" -> {
+                                        snackbarMessageState.value =
+                                            "No fue posible obtener los datos del usuario. Porfavor, intentelo de nuevo mas tarde."
+                                        snackbarVisibleState.value = true
+                                    }
                                 }
                             }
-                        },
-                        { errorMessage ->
-                            when (errorMessage) {
-                                "USER_NOT_FOUND" -> {
-                                    snackbarMessageState.value =
-                                        "No se pudo encontrar el email ingresado."
-                                    snackbarVisibleState.value = true
-                                }
+                        )
+                    }
 
-                                "PASSWORD_INVALID" -> {
-                                    snackbarMessageState.value =
-                                        "La contraseña no coincide con nuestros registros."
-                                    snackbarVisibleState.value = true
-                                }
-
-                                "UNKNOWN_ERROR" -> {
-                                    snackbarMessageState.value =
-                                        "Ha ocurrido un problema. Porfavor, intentelo de nuevo."
-                                    snackbarVisibleState.value = true
-                                }
-
-                                "FAILED_TO_GET_USER_DOCUMENT" -> {
-                                    snackbarMessageState.value =
-                                        "No fue posible obtener los datos del usuario. Porfavor, intentelo de nuevo mas tarde."
-                                    snackbarVisibleState.value = true
-                                }
-                            }
-                        }
-                    )
                 },
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 5.dp),
                 colors = ButtonDefaults.buttonColors(myBlue, contentColor = Color.White),
@@ -285,7 +302,7 @@ fun LoginPage(
                     .offset(y = 30.dp)
                     .fillMaxWidth(0.6f)
                     .padding(8.dp),
-                enabled = enabledLoginButton.value
+                enabled = true
             ) {
                 Text("Ingresar")
             }
