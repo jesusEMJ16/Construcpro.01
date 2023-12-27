@@ -11,17 +11,10 @@ import com.example.contrupro3.models.ProjectsModels.Project
 import com.example.contrupro3.models.TeamsModels.TeamMember
 import com.example.contrupro3.models.TeamsModels.Teams
 import com.example.contrupro3.models.UserModels.NotificationModel
-import com.example.contrupro3.models.UserModels.UserModel
-import com.google.android.gms.tasks.Task
-import com.google.android.gms.tasks.Tasks
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
-import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
-import com.google.firebase.firestore.DocumentSnapshot
 
 class AuthRepository(private val auth: FirebaseAuth) {
 
@@ -190,13 +183,15 @@ class AuthRepository(private val auth: FirebaseAuth) {
         }
     }
 
-    fun loadDocumentsFromFirebase(documentsList: MutableState<List<DocumentModel>>) {
+    fun loadDocumentsFromFirebase(projectId: String, documentsList: MutableState<List<DocumentModel>>) {
         val firestore = FirebaseFirestore.getInstance()
         val user = getCurrentUser()
         if (user != null) {
             val documentsCollection = firestore
                 .collection("Users")
                 .document(user.uid)
+                .collection("Projects")
+                .document(projectId)
                 .collection("Documents")
 
             documentsCollection.get()

@@ -84,6 +84,7 @@ fun CardViewDocumentsScreen(
     navController: NavHostController,
     authRepository: AuthRepository,
     userID: String,
+    projectId: String,
     documentId: String
 ) {
     val DocumentList = remember { mutableStateOf<DocumentModel?>(null) }

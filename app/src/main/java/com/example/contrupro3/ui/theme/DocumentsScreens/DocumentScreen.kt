@@ -7,12 +7,14 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
+import android.os.Build
 import android.os.ParcelFileDescriptor
 import android.provider.OpenableColumns
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -31,7 +33,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.AlertDialog
 import androidx.compose.material.Card
@@ -51,7 +52,7 @@ import androidx.compose.material.icons.filled.CheckBoxOutlineBlank
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FilterAlt
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -69,7 +70,6 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -83,15 +83,18 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.rememberImagePainter
+import com.example.contrupro3.ProjectSelection
 import com.example.contrupro3.R
 import com.example.contrupro3.models.AuthRepository
 import com.example.contrupro3.models.DocumentsModels.DocumentModel
+import com.example.contrupro3.models.DocumentsModels.DocumentScreen_ViewModel
+import com.example.contrupro3.models.ProjectsModels.Project
 import com.example.contrupro3.ui.theme.Menu.HamburgueerMenu
+import com.example.contrupro3.ui.theme.TeamsScreens.FilterTeams
 import com.example.contrupro3.ui.theme.myBlue
 import com.example.contrupro3.ui.theme.myOrangehigh
 import com.example.contrupro3.ui.theme.myOrangelow
@@ -108,47 +111,29 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
 
+@RequiresApi(Build.VERSION_CODES.O)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun DocumentsScreen(
     navController: NavHostController,
     authRepository: AuthRepository,
-    userID: String
+    userID: String,
+    DocumentsScreen_ViewModel: DocumentScreen_ViewModel
 ) {
-    var selectedFilter by remember { mutableStateOf("Nombre") }
-    var isFilterAscending by remember { mutableStateOf(false) }
-    var isFilterMenuOpen by remember { mutableStateOf(false) }
-    var isSearchExpanded by remember { mutableStateOf(false) }
-    var searchQuery by remember { mutableStateOf("") }
+    val documentsList = remember { mutableStateOf<List<DocumentModel>>(emptyList()) }
     val isAddDocumentDialogOpen = remember { mutableStateOf(false) }
     val loggedInUserUID: String by authRepository.getLoggedInUserUID().observeAsState("")
     val loggedInUserName: String by authRepository.getLoggedInUserName().observeAsState("")
-    val viewModel: DocumentsScreenViewModel = viewModel()
-    val documentsList = viewModel.documentsList
-    authRepository.loadDocumentsFromFirebase(documentsList)
-    val documentsSelectedToRemove = viewModel.documentsSelectedToRemove
+    val showDeleteDocumentsDialog by DocumentsScreen_ViewModel.showDeleteDocumentsDialog.observeAsState(false)
+    val documentsSelectedToRemove by DocumentsScreen_ViewModel.documentsSelectedToRemove.observeAsState(emptyList())
+    val project = remember { mutableStateOf<Project?>(null) }
+    val openSelectProjectsDialog = remember { mutableStateOf(true) }
+    val filteredDocuments = FilterDocuments(documentsList, DocumentsScreen_ViewModel)
 
-    var filteredDocuments =
-        remember(documentsList, selectedFilter, isFilterAscending, searchQuery) {
-            derivedStateOf {
-                var filteredList = documentsList.value.filter {
-                    it.name?.contains(
-                        searchQuery,
-                        ignoreCase = true
-                    ) == true
-                }
-                when (selectedFilter) {
-                    "Nombre" -> {
-                        filteredList = if (isFilterAscending) {
-                            filteredList.sortedBy { it.name }
-                        } else {
-                            filteredList.sortedByDescending { it.name }
-                        }
-                    }
-                }
-                filteredList
-            }
-        }
+    if (project.value !== null) authRepository.loadDocumentsFromFirebase(
+        project.value?.id.toString(),
+        documentsList
+    )
 
     Scaffold(
         floatingActionButton = {
@@ -158,7 +143,7 @@ fun DocumentsScreen(
                 if (documentsSelectedToRemove.size > 0) {
                     Row {
                         FloatingActionButton(
-                            onClick = { viewModel.documentsSelectedToRemove.clear() },
+                            onClick = { DocumentsScreen_ViewModel.onRemoveDocumentsChanged(emptyList(), false) },
                             containerColor = myOrangehigh
                         ) {
                             Icon(
@@ -168,7 +153,7 @@ fun DocumentsScreen(
                         }
                         Spacer(modifier = Modifier.width(16.dp))
                         FloatingActionButton(
-                            onClick = { viewModel.showDeleteDocumentsDialog.value = true },
+                            onClick = { DocumentsScreen_ViewModel.onRemoveDocumentsChanged(documentsSelectedToRemove, true) },
                             containerColor = myOrangehigh
                         ) {
                             Icon(
@@ -178,64 +163,11 @@ fun DocumentsScreen(
                         }
                     }
                 } else {
-                    Row {
-                        FloatingActionButton(
-                            onClick = {
-                                isSearchExpanded = !isSearchExpanded
-                                if (!isSearchExpanded) {
-                                    searchQuery = ""
-                                }
-                            },
-                            containerColor = myOrangehigh
-                        ) {
-                            Icon(
-                                if (isSearchExpanded) Icons.Default.Close else Icons.Default.Search,
-                                contentDescription = "Buscar Documento",
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(16.dp))
-                        FloatingActionButton(
-                            onClick = { isFilterMenuOpen = true },
-                            containerColor = myOrangehigh
-                        ) {
-                            Icon(
-                                Icons.Default.FilterAlt,
-                                contentDescription = "Filtros"
-                            )
-                        }
-
-                        DropdownMenu(
-                            expanded = isFilterMenuOpen,
-                            onDismissRequest = { isFilterMenuOpen = false }
-                        ) {
-                            DropdownMenuItem(
-                                onClick = {
-                                    selectedFilter = "Nombre"
-                                    isFilterMenuOpen = false
-                                    isFilterAscending = !isFilterAscending
-                                }
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text("Nombre")
-                                    Spacer(Modifier.width(10.dp))
-                                    Icon(
-                                        if (selectedFilter == "Nombre" && isFilterAscending) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
-                            }
-                        }
-                        Spacer(modifier = Modifier.width(16.dp))
-                        FloatingActionButton(
-                            onClick = { isAddDocumentDialogOpen.value = true },
-                            containerColor = myOrangehigh
-                        ) {
-                            Icon(
-                                Icons.Default.Add,
-                                contentDescription = "Agregar Documento"
-                            )
-                        }
+                    FiltersDropdowMenu(
+                        DocumentsScreen_ViewModel,
+                        project,
+                        { openSelectProjectsDialog.value = true }) {
+                        isAddDocumentDialogOpen.value = true
                     }
                 }
             }
@@ -257,38 +189,54 @@ fun DocumentsScreen(
                     text = "Planos y Documentación",
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                 )
-                Spacer(modifier = Modifier.height(5.dp))
-                Spacer(modifier = Modifier.height(5.dp))
-                when (documentsList.value.size) {
-                    0 -> {
-                        Text(
-                            text = "No tienes documentos publicados.",
-                            modifier = Modifier.padding(bottom = 10.dp)
-                        )
-                    }
+                if (project.value !== null) Text(
+                    text = "(${project.value?.projectName})",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp
+                    )
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                if (project.value == null) {
+                    Text(
+                        text = "No se ha seleccionado un proyecto.",
+                        modifier = Modifier.padding(bottom = 10.dp)
+                    )
+                } else {
+                    when (documentsList.value?.size) {
+                        0 -> {
+                            Text(
+                                text = "No hay documentos publicados.",
+                                modifier = Modifier.padding(bottom = 10.dp)
+                            )
+                        }
 
-                    1 -> {
-                        Text(
-                            text = "Tienes 1 documento creado.",
-                            modifier = Modifier.padding(bottom = 10.dp)
-                        )
-                    }
+                        1 -> {
+                            Text(
+                                text = "Tienes 1 documento creado.",
+                                modifier = Modifier.padding(bottom = 10.dp)
+                            )
+                        }
 
-                    else -> {
-                        Text(
-                            text = "Tienes ${documentsList.value.size} documentos creados.",
-                            modifier = Modifier.padding(bottom = 10.dp)
-                        )
+                        else -> {
+                            Text(
+                                text = "Tienes ${documentsList.value?.size} documentos creados.",
+                                modifier = Modifier.padding(bottom = 10.dp)
+                            )
+                        }
                     }
                 }
                 LazyColumn(modifier = Modifier.weight(1f)) {
-                    items(filteredDocuments.value) { document ->
+                    items(filteredDocuments.size) { index ->
+                        val document = filteredDocuments[index]
                         DocumentCard(
+                            DocumentsScreen_ViewModel,
                             document = document,
                             navController = navController,
                             authRepository = authRepository,
                             documentsList = documentsList,
-                            userID = userID
+                            userID = userID,
+                            project
                         )
                         Spacer(Modifier.height(15.dp))
                     }
@@ -297,14 +245,172 @@ fun DocumentsScreen(
         }
     }
     HamburgueerMenu(navController = navController, authRepository = authRepository)
+    if (openSelectProjectsDialog.value) ProjectSelection(
+        userID = userID,
+        authRepository = authRepository,
+        onDismiss = { openSelectProjectsDialog.value = false },
+        onProjectSelected = { p -> project.value = p }
+    )
+    if (showDeleteDocumentsDialog) RemoveDocumentsSelected(userID, project, DocumentsScreen_ViewModel)
     if (isAddDocumentDialogOpen.value) {
         Dialog(onDismissRequest = { isAddDocumentDialogOpen.value = false }) {
             RegisterCardDocument(
                 isAddDocumentDialogOpen,
                 loggedInUserName,
                 loggedInUserUID,
-                documentsList
+                documentsList,
+                project.value
             )
+        }
+    }
+}
+@Composable
+fun FilterDocuments(documentsList: MutableState<List<DocumentModel>>, DocumentsScreen_ViewModel: DocumentScreen_ViewModel): List<DocumentModel> {
+    val filterSelected = DocumentsScreen_ViewModel.filterSelected.observeAsState("Fecha de inicio")
+    val isFilterAscending = DocumentsScreen_ViewModel.isFilterAscending.observeAsState(false)
+    val searchQuery = DocumentsScreen_ViewModel.searchQuery.observeAsState("")
+
+    val filteredDocuments =
+        remember(documentsList, filterSelected, isFilterAscending, searchQuery) {
+            derivedStateOf {
+                var filteredList = documentsList.value.filter { document ->
+                    document.name.toString().contains(
+                        searchQuery.value,
+                        ignoreCase = true
+                    )
+                }
+
+                when (filterSelected.value) {
+                    "Nombre" -> {
+                        filteredList = if (isFilterAscending.value) {
+                            filteredList.sortedBy { it.name }
+                        } else {
+                            filteredList.sortedByDescending { it.name }
+                        }
+                    }
+                }
+                filteredList
+            }
+        }
+    return filteredDocuments.value
+}
+
+@Composable
+fun FiltersDropdowMenu(
+    DocumentsScreen_ViewModel: DocumentScreen_ViewModel,
+    project: MutableState<Project?>,
+    openSelectProjectDialog: () -> Unit,
+    openAddDocuments: () -> Unit
+) {
+    val isFilterMenuOpen = DocumentsScreen_ViewModel.isFilterMenuOpen.observeAsState(false)
+    val isSearchExpanded = DocumentsScreen_ViewModel.isSearchExpanded.observeAsState(false)
+    val isFilterAscending = DocumentsScreen_ViewModel.isFilterAscending.observeAsState(false)
+    val filterSelected = DocumentsScreen_ViewModel.filterSelected.observeAsState("Fecha de inicio")
+
+    Row {
+        FloatingActionButton(
+            onClick = { openSelectProjectDialog() },
+            containerColor = myOrangehigh
+        ) {
+            Icon(
+                Icons.Default.FolderOpen,
+                contentDescription = "Seleccionar Proyecto"
+            )
+        }
+        if (project.value !== null) {
+            Spacer(modifier = Modifier.width(16.dp))
+            FloatingActionButton(
+                onClick = {
+                    DocumentsScreen_ViewModel.onFilterSelectionChanged(
+                        true,
+                        isSearchExpanded.value,
+                        "Fecha de inicio",
+                        isFilterAscending.value
+                    )
+                },
+                containerColor = myOrangehigh
+            ) {
+                Icon(
+                    Icons.Default.FilterAlt,
+                    contentDescription = "Filtros"
+                )
+            }
+            DropdownMenu(
+                expanded = isFilterMenuOpen.value,
+                onDismissRequest = {
+                    DocumentsScreen_ViewModel.onFilterSelectionChanged(
+                        false,
+                        isSearchExpanded.value,
+                        "Fecha de inicio",
+                        isFilterAscending.value
+                    )
+                }
+            ) {
+                DropdownMenuItem(onClick = {
+                    DocumentsScreen_ViewModel.onFilterSelectionChanged(
+                        false,
+                        isSearchExpanded.value,
+                        "Nombre",
+                        !isFilterAscending.value
+                    )
+                }) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Nombre")
+                        Spacer(Modifier.width(10.dp))
+                        Icon(
+                            if (filterSelected.value == "Nombre" && isFilterAscending.value) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+                DropdownMenuItem(onClick = {
+                    DocumentsScreen_ViewModel.onFilterSelectionChanged(
+                        false,
+                        isSearchExpanded.value,
+                        "Fecha de inicio",
+                        !isFilterAscending.value
+                    )
+                }) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Fecha de inicio")
+                        Spacer(Modifier.width(10.dp))
+                        Icon(
+                            if (filterSelected.value == "Fecha de inicio" && isFilterAscending.value) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+                DropdownMenuItem(onClick = {
+                    DocumentsScreen_ViewModel.onFilterSelectionChanged(
+                        false,
+                        isSearchExpanded.value,
+                        "Fecha de finalización",
+                        !isFilterAscending.value
+                    )
+                }) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Fecha de finalización")
+                        Spacer(Modifier.width(10.dp))
+                        Icon(
+                            if (filterSelected.value == "Fecha de finalización" && isFilterAscending.value) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            FloatingActionButton(
+                onClick = { openAddDocuments() },
+                containerColor = myOrangehigh
+            ) {
+                Icon(
+                    Icons.Default.Add,
+                    contentDescription = "Crear Documento"
+                )
+            }
         }
     }
 }
@@ -312,16 +418,18 @@ fun DocumentsScreen(
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun DocumentCard(
+    DocumentsScreen_ViewModel: DocumentScreen_ViewModel,
     document: DocumentModel,
     navController: NavHostController,
     authRepository: AuthRepository,
     documentsList: MutableState<List<DocumentModel>>,
-    userID: String
+    userID: String,
+    project: MutableState<Project?>
 ) {
     var showViewer by remember { mutableStateOf(false) }
-    val viewModel: DocumentsScreenViewModel = viewModel()
-    val documentsSelectedToRemove = viewModel.documentsSelectedToRemove
-    val showDeleteDocumentsDialog = viewModel.showDeleteDocumentsDialog
+    val documentsSelectedToRemove = DocumentsScreen_ViewModel.documentsSelectedToRemove.observeAsState(
+        emptyList())
+    val showDeleteDocumentsDialog = DocumentsScreen_ViewModel.showDeleteDocumentsDialog.observeAsState(false)
 
     Spacer(Modifier.height(15.dp))
     Box(
@@ -340,24 +448,36 @@ fun DocumentCard(
                 .wrapContentSize(Alignment.Center)
                 .combinedClickable(
                     onClick = {
-                        if (documentsSelectedToRemove.size > 0) {
-                            if (!documentsSelectedToRemove.contains(document)) {
-                                documentsSelectedToRemove.add(document)
-                            } else documentsSelectedToRemove.remove(document)
+                        if (documentsSelectedToRemove.value.size > 0) {
+                            if (!documentsSelectedToRemove.value.contains(document)) {
+                                val newList = documentsSelectedToRemove.value + document
+                                DocumentsScreen_ViewModel.onRemoveDocumentsChanged(
+                                    newList,
+                                    showDeleteDocumentsDialog.value
+                                )
+                            } else DocumentsScreen_ViewModel.onRemoveDocumentsChanged(
+                                documentsSelectedToRemove.value.filter { p -> p !== document },
+                                showDeleteDocumentsDialog.value
+                            )
                         } else {
-                            navController.navigate("cardview_documents_screen/${userID}/${document.id}")
+                            navController.navigate("cardview_documents_screen/${userID}/${project.value?.id.toString()}/${document.id}")
                         }
                     },
                     onLongClick = {
-                        if (!documentsSelectedToRemove.contains(document)) {
-                            documentsSelectedToRemove.add(document)
-                        } else documentsSelectedToRemove.remove(document)
+                        if (!documentsSelectedToRemove.value.contains(document)) {
+                            val newList = documentsSelectedToRemove.value + document
+                            DocumentsScreen_ViewModel.onRemoveDocumentsChanged(
+                                newList,
+                                showDeleteDocumentsDialog.value
+                            )
+                        } else DocumentsScreen_ViewModel.onRemoveDocumentsChanged(
+                            documentsSelectedToRemove.value.filter { p -> p !== document },
+                            showDeleteDocumentsDialog.value
+                        )
                     }
                 )
         ) {
-            if (showViewer) PdfViewerScreen(navController, document.fileUrl.toString())
-            if (showDeleteDocumentsDialog.value === true) RemoveDocumentsSelected(userID = userID)
-
+//            if (showViewer) PdfViewerScreen(navController, document.fileUrl.toString())
             Column(modifier = Modifier.padding(10.dp)) {
                 Row(
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -373,7 +493,7 @@ fun DocumentCard(
                             modifier = Modifier.align(Alignment.Center)
                         )
                     }
-                    if(documentsSelectedToRemove.contains(document)) {
+                    if (documentsSelectedToRemove.value.contains(document)) {
                         Box {
                             Icon(
                                 Icons.Default.CheckBox,
@@ -383,7 +503,10 @@ fun DocumentCard(
                             )
                         }
                     }
-                    if(documentsSelectedToRemove.size > 0 && !documentsSelectedToRemove.contains(document)) {
+                    if (documentsSelectedToRemove.value.size > 0 && !documentsSelectedToRemove.value.contains(
+                            document
+                        )
+                    ) {
                         Box {
                             Icon(
                                 Icons.Default.CheckBoxOutlineBlank,
@@ -421,7 +544,8 @@ fun RegisterCardDocument(
     isAddDocumentDialogOpen: MutableState<Boolean>,
     loggedInUserName: String,
     loggedInUserUID: String,
-    documentsFiltered: MutableState<List<DocumentModel>>
+    documentsFiltered: MutableState<List<DocumentModel>>,
+    project: Project?
 ) {
     val documentName = remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
@@ -457,7 +581,7 @@ fun RegisterCardDocument(
                 value = documentName.value,
                 onValueChange = {
                     documentName.value = it
-                    nameRepliqued = documentsFiltered.value.find {
+                    nameRepliqued = documentsFiltered.value?.find {
                         it.name?.trim().equals(documentName.value.trim(), ignoreCase = true)
                     } != null
                 },
@@ -632,6 +756,8 @@ fun RegisterCardDocument(
                                     val db = FirebaseFirestore.getInstance()
                                     val collectionReference = db.collection("Users")
                                         .document(loggedInUserUID)
+                                        .collection("Projects")
+                                        .document(project?.id.toString())
                                         .collection("Documents")
 
                                     collectionReference
@@ -798,15 +924,18 @@ fun PdfViewerScreen(navController: NavHostController, pdfUrl: String) {
 }
 
 @Composable
-fun RemoveDocumentsSelected(userID: String) {
-    val viewModel: DocumentsScreenViewModel = viewModel()
-    val documentsSelectedToRemove = viewModel.documentsSelectedToRemove
-    val documentsList = viewModel.documentsList
+fun RemoveDocumentsSelected(
+    userID: String,
+    project: MutableState<Project?>,
+    DocumentsScreen_ViewModel: DocumentScreen_ViewModel
+) {
+    val documentsSelectedToRemove = DocumentsScreen_ViewModel.documentsSelectedToRemove.observeAsState(
+        emptyList())
     val context = LocalContext.current
 
-    if (documentsSelectedToRemove.size > 0) {
+    if (documentsSelectedToRemove.value!!.size > 0) {
         AlertDialog(
-            onDismissRequest = { viewModel.showDeleteDocumentsDialog.value = false },
+            onDismissRequest = { DocumentsScreen_ViewModel.onRemoveDocumentsChanged(documentsSelectedToRemove.value, false) },
             buttons = {
                 Row(
                     modifier = Modifier
@@ -816,8 +945,7 @@ fun RemoveDocumentsSelected(userID: String) {
                 ) {
                     Button(
                         onClick = {
-                            viewModel.showDeleteDocumentsDialog.value = false
-                            viewModel.documentsSelectedToRemove.clear()
+                            DocumentsScreen_ViewModel.onRemoveDocumentsChanged(emptyList(), false)
                         },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = myOrangehigh,
@@ -837,21 +965,21 @@ fun RemoveDocumentsSelected(userID: String) {
                             val collectionRef =
                                 db.collection("Users")
                                     .document(userID)
+                                    .collection("Projects")
+                                    .document(project.value?.id.toString())
                                     .collection("Documents")
 
-                            for (document in documentsSelectedToRemove) {
+                            for (document in documentsSelectedToRemove.value) {
                                 storage.getReferenceFromUrl("${document.fileRef}").delete()
                                 storage.getReferenceFromUrl("${document.previewRef}").delete()
                                 collectionRef.document("${document.id}").delete()
                             }
-                            viewModel.documentsList.value = documentsList.value.filter { d -> !documentsSelectedToRemove.contains(d) }
-                            viewModel.showDeleteDocumentsDialog.value = false
+                            DocumentsScreen_ViewModel.onRemoveDocumentsChanged(emptyList(), false)
                             Toast.makeText(
                                 context,
                                 "Documentos removidos",
                                 Toast.LENGTH_LONG
                             ).show()
-                            viewModel.documentsSelectedToRemove.clear()
                         },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = myOrangehigh,
@@ -893,10 +1021,4 @@ fun RemoveDocumentsSelected(userID: String) {
             }
         )
     }
-}
-
-class DocumentsScreenViewModel : ViewModel() {
-    val documentsSelectedToRemove = mutableStateListOf<DocumentModel>()
-    val showDeleteDocumentsDialog = mutableStateOf(false)
-    val documentsList = mutableStateOf(emptyList<DocumentModel>())
 }

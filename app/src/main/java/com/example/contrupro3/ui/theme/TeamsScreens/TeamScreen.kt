@@ -66,6 +66,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
+import com.example.contrupro3.ProjectSelection
 import com.example.contrupro3.R
 import com.example.contrupro3.models.AuthRepository
 import com.example.contrupro3.models.ProjectsModels.Project
@@ -178,28 +179,34 @@ fun TeamsScreen(
                             fontSize = 12.sp
                         )
                     )
-                    Spacer(modifier = Modifier.height(5.dp))
-                    Spacer(modifier = Modifier.height(5.dp))
-                    when (filteredTeams.size) {
-                        0 -> {
-                            Text(
-                                text = "No tienes equipos creados.",
-                                modifier = Modifier.padding(bottom = 10.dp)
-                            )
-                        }
+                    Spacer(modifier = Modifier.height(10.dp))
+                    if (project.value == null) {
+                        Text(
+                            text = "No se ha seleccionado un proyecto.",
+                            modifier = Modifier.padding(bottom = 10.dp)
+                        )
+                    } else {
+                        when (filteredTeams.size) {
+                            0 -> {
+                                Text(
+                                    text = "No tienes equipos creados.",
+                                    modifier = Modifier.padding(bottom = 10.dp)
+                                )
+                            }
 
-                        1 -> {
-                            Text(
-                                text = "Tienes 1 equipo creado.",
-                                modifier = Modifier.padding(bottom = 10.dp)
-                            )
-                        }
+                            1 -> {
+                                Text(
+                                    text = "Tienes 1 equipo creado.",
+                                    modifier = Modifier.padding(bottom = 10.dp)
+                                )
+                            }
 
-                        else -> {
-                            Text(
-                                text = "Tienes ${filteredTeams.size} equipos creados.",
-                                modifier = Modifier.padding(bottom = 10.dp)
-                            )
+                            else -> {
+                                Text(
+                                    text = "Tienes ${filteredTeams.size} equipos creados.",
+                                    modifier = Modifier.padding(bottom = 10.dp)
+                                )
+                            }
                         }
                     }
                     LazyColumn(modifier = Modifier.weight(1f)) {
@@ -222,7 +229,7 @@ fun TeamsScreen(
         }
     )
 
-    HamburgueerMenu(navController = navController, authRepository = authRepository)
+    HamburgueerMenu(navController, authRepository)
     if (openSelectProjectDialog.value) ProjectSelection(
         userID,
         authRepository,
@@ -238,132 +245,6 @@ fun TeamsScreen(
                 filteredTeams,
                 project
             )
-        }
-    }
-}
-
-@Composable
-fun ProjectSelection(
-    userID: String,
-    authRepository: AuthRepository,
-    onDismiss: () -> Unit,
-    onProjectSelected: (Project) -> Unit
-) {
-    val projectList = remember { mutableStateOf<List<Project>>(emptyList()) }
-    var projectLoadedStatus by remember { mutableStateOf("Loading") }
-
-    LaunchedEffect(userID) {
-        authRepository.loadProjectsFromFirebase(
-            projectList,
-            { status -> projectLoadedStatus = status })
-    }
-
-    Dialog(onDismissRequest = { onDismiss() }) {
-        androidx.compose.material3.Card(
-            modifier = Modifier
-                .padding(10.dp)
-                .fillMaxHeight(0.6f),
-            shape = RoundedCornerShape(4.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = Color.White
-            )
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.Top,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "Lista De Proyectos",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = myBlue
-                )
-                Spacer(modifier = Modifier.height(5.dp))
-                Divider(color = Color.Black, thickness = 1.dp)
-                Spacer(modifier = Modifier.height(10.dp))
-                if (projectLoadedStatus == "Loaded") {
-                    if (projectList.value.isNotEmpty()) {
-                        Text(
-                            text = "Estos son los proyectos creados actualmente",
-                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Light),
-                            textAlign = TextAlign.Center
-                        )
-                        LazyColumn(
-                            modifier = Modifier
-                                .fillMaxWidth(),
-                            userScrollEnabled = true,
-                            verticalArrangement = Arrangement.Top,
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            items(projectList.value.size) { index ->
-                                val proyect = projectList.value[index]
-
-                                Spacer(modifier = Modifier.padding(vertical = 5.dp))
-                                Divider(color = Color.LightGray, thickness = 1.dp)
-                                Spacer(modifier = Modifier.padding(vertical = 5.dp))
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .background(Color.White)
-                                        .clickable {
-                                            onProjectSelected(proyect)
-                                            onDismiss()
-                                        },
-                                    horizontalArrangement = Arrangement.Start
-                                ) {
-                                    Text(
-                                        text = "${proyect.projectName}",
-                                        modifier = Modifier.offset(x = 10.dp),
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
-                                }
-                            }
-                        }
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.Bottom,
-                            horizontalArrangement = Arrangement.End
-                        ) {
-                            Button(
-                                onClick = { onDismiss() },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = myOrangehigh,
-                                    contentColor = Color.White
-                                ),
-                                modifier = Modifier
-                                    .width(100.dp)
-                                    .padding(start = 0.dp, top = 5.dp, end = 5.dp, bottom = 0.dp)
-                            ) {
-                                Text(
-                                    text = "Cerrar",
-                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
-                                )
-                            }
-                        }
-                    } else {
-                        Text(
-                            text = "No hay proyectos creados",
-                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Light),
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                } else if (projectLoadedStatus == "Loading") {
-                    Text(
-                        text = "Cargando Proyectos...",
-                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Light),
-                        textAlign = TextAlign.Center
-                    )
-                } else if (projectLoadedStatus == "Failed") {
-                    Text(
-                        text = "Error al cargar proyectos...",
-                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Light),
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
         }
     }
 }
@@ -928,7 +809,6 @@ fun RegisterCardTeam(
                                             name.value = ""
                                             description.value = ""
                                             isAddTeamDialogOpen.value = false
-
                                             Toast.makeText(
                                                 context,
                                                 "Equipo creado correctamente",

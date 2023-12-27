@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.example.contrupro3.models.DocumentsModels.DocumentScreen_ViewModel
 import com.example.contrupro3.models.LoginModels.Login_ViewModel
 import com.example.contrupro3.models.LoginModels.Register_ViewModel
 import com.example.contrupro3.models.ProjectsModels.ProjectsScreen_ViewModel
@@ -16,9 +17,9 @@ import com.example.contrupro3.ui.theme.Budgets_purchasesScreens.Presupuesto_y_Co
 import com.example.contrupro3.ui.theme.DocumentsScreens.CardViewDocumentsScreen
 import com.example.contrupro3.ui.theme.DocumentsScreens.DocumentsScreen
 import com.example.contrupro3.ui.theme.LoginScreens.LoginPage
+import com.example.contrupro3.ui.theme.LoginScreens.RegisterPage
 import com.example.contrupro3.ui.theme.ProjectsScreens.CardviewProjectsScreen
 import com.example.contrupro3.ui.theme.ProjectsScreens.ProjectView
-import com.example.contrupro3.ui.theme.LoginScreens.RegisterPage
 import com.example.contrupro3.ui.theme.SplashScreen.SplashScreen
 import com.example.contrupro3.ui.theme.TeamsScreens.CardViewTeamsScreen
 import com.example.contrupro3.ui.theme.TeamsScreens.TeamsScreen
@@ -69,21 +70,29 @@ fun AppNavigator(
             val teamId = backStackEntry.arguments?.getString("teamId") ?: ""
             val userId = backStackEntry.arguments?.getString("userId") ?: ""
             val projectId = backStackEntry.arguments?.getString("projectId") ?: ""
-            CardViewTeamsScreen(navController, authRepository, userId, teamId, projectId, TeamCard_ViewModel())
+            CardViewTeamsScreen(
+                navController,
+                authRepository,
+                userId,
+                teamId,
+                projectId,
+                TeamCard_ViewModel()
+            )
         }
         composable("documents_screen/{userID}") { backStackEntry ->
             val arguments = backStackEntry.arguments
             val userID = arguments?.getString("userID")
             if (userID != null) {
-                DocumentsScreen(navController, authRepository, userID)
+                DocumentsScreen(navController, authRepository, userID, DocumentScreen_ViewModel())
             }
         }
-        composable("cardview_documents_screen/{userId}/{documentId}") { backStackEntry ->
+        composable("cardview_documents_screen/{userId}/{projectId}/{documentId}") { backStackEntry ->
             val arguments = backStackEntry.arguments
             val userID = arguments?.getString("userId")
+            val projectId = arguments?.getString("projectId")
             val documentId = arguments?.getString("documentId")
-            if (userID != null && documentId != null) {
-                CardViewDocumentsScreen(navController, authRepository, userID, documentId)
+            if (userID != null && projectId != null && documentId != null) {
+                CardViewDocumentsScreen(navController, authRepository, userID, projectId, documentId)
             }
         }
         composable("presucom_screen/{userId}") { backStackEntry ->
