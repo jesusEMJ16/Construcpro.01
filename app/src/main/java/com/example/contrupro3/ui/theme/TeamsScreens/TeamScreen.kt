@@ -609,8 +609,8 @@ fun RemoveTeamsSelected(
                             TeamScreen_ViewModel.onRemoveTeamsChanged(emptyList(), false)
                             Toast.makeText(
                                 context,
-                                "Los Equipos fueron removidos correctamente",
-                                Toast.LENGTH_LONG
+                                "Equipos removidos",
+                                Toast.LENGTH_SHORT
                             ).show()
                         },
                         colors = ButtonDefaults.buttonColors(
@@ -811,8 +811,8 @@ fun RegisterCardTeam(
                                             isAddTeamDialogOpen.value = false
                                             Toast.makeText(
                                                 context,
-                                                "Equipo creado correctamente",
-                                                Toast.LENGTH_LONG
+                                                "Equipo creado",
+                                                Toast.LENGTH_SHORT
                                             ).show()
                                         }
                                 }

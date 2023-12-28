@@ -7,7 +7,7 @@ import com.example.contrupro3.models.TeamsModels.Teams
 data class ActionButton(
     val text: String? = null,
     val action: String? = null,
-    val clicked: Boolean = false
+    var clicked: Boolean = false
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
         parcel.readString() ?: "",

@@ -1,6 +1,8 @@
 package com.example.contrupro3.ui.theme.Menu
 
+import android.content.Context
 import android.os.Build
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,12 +30,14 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -41,6 +45,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.zIndex
 import com.example.contrupro3.models.AuthRepository
 import com.example.contrupro3.models.TeamsModels.TeamMember
+import com.example.contrupro3.models.UserModels.ActionButton
 import com.example.contrupro3.models.UserModels.NotificationModel
 import com.example.contrupro3.ui.theme.myBlue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -49,6 +54,7 @@ import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import kotlin.math.log
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -119,10 +125,10 @@ fun NotificationsDialog(
                                 )
                                 Spacer(modifier = Modifier.padding(vertical = 5.dp))
                             }
-                            val notify =
+                            var notify =
                                 notificationsList.value.filter { n -> n.status == "unread" }
                                     .sortedByDescending { it.sendAt }[index]
-                            Notification(notify, authRepository)
+                            Notification(notify, authRepository) { onDismiss() }
                             Spacer(modifier = Modifier.padding(vertical = 15.dp))
                         }
                         items(notificationsList.value.filter { n -> n.status == "readed" }
@@ -134,10 +140,10 @@ fun NotificationsDialog(
                                 )
                                 Spacer(modifier = Modifier.padding(vertical = 5.dp))
                             }
-                            val notify =
+                            var notify =
                                 notificationsList.value.filter { n -> n.status == "readed" }
                                     .sortedByDescending { it.sendAt }[index]
-                            Notification(notify, authRepository)
+                            Notification(notify, authRepository) { onDismiss() }
                             Spacer(modifier = Modifier.padding(vertical = 15.dp))
                         }
                     }
@@ -171,7 +177,8 @@ fun UpdateNotifyStatus(userId: String) {
 @Composable
 fun Notification(
     notify: NotificationModel,
-    authRepository: AuthRepository
+    authRepository: AuthRepository,
+    onDismiss: () -> Unit
 ) {
     Row(
         horizontalArrangement = Arrangement.Start,
@@ -194,7 +201,7 @@ fun Notification(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 TimeAgoFormatted(timestamp = notify.sendAt!!.toLong())
-                AcceptButton(notify, authRepository)
+                AcceptButton(notify, authRepository) { onDismiss() }
             }
         }
     }
@@ -203,11 +210,15 @@ fun Notification(
 @Composable
 fun AcceptButton(
     notify: NotificationModel,
-    authRepository: AuthRepository
+    authRepository: AuthRepository,
+    onDismiss: () -> Unit
 ) {
+    val context = LocalContext.current
+    val loggedInUserUID = authRepository.getLoggedInUserUID().observeAsState("")
+
     if (notify.actionButton?.action == "accept") {
         TextButton(
-            onClick = { AcceptActions(notify, authRepository) },
+            onClick = { AcceptActions(notify, authRepository, context, loggedInUserUID) },
             shape = RoundedCornerShape(15.dp),
             colors = ButtonDefaults.buttonColors(
                 backgroundColor = Color.Gray.copy(alpha = 0.1f)
@@ -229,56 +240,93 @@ fun AcceptButton(
 
 fun AcceptActions(
     notify: NotificationModel,
-    authRepository: AuthRepository
+    authRepository: AuthRepository,
+    context: Context,
+    loggedInUserUID: State<String>
 ) {
-    val firebase = FirebaseFirestore.getInstance()
-    val user = authRepository.getCurrentUser()
-    val ownerId = notify.additionalInfo?.get("ownerId")
-    val projectId = notify.additionalInfo?.get("projectId")
-    val teamId = notify.additionalInfo?.get("teamId")
-    val collection = firebase
-        .collection("Users")
-        .document(ownerId.toString())
-        .collection("Projects")
-        .document(projectId.toString())
-        .collection("Teams")
-        .document(teamId.toString())
-        .collection("Members")
+    if(notify.actionButton?.clicked == false) {
+        val firebase = FirebaseFirestore.getInstance()
+        val user = authRepository.getCurrentUser()
+        val ownerId = notify.additionalInfo?.get("ownerId")
+        val projectId = notify.additionalInfo?.get("projectId")
+        val teamId = notify.additionalInfo?.get("teamId")
+        val collection = firebase
+            .collection("Users")
+            .document(ownerId.toString())
+            .collection("Projects")
+            .document(projectId.toString())
+            .collection("Teams")
+            .document(teamId.toString())
+            .collection("Members")
 
-    when (notify.icon?.icon.toString()) {
-        "GroupAdd" -> {
-            collection.whereEqualTo("email", user?.email.toString()).get()
-                .addOnSuccessListener { querySnapshot ->
-                    if (!querySnapshot.isEmpty) {
-                        for (document in querySnapshot) {
-                            val memberData = document.toObject(TeamMember::class.java)
-                            val userCollection = firebase
-                                .collection("Users")
-                                .document(user?.uid.toString())
+        when (notify.icon?.icon.toString()) {
+            "GroupAdd" -> {
+                collection.whereEqualTo("email", user?.email.toString()).get()
+                    .addOnSuccessListener { querySnapshot ->
+                        if (!querySnapshot.isEmpty) {
+                            for (document in querySnapshot) {
+                                val memberData = document.toObject(TeamMember::class.java)
+                                val userCollection = firebase
+                                    .collection("Users")
+                                    .document(user?.uid.toString())
 
-                            userCollection.get().addOnSuccessListener { documentSnapshot ->
-                                if (documentSnapshot.exists()) {
-                                    val userData = documentSnapshot.toObject(TeamMember::class.java)
-                                    val dataToSave = TeamMember(
-                                        id = memberData.id,
-                                        name = userData?.name,
-                                        lastName = userData?.lastName,
-                                        email = memberData.email,
-                                        role = null,
-                                        phoneNumber = userData?.phoneNumber,
-                                        inviteStatus = "Accepted"
-                                    )
+                                userCollection.get().addOnSuccessListener { documentSnapshot ->
+                                    if (documentSnapshot.exists()) {
+                                        val userData = documentSnapshot.toObject(TeamMember::class.java)
+                                        val dataToSave = TeamMember(
+                                            id = memberData.id,
+                                            name = userData?.name,
+                                            lastName = userData?.lastName,
+                                            email = memberData.email,
+                                            role = null,
+                                            phoneNumber = userData?.phoneNumber,
+                                            inviteStatus = "Accepted"
+                                        )
 
-                                    collection
-                                        .document(memberData.id.toString())
-                                        .set(dataToSave)
+                                        collection
+                                            .document(memberData.id.toString())
+                                            .set(dataToSave)
+                                        Toast.makeText(
+                                            context,
+                                            "Invitación aceptada",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    }
                                 }
                             }
                         }
                     }
-                }
+            }
         }
+        UpdateClickedNotification(notify, firebase, loggedInUserUID)
+    } else {
+        Toast.makeText(
+            context,
+            "Ya has aceptado esta notificación",
+            Toast.LENGTH_LONG
+        ).show()
     }
+
+}
+
+fun UpdateClickedNotification(
+    notify: NotificationModel,
+    firebase: FirebaseFirestore,
+    loggedInUserUID: State<String>
+) {
+    val collection = firebase
+        .collection("Users")
+        .document(loggedInUserUID.value)
+        .collection("Notifications")
+        .document(notify.id.toString())
+
+    val updatedButton = ActionButton(
+        notify.actionButton?.text,
+        notify.actionButton?.action,
+        true
+    )
+    notify.actionButton?.clicked = true
+    collection.update("actionButton", updatedButton )
 }
 
 @RequiresApi(Build.VERSION_CODES.O)

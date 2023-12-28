@@ -67,6 +67,11 @@ import com.example.contrupro3.models.UserModels.IconModel
 import com.example.contrupro3.ui.theme.myBlue
 import com.example.contrupro3.ui.theme.myOrangehigh
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -450,7 +455,7 @@ private fun MembersCard(
     if (showInviteDialog.value) InviteDialog(
         authRepository,
         userId,
-        team.value?.id,
+        team.value!!.id.toString(),
         projectId,
         TeamCard_ViewModel,
         team.value!!.name.toString()
@@ -468,7 +473,7 @@ fun isValidEmail(email: String): Boolean {
 fun InviteDialog(
     authRepository: AuthRepository,
     userId: String,
-    teamId: String?,
+    teamId: String,
     projectId: String,
     TeamCard_ViewModel1: TeamCard_ViewModel,
     teamName: String,
@@ -574,27 +579,44 @@ fun InviteDialog(
                     }
                     Button(
                         onClick = {
-                            AddMemberToDatabase(userId, teamId.toString(), projectId, email.value)
-                            SendNotificationToUser(
-                                title = "Has sido invitado a un grupo.",
-                                description = "Has sido invitado a un grupo llamado '$teamName' de ${ownerName.value}.",
-                                actionButton = ActionButton("Aceptar", "accept"),
-                                additionalInfo = mapOf<String, Any>(
-                                    "ownerId" to authRepository.getLoggedInUserUID().value.toString(),
-                                    "teamId" to teamId.toString(),
-                                    "projectId" to projectId,
-                                    "email" to email.value
-                                ),
-                                icon = IconModel("GroupAdd", "Green"),
-                                methodToGetUserId = "email"
-                            )
-                            onDismiss()
-                            Toast.makeText(
-                                context,
-                                "Usuario Invitado",
-                                Toast.LENGTH_LONG
-                            ).show()
-                            email.value = ""
+                            GlobalScope.launch(Dispatchers.IO) {
+                                val emailHasInvited =
+                                    EmailHasInvited(email, userId, projectId, teamId)
+
+                                if (!emailHasInvited) {
+                                    AddMemberToDatabase(userId, teamId, projectId, email.value)
+                                    SendNotificationToUser(
+                                        title = "Has sido invitado a un grupo.",
+                                        description = "Has sido invitado a un grupo llamado '$teamName' de ${ownerName.value}.",
+                                        actionButton = ActionButton("Aceptar", "accept"),
+                                        additionalInfo = mapOf<String, Any>(
+                                            "ownerId" to authRepository.getLoggedInUserUID().value.toString(),
+                                            "teamId" to teamId.toString(),
+                                            "projectId" to projectId,
+                                            "email" to email.value
+                                        ),
+                                        icon = IconModel("GroupAdd", "Green"),
+                                        methodToGetUserId = "email"
+                                    )
+                                    onDismiss()
+                                    launch(Dispatchers.Main) {
+                                        Toast.makeText(
+                                            context,
+                                            "Usuario invitado",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    }
+                                    email.value = ""
+                                } else {
+                                    launch(Dispatchers.Main) {
+                                        Toast.makeText(
+                                            context,
+                                            "El usuario ya ha sido invitado",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    }
+                                }
+                            }
                         },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = myOrangehigh,
@@ -613,6 +635,35 @@ fun InviteDialog(
                 }
             }
         }
+    }
+}
+
+suspend fun EmailHasInvited(
+    email: MutableState<String>,
+    userId: String,
+    projectId: String,
+    teamId: String
+): Boolean {
+    val firebase = FirebaseFirestore.getInstance()
+    val collection = firebase
+        .collection("Users")
+        .document(userId)
+        .collection("Projects")
+        .document(projectId)
+        .collection("Teams")
+        .document(teamId)
+        .collection("Members")
+
+    return suspendCoroutine { continuation ->
+        collection
+            .whereEqualTo("email", email.value)
+            .get()
+            .addOnSuccessListener { QuerySnapshot ->
+                val exists = !QuerySnapshot.isEmpty
+                continuation.resume(exists)
+            }.addOnFailureListener {
+                continuation.resume(false)
+            }
     }
 }
 
