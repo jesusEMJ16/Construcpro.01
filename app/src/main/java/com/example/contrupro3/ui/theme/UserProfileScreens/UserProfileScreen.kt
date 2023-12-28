@@ -93,42 +93,7 @@ fun UserProfileView(navController: NavController, authRepository: AuthRepository
 
 }
 
-//FALSO ABAJO
-@Composable
-fun UserProfileView2() {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(color = mywhie),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Spacer(modifier = Modifier.height(60.dp))
-        userimagen()
-        Spacer(modifier = Modifier.height(15.dp))
-        RowWithDivider()
-        Spacer(modifier = Modifier.height(5.dp))
-        Divider(
-            color = Color.LightGray,
-            modifier = Modifier
-                .height(1.dp)
-                .fillMaxWidth(0.9f)
-        )
-        Spacer(modifier = Modifier.height(10.dp))
-        sectionMedium()
-        Spacer(modifier = Modifier.height(15.dp))
-        Divider(
-            color = Color.LightGray,
-            modifier = Modifier
-                .height(1.dp)
-                .fillMaxWidth(0.9f)
-        )
-        Spacer(modifier = Modifier.height(10.dp))
-        SectionDown()
-    }
-}
 
-//FALSO ARRIBA
 
 
 @Composable
@@ -206,7 +171,7 @@ fun username() {
 @Composable
 fun ProjectIcon() {
     Icon(
-        painter = painterResource(id = R.drawable.project2),
+        painter = painterResource(id = R.drawable.projects),
         contentDescription = "Icono de proyectos",
         Modifier.size(35.dp)
     )
@@ -417,6 +382,43 @@ fun ProjectList() {
 }
 
 
+
+//FALSO ABAJO
+@Composable
+fun UserProfileView2() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(color = mywhie),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Spacer(modifier = Modifier.height(60.dp))
+        userimagen()
+        Spacer(modifier = Modifier.height(15.dp))
+        RowWithDivider()
+        Spacer(modifier = Modifier.height(5.dp))
+        Divider(
+            color = Color.LightGray,
+            modifier = Modifier
+                .height(1.dp)
+                .fillMaxWidth(0.9f)
+        )
+        Spacer(modifier = Modifier.height(10.dp))
+        sectionMedium()
+        Spacer(modifier = Modifier.height(15.dp))
+        Divider(
+            color = Color.LightGray,
+            modifier = Modifier
+                .height(1.dp)
+                .fillMaxWidth(0.9f)
+        )
+        Spacer(modifier = Modifier.height(10.dp))
+        SectionDown()
+    }
+}
+
+//FALSO ARRIBA
 @Composable
 @Preview
 fun preview() {

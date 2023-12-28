@@ -23,7 +23,7 @@ import com.example.contrupro3.ui.theme.ProjectsScreens.ProjectView
 import com.example.contrupro3.ui.theme.SplashScreen.SplashScreen
 import com.example.contrupro3.ui.theme.TeamsScreens.CardViewTeamsScreen
 import com.example.contrupro3.ui.theme.TeamsScreens.TeamsScreen
-import com.example.contrupro3.ui.theme.UserProfileScreens.UserProfilePage
+import com.example.contrupro3.ui.theme.UserProfileScreens.UserProfileView
 import com.google.firebase.auth.FirebaseAuth
 
 
@@ -46,7 +46,7 @@ fun AppNavigator(
             RegisterPage(navController, Register_ViewModel())
         }
         composable("user_screen") {
-            UserProfilePage(navController = navController, authRepository)
+            UserProfileView(navController = navController, authRepository)
         }
         composable("projects_screen/{userID}") { backStackEntry ->
             val arguments = backStackEntry.arguments

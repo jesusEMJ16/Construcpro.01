@@ -251,7 +251,7 @@ fun GetNotificationsCounter(loggedInUserUID: String, onSuccess: (String) -> Unit
 fun MenuOpciones(navController: NavController, authRepository: AuthRepository) {
     val userID = authRepository.getCurrentUser()?.uid
 
-    CreateOptionButton("Proyectos", painterResource(R.drawable.proyect_icon)) {
+    CreateOptionButton("Proyectos", painterResource(R.drawable.project_icon)) {
         navController.navigate("projects_screen/$userID")
     }
     CreateOptionButton("Tareas", painterResource(R.drawable.task_icon)) {

@@ -14,12 +14,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Divider
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -44,7 +41,6 @@ import com.example.contrupro3.models.UserModels.ActionButton
 import com.example.contrupro3.models.UserModels.IconModel
 import com.example.contrupro3.models.UserModels.NotificationModel
 import com.example.contrupro3.ui.theme.myBlue
-import com.example.contrupro3.ui.theme.myOrangehigh
 import com.google.firebase.firestore.FirebaseFirestore
 import java.util.Date
 
@@ -174,7 +170,7 @@ fun ProjectSelection(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Image(
-                                        painter = painterResource(id = R.drawable.proyect_icon),
+                                        painter = painterResource(id = R.drawable.project_icon),
                                         contentDescription = "Icono de proyecto",
                                         modifier = Modifier
                                             .size(50.dp)
