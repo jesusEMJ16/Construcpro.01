@@ -6,13 +6,15 @@ import com.example.contrupro3.models.TeamsModels.Teams
 
 data class UserModel(
     val name: String? = null,
-    val lastName: String? = "",
-    val email: String? = "",
-    val phoneNumber: String? = "",
-    val role: String? = ""
+    val lastName: String? = null,
+    val email: String? = null,
+    val emailToLowerCase: String? = null,
+    val phoneNumber: String? = null,
+    val role: String? = null
 
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
+        parcel.readString(),
         parcel.readString(),
         parcel.readString(),
         parcel.readString(),
@@ -24,6 +26,7 @@ data class UserModel(
         parcel.writeString(name)
         parcel.writeString(lastName)
         parcel.writeString(email)
+        parcel.writeString(emailToLowerCase)
         parcel.writeString(phoneNumber)
         parcel.writeString(role)
     }

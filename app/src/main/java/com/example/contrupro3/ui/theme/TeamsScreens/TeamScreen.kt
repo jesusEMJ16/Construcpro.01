@@ -222,6 +222,9 @@ fun TeamsScreen(
                                 TeamScreen_ViewModel
                             )
                             Spacer(Modifier.height(15.dp))
+                            if(filteredTeams.size - 1 == index) {
+                                Spacer(modifier = Modifier.padding(vertical = 50.dp))
+                            }
                         }
                     }
                 }
@@ -312,7 +315,7 @@ fun FiltersDropdowMenu(
                     TeamScreen_ViewModel.onFilterSelectionChanged(
                         true,
                         isSearchExpanded.value,
-                        "Fecha de inicio",
+                        filterSelected.value,
                         isFilterAscending.value
                     )
                 },
@@ -329,7 +332,7 @@ fun FiltersDropdowMenu(
                     TeamScreen_ViewModel.onFilterSelectionChanged(
                         false,
                         isSearchExpanded.value,
-                        "Fecha de inicio",
+                        filterSelected.value,
                         isFilterAscending.value
                     )
                 }
@@ -733,10 +736,10 @@ fun RegisterCardTeam(
                     )
                 } else Text(text = " ")
                 Text(
-                    text = "${name.value.length}/30",
+                    text = "${name.value.length}/25",
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontWeight = FontWeight.Light,
-                        color = if (name.value.length > 30) myBlue else Color.Black
+                        color = if (name.value.length > 30) Color.Red else Color.Black
                     ),
                     modifier = Modifier
                         .offset(x = -20.dp)
@@ -762,7 +765,7 @@ fun RegisterCardTeam(
                 text = "${description.value.length}/200",
                 style = MaterialTheme.typography.labelMedium.copy(
                     fontWeight = FontWeight.Light,
-                    color = if (description.value.length > 200) myBlue else Color.Black
+                    color = if (description.value.length > 200) Color.Red else Color.Black
                 ),
                 modifier = Modifier
                     .offset(x = -20.dp)
@@ -775,7 +778,7 @@ fun RegisterCardTeam(
             ) {
                 val scope = rememberCoroutineScope()
                 Button(
-                    enabled = name.value.length >= 6 && name.value.length <= 30 && nameRepliqued.value === false && description.value.length <= 200,
+                    enabled = name.value.length >= 6 && name.value.length <= 25 && nameRepliqued.value === false && description.value.length <= 200,
                     onClick = {
                         scope.launch {
                             val newDoc = Teams(

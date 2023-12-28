@@ -92,7 +92,13 @@ fun AppNavigator(
             val projectId = arguments?.getString("projectId")
             val documentId = arguments?.getString("documentId")
             if (userID != null && projectId != null && documentId != null) {
-                CardViewDocumentsScreen(navController, authRepository, userID, projectId, documentId)
+                CardViewDocumentsScreen(
+                    navController,
+                    authRepository,
+                    userID,
+                    projectId,
+                    documentId
+                )
             }
         }
         composable("presucom_screen/{userId}") { backStackEntry ->

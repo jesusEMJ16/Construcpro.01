@@ -53,6 +53,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.toLowerCase
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavHostController
@@ -222,10 +223,10 @@ private fun InformationCard(
                         )
                     } else Spacer(modifier = Modifier.width(0.dp))
                     Text(
-                        text = "${name.value.length}/30",
+                        text = "${name.value.length}/25",
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontWeight = FontWeight.Light,
-                            color = if (name.value.length < 6 || name.value.length > 30) myBlue else Color.Black
+                            color = if (name.value.length < 6 || name.value.length > 25) Color.Red else Color.Black
                         )
                     )
                 }
@@ -274,7 +275,7 @@ private fun InformationCard(
                     text = "${description.value.length}/200",
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontWeight = FontWeight.Light,
-                        color = if (description.value.length > 200) myBlue else Color.Black
+                        color = if (description.value.length > 200) Color.Red else Color.Black
                     ),
                     modifier = Modifier.align(Alignment.End)
                 )
@@ -340,8 +341,8 @@ private fun InformationCard(
                     inputMethodManager.hideSoftInputFromWindow(currentLocalView.windowToken, 0)
                     Toast.makeText(
                         context,
-                        "Información Actualizada",
-                        Toast.LENGTH_LONG
+                        "Información actualizada",
+                        Toast.LENGTH_SHORT
                     ).show()
                 },
                 enabled = name.value.length >= 6 && name.value.length <= 30 && description.value.length <= 200,
@@ -603,7 +604,7 @@ fun InviteDialog(
                                         Toast.makeText(
                                             context,
                                             "Usuario invitado",
-                                            Toast.LENGTH_LONG
+                                            Toast.LENGTH_SHORT
                                         ).show()
                                     }
                                     email.value = ""
@@ -612,7 +613,7 @@ fun InviteDialog(
                                         Toast.makeText(
                                             context,
                                             "El usuario ya ha sido invitado",
-                                            Toast.LENGTH_LONG
+                                            Toast.LENGTH_SHORT
                                         ).show()
                                     }
                                 }
@@ -656,7 +657,7 @@ suspend fun EmailHasInvited(
 
     return suspendCoroutine { continuation ->
         collection
-            .whereEqualTo("email", email.value)
+            .whereEqualTo("emailToLowerCase", email.value.lowercase())
             .get()
             .addOnSuccessListener { QuerySnapshot ->
                 val exists = !QuerySnapshot.isEmpty
@@ -682,6 +683,7 @@ fun AddMemberToDatabase(userId: String, teamId: String, projectId: String, email
         id = null,
         name = null,
         lastName = null,
+        emailToLowerCase = email.lowercase(),
         email = email,
         role = null,
         phoneNumber = null,
