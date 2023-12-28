@@ -1,5 +1,7 @@
 package com.example.contrupro3.ui.theme.UserProfileScreens
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -55,6 +57,7 @@ import com.example.contrupro3.ui.theme.myBlue
 import com.example.contrupro3.ui.theme.mywhie
 
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun UserProfileView(navController: NavController, authRepository: AuthRepository) {
     Column(
