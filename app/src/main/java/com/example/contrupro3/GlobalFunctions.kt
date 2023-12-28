@@ -62,7 +62,7 @@ fun SendNotificationToUser(
 
     if (methodToGetUserId == "email") {
         val email = additionalInfo?.get("email").toString()
-        val userCollection = usersCollection.whereEqualTo("email", email)
+        val userCollection = usersCollection.whereEqualTo("emailToLowerCase", email.lowercase())
 
         userCollection.get().addOnSuccessListener { querySnapshot ->
             if (!querySnapshot.isEmpty) {

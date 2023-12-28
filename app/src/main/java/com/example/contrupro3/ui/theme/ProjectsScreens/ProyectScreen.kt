@@ -125,8 +125,6 @@ fun ProjectView(
     authRepository.loadProjectsFromFirebase(projectsList)
     val filteredProjects = FilterProjects(projectsList, projectViewModel)
 
-
-
     Scaffold(
         floatingActionButton = {
             CompositionLocalProvider(
@@ -190,8 +188,7 @@ fun ProjectView(
                         fontSize = 32.sp
                     )
                 )
-                Spacer(modifier = Modifier.height(10.dp))
-                Spacer(modifier = Modifier.height(5.dp))
+                Spacer(modifier = Modifier.height(15.dp))
                 when (filteredProjects.size) {
                     0 -> {
                         Text(
@@ -226,6 +223,9 @@ fun ProjectView(
                             projectViewModel
                         )
                         Spacer(Modifier.height(15.dp))
+                        if(filteredProjects.size - 1 == index) {
+                            Spacer(modifier = Modifier.padding(vertical = 50.dp))
+                        }
                     }
                 }
             }
@@ -260,7 +260,7 @@ fun FiltersDropdowMenuProjects(projectViewModel: ProjectsScreen_ViewModel, openA
                 projectViewModel.onFilterSelectionChanged(
                     true,
                     isSearchExpanded.value,
-                    "Fecha de inicio",
+                    filterSelected.value,
                     isFilterAscending.value
                 )
             },
@@ -277,7 +277,7 @@ fun FiltersDropdowMenuProjects(projectViewModel: ProjectsScreen_ViewModel, openA
                 projectViewModel.onFilterSelectionChanged(
                     false,
                     isSearchExpanded.value,
-                    "Fecha de inicio",
+                    filterSelected.value,
                     isFilterAscending.value
                 )
             }
@@ -402,9 +402,7 @@ fun FilterProjects(
 
 @Composable
 fun RemoveProjectsSelected(userID: String, projectViewModel: ProjectsScreen_ViewModel) {
-    val projectsSelectedToRemove = projectViewModel.projectsSelectedToRemove.observeAsState(
-        emptyList()
-    )
+    val projectsSelectedToRemove = projectViewModel.projectsSelectedToRemove.observeAsState(emptyList())
     val context = LocalContext.current
 
     if (projectsSelectedToRemove.value.size > 0) {
@@ -740,7 +738,6 @@ fun ProjectCard(
     }
 }
 
-@OptIn(InternalCoroutinesApi::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun RegisterCard(
@@ -820,10 +817,10 @@ fun RegisterCard(
                     )
                 } else Text(text = " ")
                 Text(
-                    text = "${name.value.length}/30",
+                    text = "${name.value.length}/25",
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontWeight = FontWeight.Light,
-                        color = if (name.value.length > 30) myBlue else Color.Black
+                        color = if (name.value.length > 25) Color.Red else Color.Black
                     ),
                     modifier = Modifier
                         .offset(x = -20.dp)
@@ -849,7 +846,7 @@ fun RegisterCard(
                 text = "${description.value.length}/200",
                 style = MaterialTheme.typography.labelMedium.copy(
                     fontWeight = FontWeight.Light,
-                    color = if (description.value.length > 200) myBlue else Color.Black
+                    color = if (description.value.length > 200) Color.Red else Color.Black
                 ),
                 modifier = Modifier
                     .offset(x = -20.dp)
@@ -864,7 +861,7 @@ fun RegisterCard(
             ) {
                 val scope = rememberCoroutineScope()
                 Button(
-                    enabled = name.value.length >= 6 && name.value.length <= 200 && nameRepliqued.value === false && description.value.length <= 200,
+                    enabled = name.value.length >= 6 && name.value.length <= 25 && nameRepliqued.value === false && description.value.length <= 200,
                     onClick = {
                         scope.launch {
                             val newDoc = Project(
@@ -901,8 +898,8 @@ fun RegisterCard(
 
                                             Toast.makeText(
                                                 currentContext,
-                                                "Proyecto creado correctamente",
-                                                Toast.LENGTH_LONG
+                                                "Proyecto creado",
+                                                Toast.LENGTH_SHORT
                                             ).show()
                                         }
                                 }

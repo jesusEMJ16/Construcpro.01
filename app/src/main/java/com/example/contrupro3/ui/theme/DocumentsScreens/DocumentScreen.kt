@@ -239,6 +239,9 @@ fun DocumentsScreen(
                             project
                         )
                         Spacer(Modifier.height(15.dp))
+                        if(filteredDocuments.size - 1 == index) {
+                            Spacer(modifier = Modifier.padding(vertical = 50.dp))
+                        }
                     }
                 }
             }
@@ -324,7 +327,7 @@ fun FiltersDropdowMenu(
                     DocumentsScreen_ViewModel.onFilterSelectionChanged(
                         true,
                         isSearchExpanded.value,
-                        "Fecha de inicio",
+                        filterSelected.value,
                         isFilterAscending.value
                     )
                 },
@@ -341,7 +344,7 @@ fun FiltersDropdowMenu(
                     DocumentsScreen_ViewModel.onFilterSelectionChanged(
                         false,
                         isSearchExpanded.value,
-                        "Fecha de inicio",
+                        filterSelected.value,
                         isFilterAscending.value
                     )
                 }

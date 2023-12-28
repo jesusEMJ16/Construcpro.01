@@ -1,6 +1,8 @@
 package com.example.contrupro3.ui.theme.Budgets_purchasesScreens
 
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -64,6 +66,7 @@ import com.example.contrupro3.ui.theme.lightblue
 import com.example.contrupro3.ui.theme.myBlue
 import com.example.contrupro3.ui.theme.myOrangehigh
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun Presupuesto_y_Compras(navController: NavController, authRepository: AuthRepository, userId: String) {
     // Variable para almacenar la selección actual (Presupuestos o Compras)

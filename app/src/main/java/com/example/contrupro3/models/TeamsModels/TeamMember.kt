@@ -5,15 +5,17 @@ import android.os.Parcelable
 
 data class TeamMember(
     val id: String? = null,
-    val name: String? = "",
-    val lastName: String? = "",
-    val email: String? = "",
-    val role: String? = "",
-    val phoneNumber: String? = "",
-    val inviteStatus: String? = ""
+    val name: String? = null,
+    val lastName: String? = null,
+    val emailToLowerCase: String? = null,
+    val email: String? = null,
+    val role: String? = null,
+    val phoneNumber: String? = null,
+    val inviteStatus: String? = null
 
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
+        parcel.readString(),
         parcel.readString(),
         parcel.readString(),
         parcel.readString(),
@@ -27,6 +29,7 @@ data class TeamMember(
         parcel.writeString(id)
         parcel.writeString(name)
         parcel.writeString(lastName)
+        parcel.writeString(emailToLowerCase)
         parcel.writeString(email)
         parcel.writeString(role)
         parcel.writeString(phoneNumber)

@@ -52,10 +52,12 @@ import com.example.contrupro3.R
 import com.example.contrupro3.models.LoginModels.Register_ViewModel
 import com.example.contrupro3.models.LoginModels.isPhoneNumberValid
 import com.example.contrupro3.models.LoginModels.isValidEmail
+import com.example.contrupro3.models.UserModels.UserModel
 import com.example.contrupro3.ui.theme.myBlue
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.auth.User
 import kotlinx.coroutines.delay
 
 @Composable
@@ -527,11 +529,11 @@ fun RegisterUser(
                 val capitalizedFirstName = name.capitalize()
                 val capitalizedLastName = lastName.capitalize()
 
-                val userData = hashMapOf(
-                    "name" to capitalizedFirstName,
-                    "lastName" to capitalizedLastName,
-                    "email" to email,
-                    "phoneNumber" to phoneNumber
+                val userData = UserModel(
+                    name = capitalizedFirstName,
+                    lastName = capitalizedLastName,
+                    email = email,
+                    emailToLowerCase = email.lowercase()
                 )
 
                 if (user != null) {
@@ -558,6 +560,7 @@ fun RegisterUser(
                 if (exception is FirebaseAuthUserCollisionException) {
                     onFail("EMAIL_ALREADY_IN_USE")
                 } else {
+
                 }
             }
         }

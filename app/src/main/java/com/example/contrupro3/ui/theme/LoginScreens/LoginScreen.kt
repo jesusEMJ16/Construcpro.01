@@ -58,7 +58,6 @@ import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.delay
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
 @Composable
 fun LoginPage(
     navController: NavController,
@@ -110,29 +109,6 @@ fun LoginPage(
                     text = "Email",
                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
                 )
-                /*if (email.value.isEmpty()) {
-                    Text(
-                        text = "(Requerido)",
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            fontWeight = FontWeight.Light,
-                            color = Color.Gray,
-                            fontStyle = FontStyle.Italic
-                        ),
-                        modifier = Modifier
-                            .padding(horizontal = 7.dp)
-                    )
-                } else if (!isMailValid.value) {
-                    Text(
-                        text = "(Email no valido)",
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            fontWeight = FontWeight.Light,
-                            color = Color.Gray,
-                            fontStyle = FontStyle.Italic
-                        ),
-                        modifier = Modifier
-                            .padding(horizontal = 7.dp)
-                    )
-                }*/
             }
             androidx.compose.material.OutlinedTextField(
                 value = email.value,
@@ -172,27 +148,6 @@ fun LoginPage(
                     text = "Contraseña",
                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
                 )
-                /*if(password.value.isEmpty()) {
-                    Text(
-                        text = "(Requerido)",
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            fontWeight = FontWeight.Light,
-                            color = Color.Gray,
-                            fontStyle = FontStyle.Italic
-                        ),
-                        modifier = Modifier
-                            .padding(horizontal = 7.dp)
-                    )
-                } else if(password.value.length < 6) Text(
-                    text = "(Demasiado pequeña)",
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        fontWeight = FontWeight.Light,
-                        color = Color.Gray,
-                        fontStyle = FontStyle.Italic
-                    ),
-                    modifier = Modifier
-                        .padding(horizontal = 7.dp)
-                )*/
             }
             androidx.compose.material.OutlinedTextField(
                 value = password.value,
