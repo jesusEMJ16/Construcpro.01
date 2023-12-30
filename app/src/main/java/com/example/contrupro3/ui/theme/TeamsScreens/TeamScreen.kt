@@ -739,7 +739,7 @@ fun RegisterCardTeam(
                     text = "${name.value.length}/25",
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontWeight = FontWeight.Light,
-                        color = if (name.value.length > 30) Color.Red else Color.Black
+                        color = if (name.value.length > 25) Color.Red else Color.Black
                     ),
                     modifier = Modifier
                         .offset(x = -20.dp)

@@ -530,6 +530,7 @@ fun RegisterUser(
                 val capitalizedLastName = lastName.capitalize()
 
                 val userData = UserModel(
+                    id = auth.currentUser?.uid.toString(),
                     name = capitalizedFirstName,
                     lastName = capitalizedLastName,
                     email = email,

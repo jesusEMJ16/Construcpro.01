@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -30,6 +31,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -60,6 +62,7 @@ import androidx.compose.ui.window.Dialog
 import com.example.contrupro3.models.AuthRepository
 import com.example.contrupro3.models.BudgetModels.PurchasesModel
 import com.example.contrupro3.models.ProjectsModels.Project
+import com.example.contrupro3.ui.theme.myOrangehigh
 import com.google.firebase.firestore.FirebaseFirestore
 
 @SuppressLint("UnrememberedMutableState")
@@ -67,10 +70,11 @@ import com.google.firebase.firestore.FirebaseFirestore
 fun ComprasScreen(
     authRepository: AuthRepository,
     userId: String,
-    selectedProject: Project?
+    selectedProject: MutableState<Project?>,
+    onOpenSelectProject: () -> Unit
 ) {
     val purchasesList = remember { mutableStateOf<List<PurchasesModel>>(emptyList()) }
-    authRepository.loadPurchasesFromFirebase(selectedProject?.id.toString(), purchasesList)
+    authRepository.loadPurchasesFromFirebase(selectedProject.value?.id.toString(), purchasesList)
     val showDialog = remember { mutableStateOf(false) }
     val selectedRows = remember { mutableStateMapOf<String, Boolean>() }
     val currentSelectedPurchasesToDelete = remember { mutableStateListOf<PurchasesModel>() }
@@ -113,7 +117,8 @@ fun ComprasScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 16.dp),
+                .padding(top = 16.dp)
+                .offset(x = 3.dp, y = -7.dp),
             horizontalArrangement = Arrangement.End
         ) {
             if (currentSelectedPurchasesToDelete.size > 0) {
@@ -144,6 +149,17 @@ fun ComprasScreen(
                 }
             } else {
                 FloatingActionButton(
+                    onClick = { onOpenSelectProject() },
+                    containerColor = myOrangehigh
+                ) {
+                    Icon(
+                        Icons.Default.FolderOpen,
+                        contentDescription = "Seleccionar Proyecto",
+                        tint = Color.White
+                    )
+                }
+                Spacer(modifier = Modifier.padding(horizontal = 10.dp))
+                FloatingActionButton(
                     onClick = { showDialog.value = true },
                     containerColor = Color(0xFF233B40),
                 ) {
@@ -158,14 +174,14 @@ fun ComprasScreen(
             if (showDialog.value) {
                 CompraDialog(
                     userId,
-                    selectedProject?.id,
+                    selectedProject.value?.id,
                     onDismissRequest = { showDialog.value = false })
             }
             if (showDeleteDialog.value) {
                 DeletePurchasesDialog(
                     currentSelectedPurchasesToDelete,
                     userId,
-                    selectedProject?.id.toString(),
+                    selectedProject.value?.id.toString(),
                     {
                         showDeleteDialog.value = false
                         currentSelectedPurchasesToDelete.clear()

@@ -581,8 +581,7 @@ fun InviteDialog(
                     Button(
                         onClick = {
                             GlobalScope.launch(Dispatchers.IO) {
-                                val emailHasInvited =
-                                    EmailHasInvited(email, userId, projectId, teamId)
+                                val emailHasInvited = EmailHasInvited(email, userId, projectId, teamId)
 
                                 if (!emailHasInvited) {
                                     AddMemberToDatabase(userId, teamId, projectId, email.value)

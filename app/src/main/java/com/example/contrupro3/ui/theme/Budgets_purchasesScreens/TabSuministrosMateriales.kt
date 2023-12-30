@@ -4,8 +4,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -13,7 +15,7 @@ import androidx.compose.material.AlertDialog
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material3.Card
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -23,7 +25,6 @@ import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -34,45 +35,62 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.navigation.NavController
 import com.example.contrupro3.models.AuthRepository
 import com.example.contrupro3.models.BudgetModels.Materialmodel
 import com.example.contrupro3.models.BudgetModels.SuministrosViewModel
 import com.example.contrupro3.ui.theme.myBlue
+import com.example.contrupro3.ui.theme.myOrangehigh
 
 
 @Composable
-fun SuministrosScreen(viewModel: SuministrosViewModel, authRepository: AuthRepository) {
+fun SuministrosScreen(
+    viewModel: SuministrosViewModel,
+    authRepository: AuthRepository,
+    onOpenSelectProject: () -> Unit
+) {
 
     // Suponiendo que tienes un ViewModel que maneja la lógica de negocio
     val listaMateriales by viewModel.listaMateriales.observeAsState(initial = emptyList())
     val showDialog = remember { mutableStateOf(false) }
 
-    Column {
-        // Lista para mostrar los materiales
-        ListaMateriales(materiales = listaMateriales)
-        }
-    Row(
+    Column(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 16.dp),
-        horizontalArrangement = Arrangement.End
+            .fillMaxSize()
+            .padding(16.dp)
     ) {
-        FloatingActionButton(
-            onClick = { showDialog.value = true },
-            containerColor = myBlue,
+        ListaMateriales(materiales = listaMateriales)
+        Spacer(modifier = Modifier.weight(1f))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp)
+                .offset(x = 3.dp, y = -7.dp),
+            horizontalArrangement = Arrangement.End
         ) {
-            Icon(
-                Icons.Default.Add,
-                contentDescription = "Agregar lista",
-                tint = Color.White
-            )
-        }
-        if (showDialog.value) {
-            ListaDialog(onDismissRequest = { showDialog.value = false },viewModel)
+            FloatingActionButton(
+                onClick = { onOpenSelectProject() },
+                containerColor = myOrangehigh
+            ) {
+                androidx.compose.material.Icon(
+                    Icons.Default.FolderOpen,
+                    contentDescription = "Seleccionar Proyecto",
+                    tint = Color.White
+                )
+            }
+            Spacer(modifier = Modifier.padding(horizontal = 10.dp))
+            FloatingActionButton(
+                onClick = { showDialog.value = true },
+                containerColor = myBlue,
+            ) {
+                Icon(
+                    Icons.Default.Add,
+                    contentDescription = "Agregar lista",
+                    tint = Color.White
+                )
+            }
+            if (showDialog.value) {
+                ListaDialog(onDismissRequest = { showDialog.value = false }, viewModel)
+            }
         }
     }
 }
@@ -179,7 +197,7 @@ fun MaterialItem(material: Materialmodel) {
 
 
 @Composable
-fun ListaDialog(onDismissRequest: () -> Unit,viewModel: SuministrosViewModel) {
+fun ListaDialog(onDismissRequest: () -> Unit, viewModel: SuministrosViewModel) {
 
     var id: String by remember { mutableStateOf("") }
     var nombre by remember { mutableStateOf("") }
@@ -194,27 +212,44 @@ fun ListaDialog(onDismissRequest: () -> Unit,viewModel: SuministrosViewModel) {
     Dialog(onDismissRequest = onDismissRequest) {
         AlertDialog(
             onDismissRequest = onDismissRequest,
-            title = { Text("Añadir lista de materiales necesarios",
-                style = TextStyle(
-                    fontSize = 24.sp,
-                    textAlign = TextAlign.Center
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 5.dp)
-            )},
+            title = {
+                Text(
+                    "Añadir lista de materiales necesarios",
+                    style = TextStyle(
+                        fontSize = 24.sp,
+                        textAlign = TextAlign.Center
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 5.dp)
+                )
+            },
             text = {
                 AgregarMaterialForm(onAgregarMaterial = { material ->
-                    viewModel.agregarMaterial(Materialmodel(id,nombre,descripcion,cantidad,unidadDeMedida,categoria
-                        ,costoEstimado,costoReal,proveedor))
+                    viewModel.agregarMaterial(
+                        Materialmodel(
+                            id,
+                            nombre,
+                            descripcion,
+                            cantidad,
+                            unidadDeMedida,
+                            categoria,
+                            costoEstimado,
+                            costoReal,
+                            proveedor
+                        )
+                    )
                 })
             },
 
             confirmButton = {
                 androidx.compose.material.Button(
                     onClick = onDismissRequest,
-                    colors = ButtonDefaults.buttonColors(backgroundColor = myBlue,
-                        contentColor = Color.White)) {
+                    colors = ButtonDefaults.buttonColors(
+                        backgroundColor = myBlue,
+                        contentColor = Color.White
+                    )
+                ) {
                     Text("Confirmar")
                 }
             },
