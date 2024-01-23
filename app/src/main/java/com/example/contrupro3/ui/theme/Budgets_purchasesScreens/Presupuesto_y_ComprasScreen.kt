@@ -44,7 +44,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -52,10 +54,11 @@ import com.example.contrupro3.ProjectSelection
 import com.example.contrupro3.R
 import com.example.contrupro3.models.AuthRepository
 import com.example.contrupro3.models.BudgetModels.SuministrosViewModel
-import com.example.contrupro3.models.ProjectsModels.Project
+import com.example.contrupro3.models.ProjectsModels.ProjectModel
 import com.example.contrupro3.ui.theme.Menu.HamburgueerMenu
+import com.example.contrupro3.ui.theme.backgroundButtonColor
+import com.example.contrupro3.ui.theme.contentButtonColor
 import com.example.contrupro3.ui.theme.myBlue
-import com.example.contrupro3.ui.theme.myOrangehigh
 
 @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @RequiresApi(Build.VERSION_CODES.O)
@@ -66,8 +69,8 @@ fun Presupuesto_y_Compras(
     userId: String
 ) {
     // Variable para almacenar la selección actual (Presupuestos o Compras)
-    var currentSelection by remember { mutableStateOf("Presupuestos") }
-    val selectedProject = remember { mutableStateOf<Project?>(null) }
+    val currentSelection = remember { mutableStateOf("Budget Summary") }
+    val selectedProject = remember { mutableStateOf<ProjectModel?>(null) }
     val openSelectProjectsDialog = remember { mutableStateOf(true) }
     val showFloatingButtons = remember { mutableStateOf(true) }
 
@@ -79,7 +82,8 @@ fun Presupuesto_y_Compras(
                 ) {
                     FloatingActionButton(
                         onClick = { openSelectProjectsDialog.value = true },
-                        containerColor = myOrangehigh
+                        containerColor = backgroundButtonColor,
+                        contentColor = contentButtonColor
                     ) {
                         Icon(
                             Icons.Default.FolderOpen,
@@ -113,7 +117,7 @@ fun Presupuesto_y_Compras(
                         )
                     )
                     if (selectedProject.value !== null) Text(
-                        text = "(${selectedProject.value?.projectName})",
+                        text = "(${selectedProject.value?.name})",
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp
@@ -127,10 +131,10 @@ fun Presupuesto_y_Compras(
                         )
                     } else {
                         if (selectedProject.value != null) {
-                            TabsRow(currentSelection) { selection -> currentSelection = selection }
+                            TabsRow(currentSelection.value) { selection -> currentSelection.value = selection }
                             Box(modifier = Modifier.weight(1f)) {
-                                when (currentSelection) {
-                                    "Resumen del Presupuesto" -> {
+                                when (currentSelection.value) {
+                                    "Budget Summary" -> { // Resumen del presupuesto
                                         showFloatingButtons.value = false
                                         ResumenScreen(
                                             authRepository,
@@ -138,22 +142,22 @@ fun Presupuesto_y_Compras(
                                             selectedProject
                                         ) { openSelectProjectsDialog.value = true }
                                     }
-                                    "Gestión de Compras" -> {
+                                    "Purchasing Management" -> { // Gestion de compras
                                         showFloatingButtons.value = false
                                         ComprasScreen(
                                             authRepository,
                                             userId,
-                                            selectedProject
+                                            selectedProject,
                                         ) { openSelectProjectsDialog.value = true }
                                     }
-                                    "Gestión de Suministros y Materiales" -> {
+                                    "Supply and Materials Management" -> { // Gestion de suministros y materiales
                                         showFloatingButtons.value = false
                                         SuministrosScreen(
                                             SuministrosViewModel(),
                                             authRepository
                                         ) { openSelectProjectsDialog.value = true }
                                     }
-                                    "Provedores" -> {
+                                    "Suppliers" -> { // Proveedores
                                         showFloatingButtons.value = false
                                         ProveedoresScreen(
                                             authRepository,
@@ -161,7 +165,7 @@ fun Presupuesto_y_Compras(
                                             selectedProject
                                         ) { openSelectProjectsDialog.value = true }
                                     }
-                                    "Especificaciones Técnicas" -> {
+                                    "Technical Specifications" -> { // Especificaciones tecnicas
                                         showFloatingButtons.value = false
                                         EspecificacionesScreen(
                                             authRepository,
@@ -169,7 +173,7 @@ fun Presupuesto_y_Compras(
                                             selectedProject
                                         ) { openSelectProjectsDialog.value = true }
                                     }
-                                    "Criterios de Cuantificación" -> {
+                                    "Quantification Criteria" -> { // Criterios de cuantificacion
                                         showFloatingButtons.value = false
                                         CriteriosScreen(
                                             authRepository,
@@ -177,7 +181,7 @@ fun Presupuesto_y_Compras(
                                             selectedProject
                                         ) { openSelectProjectsDialog.value }
                                     }
-                                    "Historial y Reportes" -> {
+                                    "History and Reports" -> { // Historial y reportes
                                         showFloatingButtons.value = false
                                         HistorialScreen(
                                             authRepository,
@@ -206,13 +210,13 @@ fun Presupuesto_y_Compras(
 @Composable
 fun TabsRow(currentSelection: String, onTabSelected: (String) -> Unit) {
     val tabs = listOf(
-        TabData("Resumen del Presupuesto", Icons.Default.RealEstateAgent),
-        TabData("Gestión de Compras", Icons.Default.ShoppingCart),
-        TabData("Gestión de Suministros y Materiales", Icons.Default.AssuredWorkload),
-        TabData("Provedores", Icons.Default.People),
-        TabData("Especificaciones Técnicas", Icons.Default.Checklist),
-        TabData("Criterios de Cuantificación", Icons.Default.Computer),
-        TabData("Historial y Reportes", Icons.Default.History),
+        TabData("Resumen del Presupuesto", "Budget Summary", Icons.Default.RealEstateAgent),
+        TabData("Gestión de Compras", "Purchasing Management", Icons.Default.ShoppingCart),
+        TabData("Gestión de Suministros y Materiales", "Supply and Materials Management", Icons.Default.AssuredWorkload),
+        TabData("Provedores", "Suppliers", Icons.Default.People),
+        TabData("Especificaciones Técnicas", "Technical Specifications", Icons.Default.Checklist),
+        TabData("Criterios de Cuantificación", "Quantification Criteria", Icons.Default.Computer),
+        TabData("Historial y Reportes", "History and Reports", Icons.Default.History),
     )
 
     LazyRow(
@@ -225,9 +229,9 @@ fun TabsRow(currentSelection: String, onTabSelected: (String) -> Unit) {
             TabItem(
                 title = tabData.title,
                 icon = tabData.icon,
-                isSelected = currentSelection == tabData.title
+                isSelected = currentSelection == tabData.titleID
             ) {
-                onTabSelected(tabData.title)
+                onTabSelected(tabData.titleID)
             }
         }
     }
@@ -245,7 +249,7 @@ fun TabItem(title: String, icon: ImageVector, isSelected: Boolean, onClick: () -
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = if (isSelected) Color.Cyan else myBlue
+            tint = if (isSelected) backgroundButtonColor else myBlue
         )
         GradientText(title, isSelected)
     }
@@ -256,12 +260,16 @@ fun GradientText(text: String, isSelected: Boolean) {
     Text(
         text = text,
         style = if (isSelected) {
-            TextStyle(fontWeight = FontWeight.Bold) // Texto en negrita si está seleccionado
+            TextStyle(fontWeight = FontWeight.Black, textDecoration = TextDecoration.Underline) // Texto en negrita si está seleccionado
         } else {
             TextStyle(fontWeight = FontWeight.Normal) // Texto normal si no está seleccionado
         },
-        color = if (isSelected) Color.Cyan else myBlue
+        color = if (isSelected) backgroundButtonColor else myBlue
     )
 }
 
-data class TabData(val title: String, val icon: ImageVector)
+data class TabData(
+    val title: String,
+    val titleID: String,
+    val icon: ImageVector
+)

@@ -20,14 +20,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.contrupro3.models.AuthRepository
-import com.example.contrupro3.models.ProjectsModels.Project
+import com.example.contrupro3.models.ProjectsModels.ProjectModel
 import com.example.contrupro3.ui.theme.myOrangehigh
 
 @Composable
 fun EspecificacionesScreen(
     authRepository: AuthRepository,
     userId: String,
-    selectedProject: MutableState<Project?>,
+    selectedProject: MutableState<ProjectModel?>,
     onOpenSelectProject: () -> Unit
 ) {
     Column(

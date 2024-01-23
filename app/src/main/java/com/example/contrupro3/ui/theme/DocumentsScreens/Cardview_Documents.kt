@@ -68,8 +68,8 @@ import androidx.navigation.NavHostController
 import com.example.contrupro3.R
 import com.example.contrupro3.models.AuthRepository
 import com.example.contrupro3.models.DocumentsModels.DocumentModel
+import com.example.contrupro3.models.ProjectsModels.ProjectModel
 import com.example.contrupro3.models.TeamsModels.Teams
-import com.example.contrupro3.models.ProjectsModels.Project
 import com.example.contrupro3.ui.theme.myBlue
 import com.example.contrupro3.ui.theme.myOrangehigh
 import com.example.contrupro3.ui.theme.myOrangelow
@@ -90,7 +90,7 @@ fun CardViewDocumentsScreen(
     val DocumentList = remember { mutableStateOf<DocumentModel?>(null) }
     authRepository.loadDocument(documentId, DocumentList)
     val document: DocumentModel? = DocumentList.value
-    val projectsList = remember { mutableStateOf<List<Project>>(emptyList()) }
+    val projectsList = remember { mutableStateOf<List<ProjectModel>>(emptyList()) }
     authRepository.loadProjectsFromFirebase(projectsList)
     val viewModel: MyViewModel = viewModel()
     val action by viewModel.action
@@ -208,7 +208,7 @@ private fun InformationCard(
     authRepository: AuthRepository,
     userID: String,
     document: DocumentModel?,
-    projectsList: MutableState<List<Project>>,
+    projectsList: MutableState<List<ProjectModel>>,
 ) {
     val viewModel: MyViewModel = viewModel()
     val nameEnabled by viewModel.nameEnabled
@@ -342,13 +342,13 @@ fun IntegrationsCard(
     authRepository: AuthRepository,
     userID: String,
     document: DocumentModel?,
-    projectsList: MutableState<List<Project>>
+    projectsList: MutableState<List<ProjectModel>>
 ) {
     val viewModel: MyViewModel = viewModel()
     val proyectsEnabled by viewModel.proyectsEnabled
     val teamsEnabled by viewModel.teamsEnabled
     val currentProjects by viewModel.currentProjects
-    val projectsName = currentProjects.map { p -> p.projectName }.sortedBy { a -> a }.joinToString("\n")
+    val projectsName = currentProjects.map { p -> p.name }.sortedBy { a -> a }.joinToString("\n")
 
     Box(modifier = Modifier.fillMaxWidth()) {
         androidx.compose.material3.Card(
@@ -481,7 +481,7 @@ fun AddProyects(
     authRepository: AuthRepository,
     userId: String,
     document: DocumentModel?,
-    projectsList: MutableState<List<Project>>
+    projectsList: MutableState<List<ProjectModel>>
 ) {
     val DocumentList = remember { mutableStateOf<DocumentModel?>(null) }
     authRepository.loadDocument(document?.id.toString(), DocumentList)
@@ -523,7 +523,7 @@ fun AddProyects(
                     .fillMaxWidth()
                     .fillMaxHeight(0.8f)
             ) {
-                items(projectsList.value.sortedBy { it.projectName }) { proyect ->
+                items(projectsList.value.sortedBy { it.name }) { proyect ->
                     var checked by remember { mutableStateOf(proyectsSelected.contains(proyect.id.toString())) }
                     var isPressed by remember { mutableStateOf(false) }
                     val scope = rememberCoroutineScope()
@@ -548,7 +548,7 @@ fun AddProyects(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(text = "${proyect.projectName}", modifier = Modifier.offset(x = 10.dp), style = MaterialTheme.typography.bodyMedium)
+                        Text(text = "${proyect.name}", modifier = Modifier.offset(x = 10.dp), style = MaterialTheme.typography.bodyMedium)
                         Checkbox(
                             enabled = if(document?.proyectsLinked?.toList()?.contains(proyect.id.toString()) == true) false else true,
                             checked = checked,
@@ -642,7 +642,7 @@ fun RemoveProjects(
     authRepository: AuthRepository,
     userID: String,
     document: DocumentModel?,
-    projectsList: MutableState<List<Project>>
+    projectsList: MutableState<List<ProjectModel>>
 ) {
     val DocumentList = remember { mutableStateOf<DocumentModel?>(null) }
     authRepository.loadDocument(document?.id.toString(), DocumentList)
@@ -684,7 +684,7 @@ fun RemoveProjects(
                     .fillMaxWidth()
                     .fillMaxHeight(0.8f)
             ) {
-                items(proyectsCurrent.value.sortedBy { it.projectName }) { proyect ->
+                items(proyectsCurrent.value.sortedBy { it.name }) { proyect ->
                     var checked by remember { mutableStateOf(false) }
                     var isPressed by remember { mutableStateOf(false) }
                     val scope = rememberCoroutineScope()
@@ -709,7 +709,7 @@ fun RemoveProjects(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(text = "${proyect.projectName}", modifier = Modifier.offset(x = 10.dp), style = MaterialTheme.typography.bodyMedium)
+                        Text(text = "${proyect.name}", modifier = Modifier.offset(x = 10.dp), style = MaterialTheme.typography.bodyMedium)
                         Checkbox(
                             checked = checked,
                             onCheckedChange = { newChange ->
@@ -766,7 +766,7 @@ fun RemoveProjects(
                                     viewModel.action.value = ""
                                     Toast.makeText(
                                         context,
-                                        "Proyectos removidos correctamente",
+                                        "Proyectos removidos",
                                         Toast.LENGTH_SHORT
                                     ).show()
                                 }
@@ -801,6 +801,6 @@ class MyViewModel : ViewModel() {
     val proyectsEnabled = mutableStateOf(false)
     val teamsEnabled = mutableStateOf(false)
     val action = mutableStateOf("")
-    val currentProjects = mutableStateOf(emptyList<Project>())
+    val currentProjects = mutableStateOf(emptyList<ProjectModel>())
     val currentTeams = mutableStateOf(emptyList<Teams>())
 }

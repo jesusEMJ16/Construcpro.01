@@ -1,12 +1,14 @@
-package com.example.contrupro3.models.TeamsModels
+package com.example.contrupro3.models.TasksModels
 
-import android.util.Patterns
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import com.example.contrupro3.models.ProjectsModels.ProjectModel
+import com.example.contrupro3.models.TeamsModels.TeamMember
+import com.example.contrupro3.models.TeamsModels.Teams
 
-class TeamScreen_ViewModel : ViewModel() {
-    /* ===== [ TeamScreen_ViewModel - Filter Projects ] ===== */
+class TasksScreen_ViewModel : ViewModel() {
+    /* ===== [ TaskScreen_ViewModel - Filter Tasks ] ===== */
     private val _filterSelected = MutableLiveData<String>()
     val filterSelected: LiveData<String> = _filterSelected
     private val _isFilterAscending = MutableLiveData<Boolean>()
@@ -33,17 +35,23 @@ class TeamScreen_ViewModel : ViewModel() {
 
 
 
-    /* ===== [ ProjectsScreen - Others ] ===== */
-    private val _teamsSelectedToRemove = MutableLiveData<List<Teams>>()
-    val teamsSelectedToRemove: LiveData<List<Teams>> = _teamsSelectedToRemove
-    private val _showDeleteTeamsDialog = MutableLiveData<Boolean>()
-    val showDeleteTeamsDialog: LiveData<Boolean> = _showDeleteTeamsDialog
+    /* ===== [ TasksScreen - Others ] ===== */
+    private val _tasksSelectedToRemove = MutableLiveData<List<TaskModel>>()
+    val tasksSelectedToRemove: LiveData<List<TaskModel>> = _tasksSelectedToRemove
+    private val _showDeleteTasksDialog = MutableLiveData<Boolean>()
+    val showDeleteTasksDialog: LiveData<Boolean> = _showDeleteTasksDialog
+    private val _projectSelected = MutableLiveData<ProjectModel>()
+    val projectSelected: LiveData<ProjectModel> = _projectSelected
 
-    fun onRemoveTeamsChanged(
-        teamsSelectedToRemove: List<Teams>,
-        showDeleteTeamsDialog: Boolean
+    fun onProjectSaved(project: ProjectModel) {
+        _projectSelected.value = project
+    }
+
+    fun onRemoveTasksChanged(
+        tasksSelectedToRemove: List<TaskModel>,
+        showDeleteTasksDialog: Boolean
     ) {
-        _teamsSelectedToRemove.value = teamsSelectedToRemove
-        _showDeleteTeamsDialog.value = showDeleteTeamsDialog
+        _tasksSelectedToRemove.value = tasksSelectedToRemove
+        _showDeleteTasksDialog.value = showDeleteTasksDialog
     }
 }

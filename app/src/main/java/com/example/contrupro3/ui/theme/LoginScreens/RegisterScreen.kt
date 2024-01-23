@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -28,15 +29,19 @@ import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
@@ -50,16 +55,15 @@ import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
 import com.example.contrupro3.R
 import com.example.contrupro3.models.LoginModels.Register_ViewModel
-import com.example.contrupro3.models.LoginModels.isPhoneNumberValid
 import com.example.contrupro3.models.LoginModels.isValidEmail
 import com.example.contrupro3.models.UserModels.UserModel
 import com.example.contrupro3.ui.theme.myBlue
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.auth.User
 import kotlinx.coroutines.delay
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun RegisterPage(navController: NavController, Register_ViewModel: Register_ViewModel) {
     var isPasswordVisible by remember { mutableStateOf(false) }
@@ -74,6 +78,8 @@ fun RegisterPage(navController: NavController, Register_ViewModel: Register_View
     val repeatPassword = Register_ViewModel.repeatPassword.observeAsState("")
     val enableRegisterButton = Register_ViewModel.enableRegisterButton.observeAsState(false)
     val focusManager = LocalFocusManager.current
+    val isKeyboardActive = remember { mutableStateOf(false) }
+    val isRegisterLoading = remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -151,7 +157,10 @@ fun RegisterPage(navController: NavController, Register_ViewModel: Register_View
                 singleLine = true,
                 maxLines = 1,
                 modifier = Modifier
-                    .fillMaxWidth(0.8f),
+                    .fillMaxWidth(0.8f)
+                    .onFocusChanged { focusState ->
+                        isKeyboardActive.value = focusState.isFocused
+                    },
                 keyboardOptions = KeyboardOptions.Default.copy(
                     imeAction = ImeAction.Next
                 ),
@@ -220,7 +229,10 @@ fun RegisterPage(navController: NavController, Register_ViewModel: Register_View
                 singleLine = true,
                 maxLines = 1,
                 modifier = Modifier
-                    .fillMaxWidth(0.8f),
+                    .fillMaxWidth(0.8f)
+                    .onFocusChanged { focusState ->
+                        isKeyboardActive.value = focusState.isFocused
+                    },
                 keyboardOptions = KeyboardOptions.Default.copy(
                     imeAction = ImeAction.Next
                 ),
@@ -287,7 +299,10 @@ fun RegisterPage(navController: NavController, Register_ViewModel: Register_View
                 singleLine = true,
                 maxLines = 1,
                 modifier = Modifier
-                    .fillMaxWidth(0.8f),
+                    .fillMaxWidth(0.8f)
+                    .onFocusChanged { focusState ->
+                        isKeyboardActive.value = focusState.isFocused
+                    },
                 keyboardOptions = KeyboardOptions.Default.copy(
                     keyboardType = KeyboardType.Email,
                     imeAction = ImeAction.Next
@@ -355,7 +370,10 @@ fun RegisterPage(navController: NavController, Register_ViewModel: Register_View
                 singleLine = true,
                 maxLines = 1,
                 modifier = Modifier
-                    .fillMaxWidth(0.8f),
+                    .fillMaxWidth(0.8f)
+                    .onFocusChanged { focusState ->
+                        isKeyboardActive.value = focusState.isFocused
+                    },
                 keyboardOptions = KeyboardOptions.Default.copy(
                     keyboardType = KeyboardType.Password,
                     imeAction = ImeAction.Next
@@ -435,7 +453,10 @@ fun RegisterPage(navController: NavController, Register_ViewModel: Register_View
                 singleLine = true,
                 maxLines = 1,
                 modifier = Modifier
-                    .fillMaxWidth(0.8f),
+                    .fillMaxWidth(0.8f)
+                    .onFocusChanged { focusState ->
+                        isKeyboardActive.value = focusState.isFocused
+                    },
                 keyboardOptions = KeyboardOptions.Default.copy(
                     keyboardType = KeyboardType.Password,
                     imeAction = ImeAction.Done
@@ -494,7 +515,8 @@ fun RegisterPage(navController: NavController, Register_ViewModel: Register_View
                                     "Ocurrio un problema al registrarte, intente de nuevo mas tarde."
                                 snackbarVisibleState.value = true
                             }
-                        }
+                        },
+                        isRegisterLoading
                     )
                 },
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 5.dp),
@@ -505,7 +527,14 @@ fun RegisterPage(navController: NavController, Register_ViewModel: Register_View
                     .padding(8.dp),
                 enabled = enableRegisterButton.value
             ) {
-                Text("Registrarse")
+                if(isRegisterLoading.value) {
+                    CircularProgressIndicator(
+                        color = myBlue,
+                        strokeWidth = 3.dp,
+                        modifier = Modifier.size(25.dp),
+                        strokeCap = StrokeCap.Square
+                    )
+                } else Text("Registrarse")
             }
         }
     }
@@ -518,8 +547,10 @@ fun RegisterUser(
     phoneNumber: String?,
     password: String,
     onSucces: () -> Unit,
-    onFail: (String) -> Unit
+    onFail: (String) -> Unit,
+    isRegisterLoading: MutableState<Boolean>
 ) {
+    isRegisterLoading.value = true
     val auth = FirebaseAuth.getInstance()
 
     auth.createUserWithEmailAndPassword(email, password)
@@ -548,15 +579,18 @@ fun RegisterUser(
                                 if (emailTask.isSuccessful) {
                                     onSucces()
                                 } else {
+                                    isRegisterLoading.value = false
                                     onFail("EMAIL_VERIFICATION_FAILED")
                                 }
                             }
                         }
                         .addOnFailureListener { exception: Exception ->
                             onFail("FIRESTORE_ERROR")
+                            isRegisterLoading.value = false
                         }
                 }
             } else {
+                isRegisterLoading.value = false
                 val exception = task.exception
                 if (exception is FirebaseAuthUserCollisionException) {
                     onFail("EMAIL_ALREADY_IN_USE")

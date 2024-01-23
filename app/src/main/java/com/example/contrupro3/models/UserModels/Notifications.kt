@@ -63,7 +63,6 @@ data class IconModel(
     }
 }
 
-
 data class NotificationModel(
     val id: String? = null,
     val title: String? = null,

@@ -1,4 +1,4 @@
-package com.example.contrupro3.models.BudgetModels
+package com.example.contrupro3.models.BudgetModels.Purchases
 
 import android.os.Parcel
 import android.os.Parcelable
@@ -6,12 +6,14 @@ import com.example.contrupro3.models.DocumentsModels.DocumentModel
 
 data class PurchasesModel(
     val id: String? = null,
-    val name: String? = "",
-    val date: String? = "",
-    val supplier: String? = "",
+    val name: String? = null,
+    val date: String? = null,
+    val supplier: String? = null,
     val quantity: Int? = null,
     val priceUnit: Double? = null,
-    val totalPrice: Double? = null
+    val totalPrice: Double? = null,
+    val creatorName: String? = null,
+    val creatorUID: String? = null
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
         parcel.readString(),
@@ -20,7 +22,9 @@ data class PurchasesModel(
         parcel.readString(),
         parcel.readInt(),
         parcel.readDouble(),
-        parcel.readDouble()
+        parcel.readDouble(),
+        parcel.readString(),
+        parcel.readString()
     )
 
 
@@ -32,6 +36,8 @@ data class PurchasesModel(
         parcel.writeInt(quantity?: 0)
         parcel.writeDouble(priceUnit?: 0.0)
         parcel.writeDouble(totalPrice?: 0.0)
+        parcel.writeString(creatorName)
+        parcel.writeString(creatorUID)
     }
 
     override fun describeContents(): Int {

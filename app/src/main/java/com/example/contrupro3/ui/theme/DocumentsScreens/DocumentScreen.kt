@@ -89,10 +89,11 @@ import androidx.navigation.NavHostController
 import coil.compose.rememberImagePainter
 import com.example.contrupro3.ProjectSelection
 import com.example.contrupro3.R
+import com.example.contrupro3.UpdateProjectCounter
 import com.example.contrupro3.models.AuthRepository
 import com.example.contrupro3.models.DocumentsModels.DocumentModel
 import com.example.contrupro3.models.DocumentsModels.DocumentScreen_ViewModel
-import com.example.contrupro3.models.ProjectsModels.Project
+import com.example.contrupro3.models.ProjectsModels.ProjectModel
 import com.example.contrupro3.ui.theme.Menu.HamburgueerMenu
 import com.example.contrupro3.ui.theme.TeamsScreens.FilterTeams
 import com.example.contrupro3.ui.theme.myBlue
@@ -126,7 +127,7 @@ fun DocumentsScreen(
     val loggedInUserName: String by authRepository.getLoggedInUserName().observeAsState("")
     val showDeleteDocumentsDialog by DocumentsScreen_ViewModel.showDeleteDocumentsDialog.observeAsState(false)
     val documentsSelectedToRemove by DocumentsScreen_ViewModel.documentsSelectedToRemove.observeAsState(emptyList())
-    val project = remember { mutableStateOf<Project?>(null) }
+    val project = remember { mutableStateOf<ProjectModel?>(null) }
     val openSelectProjectsDialog = remember { mutableStateOf(true) }
     val filteredDocuments = FilterDocuments(documentsList, DocumentsScreen_ViewModel)
 
@@ -190,7 +191,7 @@ fun DocumentsScreen(
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                 )
                 if (project.value !== null) Text(
-                    text = "(${project.value?.projectName})",
+                    text = "(${project.value?.name})",
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp
@@ -301,7 +302,7 @@ fun FilterDocuments(documentsList: MutableState<List<DocumentModel>>, DocumentsS
 @Composable
 fun FiltersDropdowMenu(
     DocumentsScreen_ViewModel: DocumentScreen_ViewModel,
-    project: MutableState<Project?>,
+    project: MutableState<ProjectModel?>,
     openSelectProjectDialog: () -> Unit,
     openAddDocuments: () -> Unit
 ) {
@@ -427,7 +428,7 @@ fun DocumentCard(
     authRepository: AuthRepository,
     documentsList: MutableState<List<DocumentModel>>,
     userID: String,
-    project: MutableState<Project?>
+    project: MutableState<ProjectModel?>
 ) {
     var showViewer by remember { mutableStateOf(false) }
     val documentsSelectedToRemove = DocumentsScreen_ViewModel.documentsSelectedToRemove.observeAsState(
@@ -548,7 +549,7 @@ fun RegisterCardDocument(
     loggedInUserName: String,
     loggedInUserUID: String,
     documentsFiltered: MutableState<List<DocumentModel>>,
-    project: Project?
+    project: ProjectModel?
 ) {
     val documentName = remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
@@ -625,10 +626,10 @@ fun RegisterCardDocument(
                     )
                 } else Text(text = " ")
                 Text(
-                    text = "${documentName.value.length}/30",
+                    text = "${documentName.value.length}/25",
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontWeight = FontWeight.Light,
-                        color = if (documentName.value.length > 30) myBlue else Color.Black
+                        color = if (documentName.value.length > 25) Color.Red else Color.Black
                     ),
                     modifier = Modifier
                         .offset(x = -20.dp)
@@ -654,7 +655,7 @@ fun RegisterCardDocument(
                 text = "${description.length}/200",
                 style = MaterialTheme.typography.labelMedium.copy(
                     fontWeight = FontWeight.Light,
-                    color = if (description.length > 200) myBlue else Color.Black
+                    color = if (description.length > 200) Color.Red else Color.Black
                 ),
                 modifier = Modifier
                     .offset(x = -20.dp)
@@ -729,7 +730,7 @@ fun RegisterCardDocument(
 
                 if (!isLoadingSpinnerActived) {
                     Button(
-                        enabled = documentName.value.length >= 6 && documentName.value.length <= 30 && documentUriName.length > 1 && nameRepliqued === false && description.length <= 200,
+                        enabled = documentName.value.length >= 6 && documentName.value.length <= 25 && documentUriName.length > 1 && nameRepliqued === false && description.length <= 200,
                         onClick = {
                             isLoadingSpinnerActived = true
                             showLoadingSpinner = true
@@ -778,9 +779,15 @@ fun RegisterCardDocument(
 
                                                     Toast.makeText(
                                                         context,
-                                                        "Archivo agregado correctamente",
-                                                        Toast.LENGTH_LONG
+                                                        "Archivo agregado",
+                                                        Toast.LENGTH_SHORT
                                                     ).show()
+                                                    UpdateProjectCounter(
+                                                        projectId = project?.id.toString(),
+                                                        ownerId = loggedInUserUID,
+                                                        propertiesToUpdate = "documents",
+                                                        toAdd = true
+                                                    )
                                                 }
                                         }
                                 } else {
@@ -929,7 +936,7 @@ fun PdfViewerScreen(navController: NavHostController, pdfUrl: String) {
 @Composable
 fun RemoveDocumentsSelected(
     userID: String,
-    project: MutableState<Project?>,
+    project: MutableState<ProjectModel?>,
     DocumentsScreen_ViewModel: DocumentScreen_ViewModel
 ) {
     val documentsSelectedToRemove = DocumentsScreen_ViewModel.documentsSelectedToRemove.observeAsState(
@@ -977,6 +984,13 @@ fun RemoveDocumentsSelected(
                                 storage.getReferenceFromUrl("${document.previewRef}").delete()
                                 collectionRef.document("${document.id}").delete()
                             }
+                            UpdateProjectCounter(
+                                ownerId = userID,
+                                projectId = project.value?.id.toString(),
+                                propertiesToUpdate = "documents",
+                                toAdd = false,
+                                counts = documentsSelectedToRemove.value.size
+                            )
                             DocumentsScreen_ViewModel.onRemoveDocumentsChanged(emptyList(), false)
                             Toast.makeText(
                                 context,

@@ -20,14 +20,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.contrupro3.models.AuthRepository
-import com.example.contrupro3.models.ProjectsModels.Project
+import com.example.contrupro3.models.ProjectsModels.ProjectModel
+import com.example.contrupro3.ui.theme.backgroundButtonColor
+import com.example.contrupro3.ui.theme.contentButtonColor
 import com.example.contrupro3.ui.theme.myOrangehigh
 
 @Composable
 fun ResumenScreen(
     authRepository: AuthRepository,
     userId: String,
-    selectedProject: MutableState<Project?>,
+    selectedProject: MutableState<ProjectModel?>,
     onOpenSelectProject: () -> Unit
 ) {
     Column(
@@ -37,23 +39,29 @@ fun ResumenScreen(
     ) {
         Text(text = "Resumen del Presupuesto", style = MaterialTheme.typography.bodySmall)
         Spacer(modifier = Modifier.weight(1f))
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 16.dp)
-                .offset(x = 3.dp, y = -7.dp),
-            horizontalArrangement = Arrangement.End
+        CustomResumeFloatingActionButton { onOpenSelectProject() }
+    }
+}
+
+@Composable
+private fun CustomResumeFloatingActionButton(onOpenSelectProject: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp)
+            .offset(x = 4.dp, y = -8.dp),
+        horizontalArrangement = Arrangement.End
+    ) {
+        FloatingActionButton(
+            onClick = { onOpenSelectProject() },
+            containerColor = backgroundButtonColor,
+            contentColor = contentButtonColor
         ) {
-            FloatingActionButton(
-                onClick = { onOpenSelectProject() },
-                containerColor = myOrangehigh
-            ) {
-                Icon(
-                    Icons.Default.FolderOpen,
-                    contentDescription = "Seleccionar Proyecto",
-                    tint = Color.White
-                )
-            }
+            Icon(
+                Icons.Default.FolderOpen,
+                contentDescription = "Seleccionar Proyecto",
+                tint = Color.White
+            )
         }
     }
 }

@@ -1,4 +1,4 @@
-package com.example.contrupro3.ui.theme.TeamsScreens
+package com.example.contrupro3.ui.theme.TasksScreen
 
 
 import android.annotation.SuppressLint
@@ -8,7 +8,6 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -46,22 +45,20 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -70,8 +67,8 @@ import com.example.contrupro3.ProjectSelection
 import com.example.contrupro3.R
 import com.example.contrupro3.models.AuthRepository
 import com.example.contrupro3.models.ProjectsModels.ProjectModel
-import com.example.contrupro3.models.TeamsModels.TeamScreen_ViewModel
-import com.example.contrupro3.models.TeamsModels.Teams
+import com.example.contrupro3.models.TasksModels.TaskModel
+import com.example.contrupro3.models.TasksModels.TasksScreen_ViewModel
 import com.example.contrupro3.ui.theme.Menu.HamburgueerMenu
 import com.example.contrupro3.ui.theme.myBlue
 import com.example.contrupro3.ui.theme.myOrangehigh
@@ -84,25 +81,26 @@ import java.util.Locale
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @ExperimentalMaterial3Api
 @Composable
-fun TeamsScreen(
+fun TasksScreen(
     navController: NavController,
     authRepository: AuthRepository,
     userID: String,
-    TeamScreen_ViewModel: TeamScreen_ViewModel
+    TasksScreen_ViewModel: TasksScreen_ViewModel
 ) {
     val loggedInUserUID: String by authRepository.getLoggedInUserUID().observeAsState("")
     val loggedInUserName: String by authRepository.getLoggedInUserName().observeAsState("")
-    val teamsSelectedToRemove =
-        TeamScreen_ViewModel.teamsSelectedToRemove.observeAsState(emptyList())
-    val showTeamDeleteDialog = TeamScreen_ViewModel.showDeleteTeamsDialog.observeAsState(false)
-    val teamsList = remember { mutableStateOf<List<Teams>>(emptyList()) }
-    val project = remember { mutableStateOf<ProjectModel?>(null) }
-    val openSelectProjectDialog = remember { mutableStateOf(true) }
+    val tasksSelectedToRemove =
+        TasksScreen_ViewModel.tasksSelectedToRemove.observeAsState(emptyList())
+    val showTaskDeleteDialog = TasksScreen_ViewModel.showDeleteTasksDialog.observeAsState(false)
+    val tasksList = remember { mutableStateOf<List<TaskModel>>(emptyList()) }
+    val project = TasksScreen_ViewModel.projectSelected.observeAsState(null)
+    val openSelectProjectDialog = remember(project) { mutableStateOf(project.value == null) }
     val isAddTeamDialogOpen = remember { mutableStateOf(false) }
-    val filteredTeams = FilterTeams(teamsList, TeamScreen_ViewModel)
+    val filteredTasks = FilterTasks(tasksList, TasksScreen_ViewModel)
 
     if (project.value !== null) {
-        authRepository.loadEquiposFromFirebase(teamsList, project.value?.id.toString())
+        TasksScreen_ViewModel.onProjectSaved(project.value!!)
+        authRepository.loadTasksFromFirebase(tasksList, project.value?.id.toString())
     }
 
     Scaffold(
@@ -110,11 +108,11 @@ fun TeamsScreen(
             CompositionLocalProvider(
                 LocalContentColor provides colorResource(id = R.color.white)
             ) {
-                if (teamsSelectedToRemove.value.isNotEmpty()) {
+                if (tasksSelectedToRemove.value.isNotEmpty()) {
                     Row {
                         FloatingActionButton(
                             onClick = {
-                                TeamScreen_ViewModel.onRemoveTeamsChanged(
+                                TasksScreen_ViewModel.onRemoveTasksChanged(
                                     emptyList(),
                                     false
                                 )
@@ -129,8 +127,8 @@ fun TeamsScreen(
                         Spacer(modifier = Modifier.width(16.dp))
                         FloatingActionButton(
                             onClick = {
-                                TeamScreen_ViewModel.onRemoveTeamsChanged(
-                                    teamsSelectedToRemove.value,
+                                TasksScreen_ViewModel.onRemoveTasksChanged(
+                                    tasksSelectedToRemove.value,
                                     true
                                 )
                             },
@@ -144,7 +142,7 @@ fun TeamsScreen(
                     }
                 } else {
                     FiltersDropdowMenu(
-                        TeamScreen_ViewModel,
+                        TasksScreen_ViewModel,
                         project,
                         { openSelectProjectDialog.value = true }) {
                         isAddTeamDialogOpen.value = true
@@ -166,7 +164,7 @@ fun TeamsScreen(
                 ) {
                     Spacer(modifier = Modifier.height(5.dp))
                     Text(
-                        text = "Equipos",
+                        text = "Tareas",
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.Bold,
                             fontSize = 32.sp
@@ -186,43 +184,43 @@ fun TeamsScreen(
                             modifier = Modifier.padding(bottom = 10.dp)
                         )
                     } else {
-                        when (filteredTeams.size) {
+                        when (filteredTasks.size) {
                             0 -> {
                                 Text(
-                                    text = "No tienes equipos creados.",
+                                    text = "No tienes tareas creadas.",
                                     modifier = Modifier.padding(bottom = 10.dp)
                                 )
                             }
 
                             1 -> {
                                 Text(
-                                    text = "Tienes 1 equipo creado.",
+                                    text = "Tienes 1 tarea creada.",
                                     modifier = Modifier.padding(bottom = 10.dp)
                                 )
                             }
 
                             else -> {
                                 Text(
-                                    text = "Tienes ${filteredTeams.size} equipos creados.",
+                                    text = "Tienes ${filteredTasks.size} tareas creadas.",
                                     modifier = Modifier.padding(bottom = 10.dp)
                                 )
                             }
                         }
                     }
                     LazyColumn(modifier = Modifier.weight(1f)) {
-                        items(filteredTeams.size) { index ->
-                            val team = filteredTeams[index]
-                            EquipoCard(
-                                team,
+                        items(filteredTasks.size) { index ->
+                            val task = filteredTasks[index]
+                            TaskCard(
+                                task,
                                 project.value?.id.toString(),
                                 navController,
                                 userID,
                                 authRepository,
-                                teamsList,
-                                TeamScreen_ViewModel
+                                tasksList,
+                                TasksScreen_ViewModel
                             )
                             Spacer(Modifier.height(15.dp))
-                            if(filteredTeams.size - 1 == index) {
+                            if(filteredTasks.size - 1 == index) {
                                 Spacer(modifier = Modifier.padding(vertical = 50.dp))
                             }
                         }
@@ -237,35 +235,35 @@ fun TeamsScreen(
         userID,
         authRepository,
         { openSelectProjectDialog.value = false }
-    ) { p -> project.value = p }
-    if (showTeamDeleteDialog.value) RemoveTeamsSelected(userID, project, TeamScreen_ViewModel)
+    ) { p -> TasksScreen_ViewModel.onProjectSaved(p) }
+    if (showTaskDeleteDialog.value) RemoveTasksSelected(userID, project.value, TasksScreen_ViewModel)
     if (isAddTeamDialogOpen.value) {
         Dialog(onDismissRequest = { isAddTeamDialogOpen.value = false }) {
-            RegisterCardTeam(
+            RegisterCardTask(
                 isAddTeamDialogOpen,
                 loggedInUserName,
                 loggedInUserUID,
-                filteredTeams,
-                project
+                filteredTasks,
+                project.value
             )
         }
     }
 }
 
 @Composable
-fun FilterTeams(
-    teamList: MutableState<List<Teams>>,
-    teamViewModel: TeamScreen_ViewModel
-): List<Teams> {
-    val filterSelected = teamViewModel.filterSelected.observeAsState("Fecha de inicio")
-    val isFilterAscending = teamViewModel.isFilterAscending.observeAsState(false)
-    val searchQuery = teamViewModel.searchQuery.observeAsState("")
+private fun FilterTasks(
+    tasksList: MutableState<List<TaskModel>>,
+    TasksScreen_ViewModel: TasksScreen_ViewModel
+): List<TaskModel> {
+    val filterSelected = TasksScreen_ViewModel.filterSelected.observeAsState("Fecha de inicio")
+    val isFilterAscending = TasksScreen_ViewModel.isFilterAscending.observeAsState(false)
+    val searchQuery = TasksScreen_ViewModel.searchQuery.observeAsState("")
 
-    val filteredTeams =
-        remember(teamList, filterSelected, isFilterAscending, searchQuery) {
+    val filteredTasks =
+        remember(tasksList, filterSelected, isFilterAscending, searchQuery) {
             derivedStateOf {
-                var filteredList = teamList.value.filter { team ->
-                    team.name.toString().contains(
+                var filteredList = tasksList.value.filter { task ->
+                    task.name.toString().contains(
                         searchQuery.value,
                         ignoreCase = true
                     )
@@ -283,20 +281,20 @@ fun FilterTeams(
                 filteredList
             }
         }
-    return filteredTeams.value
+    return filteredTasks.value
 }
 
 @Composable
-fun FiltersDropdowMenu(
-    TeamScreen_ViewModel: TeamScreen_ViewModel,
-    project: MutableState<ProjectModel?>,
+private fun FiltersDropdowMenu(
+    TasksScreen_ViewModel: TasksScreen_ViewModel,
+    project: State<ProjectModel?>,
     openSelectProjectDialog: () -> Unit,
-    openAddTeams: () -> Unit
+    openAddTasks: () -> Unit
 ) {
-    val isFilterMenuOpen = TeamScreen_ViewModel.isFilterMenuOpen.observeAsState(false)
-    val isSearchExpanded = TeamScreen_ViewModel.isSearchExpanded.observeAsState(false)
-    val isFilterAscending = TeamScreen_ViewModel.isFilterAscending.observeAsState(false)
-    val filterSelected = TeamScreen_ViewModel.filterSelected.observeAsState("Fecha de inicio")
+    val isFilterMenuOpen = TasksScreen_ViewModel.isFilterMenuOpen.observeAsState(false)
+    val isSearchExpanded = TasksScreen_ViewModel.isSearchExpanded.observeAsState(false)
+    val isFilterAscending = TasksScreen_ViewModel.isFilterAscending.observeAsState(false)
+    val filterSelected = TasksScreen_ViewModel.filterSelected.observeAsState("Fecha de inicio")
 
     Row {
         FloatingActionButton(
@@ -312,7 +310,7 @@ fun FiltersDropdowMenu(
             Spacer(modifier = Modifier.width(16.dp))
             FloatingActionButton(
                 onClick = {
-                    TeamScreen_ViewModel.onFilterSelectionChanged(
+                    TasksScreen_ViewModel.onFilterSelectionChanged(
                         true,
                         isSearchExpanded.value,
                         filterSelected.value,
@@ -329,7 +327,7 @@ fun FiltersDropdowMenu(
             DropdownMenu(
                 expanded = isFilterMenuOpen.value,
                 onDismissRequest = {
-                    TeamScreen_ViewModel.onFilterSelectionChanged(
+                    TasksScreen_ViewModel.onFilterSelectionChanged(
                         false,
                         isSearchExpanded.value,
                         filterSelected.value,
@@ -338,7 +336,7 @@ fun FiltersDropdowMenu(
                 }
             ) {
                 DropdownMenuItem(onClick = {
-                    TeamScreen_ViewModel.onFilterSelectionChanged(
+                    TasksScreen_ViewModel.onFilterSelectionChanged(
                         false,
                         isSearchExpanded.value,
                         "Nombre",
@@ -356,7 +354,7 @@ fun FiltersDropdowMenu(
                     }
                 }
                 DropdownMenuItem(onClick = {
-                    TeamScreen_ViewModel.onFilterSelectionChanged(
+                    TasksScreen_ViewModel.onFilterSelectionChanged(
                         false,
                         isSearchExpanded.value,
                         "Fecha de inicio",
@@ -374,7 +372,7 @@ fun FiltersDropdowMenu(
                     }
                 }
                 DropdownMenuItem(onClick = {
-                    TeamScreen_ViewModel.onFilterSelectionChanged(
+                    TasksScreen_ViewModel.onFilterSelectionChanged(
                         false,
                         isSearchExpanded.value,
                         "Fecha de finalización",
@@ -394,12 +392,12 @@ fun FiltersDropdowMenu(
             }
             Spacer(modifier = Modifier.width(16.dp))
             FloatingActionButton(
-                onClick = { openAddTeams() },
+                onClick = { openAddTasks() },
                 containerColor = myOrangehigh
             ) {
                 Icon(
                     Icons.Default.Add,
-                    contentDescription = "Crear Equipo"
+                    contentDescription = "Crear Tarea"
                 )
             }
         }
@@ -408,18 +406,18 @@ fun FiltersDropdowMenu(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun EquipoCard(
-    team: Teams,
+private fun TaskCard(
+    task: TaskModel,
     projectId: String,
     navController: NavController,
     userID: String,
     authRepository: AuthRepository,
-    teamList: MutableState<List<Teams>>,
-    TeamScreen_ViewModel: TeamScreen_ViewModel
+    taskList: MutableState<List<TaskModel>>,
+    TasksScreen_ViewModel: TasksScreen_ViewModel
 ) {
-    val teamsSelectedToRemove =
-        TeamScreen_ViewModel.teamsSelectedToRemove.observeAsState(emptyList())
-    val showDeleteTeamsDialog = TeamScreen_ViewModel.showDeleteTeamsDialog.observeAsState(false)
+    val tasksSelectedToRemove =
+        TasksScreen_ViewModel.tasksSelectedToRemove.observeAsState(emptyList())
+    val showDeleteTaskDialog = TasksScreen_ViewModel.showDeleteTasksDialog.observeAsState(false)
 
     Spacer(Modifier.height(15.dp))
     Box(
@@ -435,29 +433,29 @@ fun EquipoCard(
                 .wrapContentSize(Alignment.Center)
                 .combinedClickable(
                     onClick = {
-                        if (teamsSelectedToRemove.value.size > 0) {
-                            if (!teamsSelectedToRemove.value.contains(team)) {
-                                val newList = teamsSelectedToRemove.value + team
-                                TeamScreen_ViewModel.onRemoveTeamsChanged(
+                        if (tasksSelectedToRemove.value.size > 0) {
+                            if (!tasksSelectedToRemove.value.contains(task)) {
+                                val newList = tasksSelectedToRemove.value + task
+                                TasksScreen_ViewModel.onRemoveTasksChanged(
                                     newList,
-                                    showDeleteTeamsDialog.value
+                                    showDeleteTaskDialog.value
                                 )
-                            } else TeamScreen_ViewModel.onRemoveTeamsChanged(
-                                teamsSelectedToRemove.value.filter { p -> p !== team },
-                                showDeleteTeamsDialog.value
+                            } else TasksScreen_ViewModel.onRemoveTasksChanged(
+                                tasksSelectedToRemove.value.filter { p -> p !== task },
+                                showDeleteTaskDialog.value
                             )
-                        } else navController.navigate("cardview_teams_screen/${userID}/${team.id}/$projectId")
+                        } else navController.navigate("cardview_tasks_screen/${userID}/${projectId}/${task.id}")
                     },
                     onLongClick = {
-                        if (!teamsSelectedToRemove.value.contains(team)) {
-                            val newList = teamsSelectedToRemove.value + team
-                            TeamScreen_ViewModel.onRemoveTeamsChanged(
+                        if (!tasksSelectedToRemove.value.contains(task)) {
+                            val newList = tasksSelectedToRemove.value + task
+                            TasksScreen_ViewModel.onRemoveTasksChanged(
                                 newList,
-                                showDeleteTeamsDialog.value
+                                showDeleteTaskDialog.value
                             )
-                        } else TeamScreen_ViewModel.onRemoveTeamsChanged(
-                            teamsSelectedToRemove.value.filter { p -> p !== team },
-                            showDeleteTeamsDialog.value
+                        } else TasksScreen_ViewModel.onRemoveTasksChanged(
+                            tasksSelectedToRemove.value.filter { p -> p !== task },
+                            showDeleteTaskDialog.value
                         )
                     }
                 ),
@@ -474,12 +472,12 @@ fun EquipoCard(
                 ) {
                     Box(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = team.name.toString(),
+                            text = task.name.toString(),
                             style = MaterialTheme.typography.titleSmall,
                             modifier = Modifier.align(Alignment.Center)
                         )
                     }
-                    if (teamsSelectedToRemove.value.contains(team)) {
+                    if (tasksSelectedToRemove.value.contains(task)) {
                         Box {
                             Icon(
                                 Icons.Default.CheckBox,
@@ -489,9 +487,7 @@ fun EquipoCard(
                             )
                         }
                     }
-                    if (teamsSelectedToRemove.value.size > 0 && !teamsSelectedToRemove.value.contains(
-                            team
-                        )
+                    if (tasksSelectedToRemove.value.size > 0 && !tasksSelectedToRemove.value.contains(task)
                     ) {
                         Box {
                             Icon(
@@ -524,7 +520,7 @@ fun EquipoCard(
                     }
                     Spacer(modifier = Modifier.width(5.dp))
                     Text(
-                        text = team.creatorName.toString(),
+                        text = task.creatorName.toString(),
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
@@ -557,20 +553,20 @@ fun EquipoCard(
 }
 
 @Composable
-fun RemoveTeamsSelected(
+private fun RemoveTasksSelected(
     userID: String,
-    project: MutableState<ProjectModel?>,
-    TeamScreen_ViewModel: TeamScreen_ViewModel
+    project: ProjectModel?,
+    TasksScreen_ViewModel: TasksScreen_ViewModel
 ) {
-    val teamsSelectedToRemove =
-        TeamScreen_ViewModel.teamsSelectedToRemove.observeAsState(emptyList())
+    val tasksSelectedToRemove =
+        TasksScreen_ViewModel.tasksSelectedToRemove.observeAsState(emptyList())
     val context = LocalContext.current
 
-    if (teamsSelectedToRemove.value.size > 0) {
+    if (tasksSelectedToRemove.value.size > 0) {
         AlertDialog(
             onDismissRequest = {
-                TeamScreen_ViewModel.onRemoveTeamsChanged(
-                    teamsSelectedToRemove.value,
+                TasksScreen_ViewModel.onRemoveTasksChanged(
+                    tasksSelectedToRemove.value,
                     false
                 )
             },
@@ -583,7 +579,7 @@ fun RemoveTeamsSelected(
                 ) {
                     Button(
                         onClick = {
-                            TeamScreen_ViewModel.onRemoveTeamsChanged(emptyList(), false)
+                            TasksScreen_ViewModel.onRemoveTasksChanged(emptyList(), false)
                         },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = myOrangehigh,
@@ -603,16 +599,16 @@ fun RemoveTeamsSelected(
                                 db.collection("Users")
                                     .document(userID)
                                     .collection("Projects")
-                                    .document(project.value?.id!!)
-                                    .collection("Teams")
+                                    .document(project?.id!!)
+                                    .collection("Tasks")
 
-                            for (team in teamsSelectedToRemove.value) {
+                            for (team in tasksSelectedToRemove.value) {
                                 collectionRef.document("${team.id}").delete()
                             }
-                            TeamScreen_ViewModel.onRemoveTeamsChanged(emptyList(), false)
+                            TasksScreen_ViewModel.onRemoveTasksChanged(emptyList(), false)
                             Toast.makeText(
                                 context,
-                                "Equipos removidos",
+                                "Tareas removidas",
                                 Toast.LENGTH_SHORT
                             ).show()
                         },
@@ -650,7 +646,7 @@ fun RemoveTeamsSelected(
             },
             text = {
                 Text(
-                    text = "Los equipos no se podran volver a recuperar. ¿Esta seguro de esto?",
+                    text = "Las tareas no se podran volver a recuperar. ¿Esta seguro de esto?",
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Light)
                 )
             }
@@ -661,11 +657,11 @@ fun RemoveTeamsSelected(
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun RegisterCardTeam(
-    isAddTeamDialogOpen: MutableState<Boolean>, loggedInUserName: String,
+private fun RegisterCardTask(
+    isAddTaskDialogOpen: MutableState<Boolean>, loggedInUserName: String,
     loggedInUserUID: String,
-    teams: List<Teams>,
-    project: MutableState<ProjectModel?>
+    tasks: List<TaskModel>,
+    project: ProjectModel?
 ) {
     val name = remember { mutableStateOf("") }
     val description = remember { mutableStateOf("") }
@@ -684,7 +680,7 @@ fun RegisterCardTeam(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Crear Equipo",
+                text = "Crear Tarea",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 color = myBlue
             )
@@ -695,11 +691,11 @@ fun RegisterCardTeam(
                 value = name.value,
                 onValueChange = {
                     name.value = it
-                    if (teams.find {
+                    if (tasks.find {
                             it.name?.trim().equals(name.value.trim(), ignoreCase = true)
                         } != null) nameRepliqued.value = true else nameRepliqued.value = false
                 },
-                label = { Text(text = "Nombre del equipo") },
+                label = { Text(text = "Nombre de la tarea") },
                 colors = TextFieldDefaults.outlinedTextFieldColors(
                     textColor = Color.Black,
                     cursorColor = myBlue,
@@ -749,7 +745,7 @@ fun RegisterCardTeam(
             OutlinedTextField(
                 value = description.value,
                 onValueChange = { description.value = it },
-                label = { Text(text = "Descripción del equipo") },
+                label = { Text(text = "Descripción de la tarea") },
                 colors = TextFieldDefaults.outlinedTextFieldColors(
                     textColor = Color.Black,
                     cursorColor = myBlue,
@@ -781,7 +777,7 @@ fun RegisterCardTeam(
                     enabled = name.value.length >= 6 && name.value.length <= 25 && nameRepliqued.value === false && description.value.length <= 200,
                     onClick = {
                         scope.launch {
-                            val newDoc = Teams(
+                            val newDoc = TaskModel(
                                 null,
                                 name.value.lowercase(Locale.getDefault())
                                     .replaceFirstChar {
@@ -798,8 +794,8 @@ fun RegisterCardTeam(
                             val collectionReference = db.collection("Users")
                                 .document(loggedInUserUID)
                                 .collection("Projects")
-                                .document(project.value?.id!!)
-                                .collection("Teams")
+                                .document(project?.id!!)
+                                .collection("Tasks")
 
                             collectionReference
                                 .add(newDoc)
@@ -811,10 +807,10 @@ fun RegisterCardTeam(
                                         .addOnSuccessListener {
                                             name.value = ""
                                             description.value = ""
-                                            isAddTeamDialogOpen.value = false
+                                            isAddTaskDialogOpen.value = false
                                             Toast.makeText(
                                                 context,
-                                                "Equipo creado",
+                                                "Tarea creada",
                                                 Toast.LENGTH_SHORT
                                             ).show()
                                         }
@@ -830,7 +826,7 @@ fun RegisterCardTeam(
 
                 Button(
                     onClick = {
-                        isAddTeamDialogOpen.value = false
+                        isAddTaskDialogOpen.value = false
                     },
                     colors = ButtonDefaults.buttonColors(myBlue, contentColor = Color.White),
                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),

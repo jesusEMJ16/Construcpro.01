@@ -6,9 +6,11 @@ import android.os.Build
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,6 +31,8 @@ import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CheckBox
+import androidx.compose.material.icons.filled.CheckBoxOutlineBlank
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -43,17 +47,18 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.toLowerCase
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavHostController
@@ -65,6 +70,7 @@ import com.example.contrupro3.models.TeamsModels.TeamMember
 import com.example.contrupro3.models.TeamsModels.Teams
 import com.example.contrupro3.models.UserModels.ActionButton
 import com.example.contrupro3.models.UserModels.IconModel
+import com.example.contrupro3.ui.theme.backgroundButtonColor
 import com.example.contrupro3.ui.theme.myBlue
 import com.example.contrupro3.ui.theme.myOrangehigh
 import com.google.firebase.firestore.FirebaseFirestore
@@ -368,6 +374,9 @@ private fun MembersCard(
 ) {
     val showInviteDialog = remember { mutableStateOf(false) }
     val membersList = remember { mutableStateOf<List<TeamMember>>(emptyList()) }
+    val showRemoveMemberDialog = remember { mutableStateOf(false) }
+    val membersSelectedToRemove by TeamCard_ViewModel
+        .membersSelectedToRemove.observeAsState(emptyList())
     authRepository.loadMembersOfTeam(membersList, userId, projectId, team.value?.id.toString())
 
     Box(modifier = Modifier.fillMaxWidth()) {
@@ -386,6 +395,7 @@ private fun MembersCard(
             Spacer(modifier = Modifier.height(10.dp))
             LazyColumn(
                 modifier = Modifier
+                    .clip(MaterialTheme.shapes.large)
                     .fillMaxWidth()
                     .fillMaxHeight(0.6f)
                     .background(Color(0x79D8D8D8))
@@ -393,45 +403,7 @@ private fun MembersCard(
                 items(membersList.value.filter { a -> a.inviteStatus == "Accepted" }.size) { index ->
                     val member =
                         membersList.value.filter { a -> a.inviteStatus == "Accepted" }[index]
-                    Box(
-                        modifier = Modifier
-                            .padding(10.dp)
-                            .clickable { }
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Start,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(50.dp)
-                                    .padding(end = 3.dp)
-                            ) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.user_icon),
-                                    contentDescription = "Icono del usuario",
-                                    modifier = Modifier.offset(y = 3.dp)
-                                )
-                            }
-                            Column(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalAlignment = Alignment.Start,
-                                verticalArrangement = Arrangement.Top
-                            ) {
-                                Text(
-                                    text = "${member.name} ${member.lastName}",
-                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
-                                )
-                                Text(
-                                    text = "${member.email}",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    modifier = Modifier.padding(start = 3.dp)
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.padding(vertical = 10.dp))
-                    }
+                    MemberCard(member, TeamCard_ViewModel, team)
                 }
             }
             Row(
@@ -439,20 +411,51 @@ private fun MembersCard(
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Button(
-                    onClick = { showInviteDialog.value = true },
-                    colors = ButtonDefaults.buttonColors(
-                        contentColor = Color.White,
-                        containerColor = myOrangehigh
-                    ),
-                    elevation = ButtonDefaults.buttonElevation(4.dp)
-                ) {
-                    Text(text = "Invitar")
+                if (membersSelectedToRemove.size > 0) {
+                    Button(
+                        onClick = { TeamCard_ViewModel.onSelectionToRemoveUpdated(emptyList()) },
+                        colors = ButtonDefaults.buttonColors(
+                            contentColor = Color.White,
+                            containerColor = myOrangehigh
+                        ),
+                        elevation = ButtonDefaults.buttonElevation(4.dp)
+                    ) {
+                        Text(text = "Cancelar")
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Button(
+                        onClick = { showRemoveMemberDialog.value = true },
+                        colors = ButtonDefaults.buttonColors(
+                            contentColor = Color.White,
+                            containerColor = myOrangehigh
+                        ),
+                        elevation = ButtonDefaults.buttonElevation(4.dp)
+                    ) {
+                        Text(text = "Remover")
+                    }
+                } else {
+                    Button(
+                        onClick = { showInviteDialog.value = true },
+                        colors = ButtonDefaults.buttonColors(
+                            contentColor = Color.White,
+                            containerColor = myOrangehigh
+                        ),
+                        elevation = ButtonDefaults.buttonElevation(4.dp)
+                    ) {
+                        Text(text = "Invitar")
+                    }
                 }
             }
         }
     }
 
+    if (showRemoveMemberDialog.value) DeleteMembersFromTeamDialog(
+        team,
+        TeamCard_ViewModel,
+        projectId,
+        membersList,
+        { showRemoveMemberDialog.value = false }
+    )
     if (showInviteDialog.value) InviteDialog(
         authRepository,
         userId,
@@ -462,6 +465,145 @@ private fun MembersCard(
         team.value!!.name.toString()
     ) {
         showInviteDialog.value = false
+    }
+}
+
+@Composable
+fun DeleteMembersFromTeamDialog(
+    team: MutableState<Teams?>,
+    teamcardViewmodel: TeamCard_ViewModel,
+    projectId: String,
+    membersList: MutableState<List<TeamMember>>,
+    onDismiss: () -> Unit
+) {
+
+}
+
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun MemberCard(
+    member: TeamMember,
+    TeamCard_ViewModel: TeamCard_ViewModel,
+    team: MutableState<Teams?>
+) {
+    val membersSelectedToRemove by TeamCard_ViewModel.membersSelectedToRemove.observeAsState(
+        emptyList()
+    )
+    val isSelectedToRemove = remember(member, membersSelectedToRemove) {
+        mutableStateOf(membersSelectedToRemove.contains(member))
+    }
+
+    Box(
+        modifier = Modifier
+            .padding(10.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .combinedClickable(
+                    onLongClick = {
+                        if (isSelectedToRemove.value) {
+                            val newList =
+                                membersSelectedToRemove.filter { m -> m != member }
+                            TeamCard_ViewModel.onSelectionToRemoveUpdated(newList)
+                        } else {
+                            TeamCard_ViewModel.onSelectionToRemoveUpdated(membersSelectedToRemove + member)
+                        }
+                    },
+                    onClick = {
+                        if (membersSelectedToRemove.size > 0) {
+                            if (isSelectedToRemove.value) {
+                                val newList =
+                                    membersSelectedToRemove.filter { m -> m != member }
+                                TeamCard_ViewModel.onSelectionToRemoveUpdated(newList)
+                            } else {
+                                TeamCard_ViewModel.onSelectionToRemoveUpdated(
+                                    membersSelectedToRemove + member
+                                )
+                            }
+                        }
+                    }
+                ),
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            MemberIcon(member)
+            MemberInfo(member)
+            MemberIconIsSelected(isSelectedToRemove, TeamCard_ViewModel, member)
+        }
+        Spacer(modifier = Modifier.padding(vertical = 10.dp))
+    }
+}
+
+@Composable
+fun MemberIconIsSelected(
+    isSelectedToRemove: MutableState<Boolean>,
+    TeamCard_ViewModel: TeamCard_ViewModel,
+    member: TeamMember
+) {
+    val membersSelectedToRemove by TeamCard_ViewModel
+        .membersSelectedToRemove.observeAsState(emptyList())
+
+    AnimatedVisibility(visible = isSelectedToRemove.value) {
+        Box(
+            modifier = Modifier
+                .size(30.dp)
+                .offset(x = 50.dp)
+        ) {
+            IconButton(onClick = {
+                if (membersSelectedToRemove.size > 0) {
+                    if (isSelectedToRemove.value) {
+                        val newList =
+                            membersSelectedToRemove.filter { m -> m != member }
+                        TeamCard_ViewModel.onSelectionToRemoveUpdated(newList)
+                    } else {
+                        TeamCard_ViewModel.onSelectionToRemoveUpdated(
+                            membersSelectedToRemove + member
+                        )
+                    }
+                }
+            }) {
+                Icon(
+                    if (isSelectedToRemove.value) Icons.Default.CheckBox else Icons.Default.CheckBoxOutlineBlank,
+                    contentDescription = null,
+                    tint = backgroundButtonColor
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun MemberInfo(member: TeamMember) {
+    Column(
+        horizontalAlignment = Alignment.Start,
+        verticalArrangement = Arrangement.Top
+    ) {
+        Text(
+            text = "${member.name} ${member.lastName}",
+            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+        )
+        Text(
+            text = "${member.email}",
+            style = MaterialTheme.typography.labelMedium,
+            modifier = Modifier.padding(start = 3.dp)
+        )
+    }
+}
+
+@Composable
+fun MemberIcon(member: TeamMember) {
+    Box(
+        modifier = Modifier
+            .size(50.dp)
+            .padding(end = 3.dp)
+    ) {
+        Image(
+            painter = painterResource(id = R.drawable.user_icon),
+            contentDescription = "Icono del usuario",
+            modifier = Modifier.offset(y = 3.dp)
+        )
     }
 }
 
@@ -581,7 +723,8 @@ fun InviteDialog(
                     Button(
                         onClick = {
                             GlobalScope.launch(Dispatchers.IO) {
-                                val emailHasInvited = EmailHasInvited(email, userId, projectId, teamId)
+                                val emailHasInvited =
+                                    EmailHasInvited(email, userId, projectId, teamId)
 
                                 if (!emailHasInvited) {
                                     AddMemberToDatabase(userId, teamId, projectId, email.value)

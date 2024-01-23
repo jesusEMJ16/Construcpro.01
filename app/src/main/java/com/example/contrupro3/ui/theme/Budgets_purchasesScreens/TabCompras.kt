@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,9 +27,12 @@ import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Divider
 import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
 import androidx.compose.material.TextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CheckBox
+import androidx.compose.material.icons.filled.CheckBoxOutlineBlank
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FolderOpen
@@ -43,11 +47,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -60,9 +63,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.example.contrupro3.models.AuthRepository
-import com.example.contrupro3.models.BudgetModels.PurchasesModel
-import com.example.contrupro3.models.ProjectsModels.Project
-import com.example.contrupro3.ui.theme.myOrangehigh
+import com.example.contrupro3.models.BudgetModels.Purchases.PurchasesModel
+import com.example.contrupro3.models.BudgetModels.Purchases.Purchases_ViewModel
+import com.example.contrupro3.models.ProjectsModels.ProjectModel
+import com.example.contrupro3.ui.theme.backgroundButtonColor
+import com.example.contrupro3.ui.theme.contentButtonColor
 import com.google.firebase.firestore.FirebaseFirestore
 
 @SuppressLint("UnrememberedMutableState")
@@ -70,15 +75,17 @@ import com.google.firebase.firestore.FirebaseFirestore
 fun ComprasScreen(
     authRepository: AuthRepository,
     userId: String,
-    selectedProject: MutableState<Project?>,
+    selectedProject: MutableState<ProjectModel?>,
     onOpenSelectProject: () -> Unit
 ) {
+    val Purchases_ViewModel = Purchases_ViewModel()
     val purchasesList = remember { mutableStateOf<List<PurchasesModel>>(emptyList()) }
     authRepository.loadPurchasesFromFirebase(selectedProject.value?.id.toString(), purchasesList)
-    val showDialog = remember { mutableStateOf(false) }
     val selectedRows = remember { mutableStateMapOf<String, Boolean>() }
-    val currentSelectedPurchasesToDelete = remember { mutableStateListOf<PurchasesModel>() }
-    val showDeleteDialog = remember { mutableStateOf(false) }
+    val showDeleteDialog = Purchases_ViewModel.showDeleteDialog.observeAsState(false)
+    val showAddDialog = Purchases_ViewModel.showDialog.observeAsState(false)
+    val currentSelectedPurchasesToDelete = Purchases_ViewModel
+        .currentSelectedPurchasesToDelete.observeAsState(emptyList())
 
     Column(
         modifier = Modifier
@@ -105,95 +112,115 @@ fun ComprasScreen(
                         CompraItem(
                             compra,
                             selectedRows,
-                            currentSelectedPurchasesToDelete,
-                            { purchase -> currentSelectedPurchasesToDelete.add(purchase) }
-                        ) { purchase -> currentSelectedPurchasesToDelete.remove(purchase) }
+                            Purchases_ViewModel
+                        )
                         Divider(modifier = Modifier.padding(vertical = 4.dp))
                     }
                 }
             }
         }
         Spacer(modifier = Modifier.weight(1f))
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 16.dp)
-                .offset(x = 3.dp, y = -7.dp),
-            horizontalArrangement = Arrangement.End
-        ) {
-            if (currentSelectedPurchasesToDelete.size > 0) {
-                FloatingActionButton(
-                    onClick = {
-                        showDeleteDialog.value = false
-                        currentSelectedPurchasesToDelete.clear()
-                        selectedRows.clear()
-                    },
-                    containerColor = Color(0xFF233B40),
-                ) {
-                    Icon(
-                        Icons.Default.Close,
-                        contentDescription = "Cancelar",
-                        tint = Color.White
-                    )
-                }
-                Spacer(modifier = Modifier.padding(horizontal = 10.dp))
-                FloatingActionButton(
-                    onClick = { showDeleteDialog.value = true },
-                    containerColor = Color(0xFF233B40),
-                ) {
-                    Icon(
-                        Icons.Default.Delete,
-                        contentDescription = "Eliminar Compras",
-                        tint = Color.White
-                    )
-                }
-            } else {
-                FloatingActionButton(
-                    onClick = { onOpenSelectProject() },
-                    containerColor = myOrangehigh
-                ) {
-                    Icon(
-                        Icons.Default.FolderOpen,
-                        contentDescription = "Seleccionar Proyecto",
-                        tint = Color.White
-                    )
-                }
-                Spacer(modifier = Modifier.padding(horizontal = 10.dp))
-                FloatingActionButton(
-                    onClick = { showDialog.value = true },
-                    containerColor = Color(0xFF233B40),
-                ) {
-                    Icon(
-                        Icons.Default.Add,
-                        contentDescription = "Agregar Compra",
-                        tint = Color.White
-                    )
-                }
-            }
+        CustomPurchasesFloatingActionButton(
+            userId,
+            purchasesList,
+            selectedProject,
+            selectedRows,
+            Purchases_ViewModel
+        ) { onOpenSelectProject() }
 
-            if (showDialog.value) {
-                CompraDialog(
-                    userId,
-                    selectedProject.value?.id,
-                    onDismissRequest = { showDialog.value = false })
+        if (showAddDialog.value) {
+            CompraDialog(
+                userId,
+                selectedProject.value?.id,
+                Purchases_ViewModel
+            )
+        }
+        if (showDeleteDialog.value) {
+            DeletePurchasesDialog(
+                userId,
+                selectedProject.value?.id.toString(),
+                Purchases_ViewModel,
+                purchasesList,
+                currentSelectedPurchasesToDelete.value
+            ) {
+                selectedRows.clear()
+                Purchases_ViewModel.onSelectedPurchasesToDeleteUpdated(emptyList())
+                Purchases_ViewModel.onDialogsUpdated(false, false)
             }
-            if (showDeleteDialog.value) {
-                DeletePurchasesDialog(
-                    currentSelectedPurchasesToDelete,
-                    userId,
-                    selectedProject.value?.id.toString(),
-                    {
-                        showDeleteDialog.value = false
-                        currentSelectedPurchasesToDelete.clear()
-                        selectedRows.clear()
-                    }) {
-                    purchasesList.value = purchasesList.value.filter {
-                        !currentSelectedPurchasesToDelete.contains(it)
-                    }
-                    showDeleteDialog.value = false
-                    currentSelectedPurchasesToDelete.clear()
+        }
+    }
+}
+
+
+@Composable
+fun CustomPurchasesFloatingActionButton(
+    userId: String,
+    purchasesList: MutableState<List<PurchasesModel>>,
+    selectedProject: MutableState<ProjectModel?>,
+    selectedRows: SnapshotStateMap<String, Boolean>,
+    Purchases_ViewModel: Purchases_ViewModel,
+    onOpenSelectProject: () -> Unit
+) {
+    val currentSelectedPurchasesToDelete = Purchases_ViewModel
+        .currentSelectedPurchasesToDelete.observeAsState(emptyList())
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp)
+            .offset(x = 3.dp, y = -7.dp),
+        horizontalArrangement = Arrangement.End
+    ) {
+        if (currentSelectedPurchasesToDelete.value.size > 0) {
+            FloatingActionButton(
+                onClick = {
+                    Purchases_ViewModel.onDialogsUpdated(false, false)
+                    Purchases_ViewModel.onSelectedPurchasesToDeleteUpdated(emptyList())
                     selectedRows.clear()
-                }
+                },
+                containerColor = backgroundButtonColor,
+                contentColor = contentButtonColor
+            ) {
+                Icon(
+                    Icons.Default.Close,
+                    contentDescription = "Cancelar",
+                    tint = contentButtonColor
+                )
+            }
+            Spacer(modifier = Modifier.padding(horizontal = 10.dp))
+            FloatingActionButton(
+                onClick = { Purchases_ViewModel.onDialogsUpdated(true, false) },
+                containerColor = backgroundButtonColor,
+                contentColor = contentButtonColor
+            ) {
+                Icon(
+                    Icons.Default.Delete,
+                    contentDescription = "Eliminar Compras",
+                    tint = contentButtonColor
+                )
+            }
+        } else {
+            FloatingActionButton(
+                onClick = { onOpenSelectProject() },
+                containerColor = backgroundButtonColor,
+                contentColor = contentButtonColor
+            ) {
+                Icon(
+                    Icons.Default.FolderOpen,
+                    contentDescription = "Seleccionar Proyecto",
+                    tint = contentButtonColor
+                )
+            }
+            Spacer(modifier = Modifier.padding(horizontal = 10.dp))
+            FloatingActionButton(
+                onClick = { Purchases_ViewModel.onDialogsUpdated(false, true) },
+                containerColor = backgroundButtonColor,
+                contentColor = contentButtonColor
+            ) {
+                Icon(
+                    Icons.Default.Add,
+                    contentDescription = "Agregar Compra",
+                    tint = contentButtonColor
+                )
             }
         }
     }
@@ -203,11 +230,12 @@ fun ComprasScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DeletePurchasesDialog(
-    currentSelectedPurchasesToDelete: SnapshotStateList<PurchasesModel>,
     userId: String,
     projectId: String,
-    onDismiss: () -> Unit,
-    onDeletedPurchases: () -> Unit
+    Purchases_ViewModel: Purchases_ViewModel,
+    purchasesList: MutableState<List<PurchasesModel>>,
+    currentSelectedPurchasesToDelete: List<PurchasesModel>,
+    onDismiss: () -> Unit
 ) {
     val currentContext = LocalContext.current
 
@@ -251,19 +279,39 @@ fun DeletePurchasesDialog(
                     horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Button(onClick = { onDismiss() }) {
-                        Text("Cancelar")
+                    Button(
+                        onClick = { onDismiss() },
+                        colors = ButtonDefaults.buttonColors(
+                            backgroundColor = backgroundButtonColor,
+                            contentColor = contentButtonColor
+                        ),
+                        shape = MaterialTheme.shapes.medium
+                    ) {
+                        Text("Cancelar", color = contentButtonColor)
                     }
                     Spacer(modifier = Modifier.padding(horizontal = 10.dp))
-                    Button(onClick = {
-                        DeletePurchasesFromDatabase(
-                            userId,
-                            projectId,
-                            currentSelectedPurchasesToDelete,
-                            currentContext,
-                        ) { onDeletedPurchases() }
-                    }) {
-                        Text("Aceptar")
+                    Button(
+                        onClick = {
+                            DeletePurchasesFromDatabase(
+                                userId,
+                                projectId,
+                                currentContext,
+                                currentSelectedPurchasesToDelete.toList()
+                            ) {
+                                purchasesList.value = purchasesList.value.filter { c ->
+                                    !currentSelectedPurchasesToDelete.contains(c)
+                                }
+                                onDismiss()
+                                Purchases_ViewModel.onSelectedPurchasesToDeleteUpdated(emptyList())
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            backgroundColor = backgroundButtonColor,
+                            contentColor = contentButtonColor
+                        ),
+                        shape = MaterialTheme.shapes.medium
+                    ) {
+                        Text("Aceptar", color = contentButtonColor)
                     }
                 }
             }
@@ -274,8 +322,8 @@ fun DeletePurchasesDialog(
 fun DeletePurchasesFromDatabase(
     userId: String,
     projectId: String,
-    currentSelectedPurchasesToDelete: SnapshotStateList<PurchasesModel>,
     currentContext: Context,
+    currentSelectedPurchasesToDelete: List<PurchasesModel>,
     onDeletedPurchases: () -> Unit
 ) {
     val firebase = FirebaseFirestore.getInstance()
@@ -293,13 +341,13 @@ fun DeletePurchasesFromDatabase(
     onDeletedPurchases()
     Toast.makeText(
         currentContext,
-        "Compras eliminadas correctamente",
-        Toast.LENGTH_LONG
+        "Compras eliminadas",
+        Toast.LENGTH_SHORT
     ).show()
 }
 
 @Composable
-fun CompraDialog(userId: String, projectId: String?, onDismissRequest: () -> Unit) {
+fun CompraDialog(userId: String, projectId: String?, Purchases_ViewModel: Purchases_ViewModel) {
     val producto = remember { mutableStateOf("") }
     val fechaCompra = remember { mutableStateOf("") }
     val proveedor = remember { mutableStateOf("") }
@@ -307,7 +355,7 @@ fun CompraDialog(userId: String, projectId: String?, onDismissRequest: () -> Uni
     val precioUnitario = remember { mutableStateOf("") }
     val currentContext = LocalContext.current
 
-    Dialog(onDismissRequest = onDismissRequest) {
+    Dialog(onDismissRequest = { Purchases_ViewModel.onDialogsUpdated(false, false) }) {
         Card(
             modifier = Modifier.padding(10.dp),
             shape = RoundedCornerShape(4.dp),
@@ -353,7 +401,7 @@ fun CompraDialog(userId: String, projectId: String?, onDismissRequest: () -> Uni
                     horizontalArrangement = Arrangement.End
                 ) {
                     Button(
-                        onClick = { onDismissRequest() },
+                        onClick = { Purchases_ViewModel.onDialogsUpdated(false, false) },
                         colors = ButtonDefaults.buttonColors(
                             backgroundColor = Color(0xFF233B40),
                             contentColor = Color.White
@@ -367,7 +415,10 @@ fun CompraDialog(userId: String, projectId: String?, onDismissRequest: () -> Uni
                     ) {
                         Text(
                             text = "Cancelar",
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
                         )
                     }
                     Button(
@@ -392,10 +443,10 @@ fun CompraDialog(userId: String, projectId: String?, onDismissRequest: () -> Uni
                             collection.add(newPurchase).addOnSuccessListener {
                                 val doc = newPurchase.copy(id = it.id)
                                 collection.document(it.id).set(doc).addOnSuccessListener {
-                                    onDismissRequest()
+                                    Purchases_ViewModel.onDialogsUpdated(false, false)
                                     Toast.makeText(
                                         currentContext,
-                                        "Compra agregada correctamente",
+                                        "Compra agregada",
                                         Toast.LENGTH_SHORT
                                     ).show()
                                 }
@@ -411,11 +462,14 @@ fun CompraDialog(userId: String, projectId: String?, onDismissRequest: () -> Uni
                             end = 5.dp,
                             bottom = 0.dp
                         ),
-                        enabled = producto.value.length > 0
+                        enabled = producto.value.length > 0 && cantidad.value != null && precioUnitario.value != null
                     ) {
                         Text(
                             text = "Agregar",
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
                         )
                     }
                 }
@@ -541,44 +595,79 @@ fun HeaderRow() {
 fun CompraItem(
     compra: PurchasesModel,
     selectedRows: SnapshotStateMap<String, Boolean>,
-    currentSelectedPurchasesToDelete: SnapshotStateList<PurchasesModel>,
-    addSelection: (PurchasesModel) -> Unit,
-    removeSelection: (PurchasesModel) -> Unit
+    Purchases_ViewModel: Purchases_ViewModel
 ) {
     val isSelected = selectedRows[compra.id!!] ?: false
-    val backgroundColor = if (isSelected) Color.LightGray else Color.Transparent
+    val backgroundColor = if (isSelected) Color(0x328A8A8A) else Color.Transparent
+    val currentSelectedPurchasesToDelete = Purchases_ViewModel
+        .currentSelectedPurchasesToDelete.observeAsState(emptyList())
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
             .combinedClickable(
-                onClick = {},
+                onClick = {
+                    if (!currentSelectedPurchasesToDelete.value.contains(compra)) {
+                        Purchases_ViewModel.onSelectedPurchasesToDeleteUpdated(
+                            currentSelectedPurchasesToDelete.value.plus(compra)
+                        )
+                    } else {
+                        val newList = currentSelectedPurchasesToDelete.value.filter { c ->
+                            !currentSelectedPurchasesToDelete.value.contains(c)
+                        }
+                        Purchases_ViewModel.onSelectedPurchasesToDeleteUpdated(newList)
+                    }
+                    selectedRows[compra.id!!] = !isSelected
+                },
                 onLongClick = {
-                    if (currentSelectedPurchasesToDelete.contains(compra))
-                        removeSelection(compra) else addSelection(compra)
+                    if (!currentSelectedPurchasesToDelete.value.contains(compra)) {
+                        Purchases_ViewModel.onSelectedPurchasesToDeleteUpdated(
+                            currentSelectedPurchasesToDelete.value.plus(compra)
+                        )
+                    } else {
+                        val newList = currentSelectedPurchasesToDelete.value.filter { c ->
+                            !currentSelectedPurchasesToDelete.value.contains(c)
+                        }
+                        Purchases_ViewModel.onSelectedPurchasesToDeleteUpdated(newList)
+                    }
                     selectedRows[compra.id!!] = !isSelected
                 }
             )
             .background(backgroundColor)
     ) {
+        if(currentSelectedPurchasesToDelete.value.size > 0 && isSelected) {
+            IconButton(
+                modifier = Modifier.size(25.dp),
+                onClick = { /*TODO*/ }
+            ) {
+                Icon(Icons.Default.CheckBox, contentDescription = null, tint = backgroundButtonColor)
+            }
+        }
+        if(currentSelectedPurchasesToDelete.value.size > 0 && !isSelected) {
+            IconButton(
+                modifier = Modifier.size(25.dp),
+                onClick = { /*TODO*/ }
+            ) {
+                Icon(Icons.Default.CheckBoxOutlineBlank, contentDescription = null, tint = backgroundButtonColor)
+            }
+        }
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Divider(color = Color.LightGray, thickness = 1.dp)
             Text(
                 text = compra.name.toString(),
                 modifier = Modifier.width(150.dp),
                 textAlign = TextAlign.Center
             )
             Text(
-                text = compra.date.toString(),
+                text = if (compra.date == null) "-" else "${compra.date}",
                 modifier = Modifier.width(100.dp),
                 textAlign = TextAlign.Center
             )
             Text(
-                text = if (compra.supplier?.length === 0) "-" else "${compra.supplier}",
+                text = if (compra.supplier == null) "-" else "${compra.supplier}",
                 modifier = Modifier.width(150.dp),
                 textAlign = TextAlign.Center
             )

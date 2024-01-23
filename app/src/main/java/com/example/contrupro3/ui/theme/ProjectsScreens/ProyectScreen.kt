@@ -2,7 +2,6 @@ package com.example.contrupro3.ui.theme.ProjectsScreens
 
 import android.annotation.SuppressLint
 import android.os.Build
-import android.util.Range
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -42,7 +41,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CheckBox
 import androidx.compose.material.icons.filled.CheckBoxOutlineBlank
 import androidx.compose.material.icons.filled.Checklist
@@ -80,28 +78,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import androidx.core.util.toRange
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.contrupro3.R
+import com.example.contrupro3.TimestampToDate
 import com.example.contrupro3.models.AuthRepository
-import com.example.contrupro3.models.ProjectsModels.Project
+import com.example.contrupro3.models.ProjectsModels.ProjectModel
 import com.example.contrupro3.models.ProjectsModels.ProjectsScreen_ViewModel
-import com.example.contrupro3.models.TeamsModels.TeamScreen_ViewModel
 import com.example.contrupro3.ui.theme.Menu.HamburgueerMenu
+import com.example.contrupro3.ui.theme.backgroundButtonColor
+import com.example.contrupro3.ui.theme.contentButtonColor
 import com.example.contrupro3.ui.theme.myBlue
 import com.example.contrupro3.ui.theme.myOrangehigh
 import com.example.contrupro3.ui.theme.myOrangelow
 import com.example.contrupro3.ui.theme.mywhie
 import com.google.firebase.firestore.FirebaseFirestore
-import com.maxkeppeker.sheets.core.models.base.rememberUseCaseState
-import com.maxkeppeler.sheets.calendar.CalendarDialog
-import com.maxkeppeler.sheets.calendar.models.CalendarConfig
-import com.maxkeppeler.sheets.calendar.models.CalendarSelection
-import com.maxkeppeler.sheets.calendar.models.CalendarStyle
-import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.launch
-import java.time.LocalDate
+import java.util.Calendar
 import java.util.Locale
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -112,61 +104,21 @@ fun ProjectView(
     navController: NavController,
     authRepository: AuthRepository,
     userID: String,
-    projectsscreenViewmodel: ProjectsScreen_ViewModel
+    ProjectsScreen_VieVmodel: ProjectsScreen_ViewModel
 ) {
-    val projectViewModel: ProjectsScreen_ViewModel = viewModel()
-    val projectsSelectedToRemove = projectViewModel.projectsSelectedToRemove.observeAsState(emptyList())
-    val showRemoveProyectsDialog = projectViewModel.showDeleteProyectsDialog.observeAsState(false)
+    val showRemoveProyectsDialog by ProjectsScreen_VieVmodel
+        .showDeleteProyectsDialog.observeAsState(false)
     val loggedInUserUID: String by authRepository.getLoggedInUserUID().observeAsState("")
-    val projectsList = remember { mutableStateOf<List<Project>>(emptyList()) }
-    val isAddProjectDialogOpen = remember { mutableStateOf(false) }
     val loggedInUserName: String by authRepository.getLoggedInUserName().observeAsState("")
+    val projectsList = remember { mutableStateOf<List<ProjectModel>>(emptyList()) }
+    val isAddProjectDialogOpen = remember { mutableStateOf(false) }
+    val firebase = FirebaseFirestore.getInstance()
 
     authRepository.loadProjectsFromFirebase(projectsList)
-    val filteredProjects = FilterProjects(projectsList, projectViewModel)
+    val filteredProjects = FilterProjects(projectsList, ProjectsScreen_VieVmodel)
 
     Scaffold(
-        floatingActionButton = {
-            CompositionLocalProvider(
-                LocalContentColor provides colorResource(id = R.color.white)
-            ) {
-                if (projectsSelectedToRemove.value.size > 0) {
-                    Row {
-                        FloatingActionButton(
-                            onClick = {
-                                projectViewModel.onRemoveProjectsChanged(
-                                    emptyList(),
-                                    false
-                                )
-                            },
-                            containerColor = myOrangehigh
-                        ) {
-                            Icon(
-                                Icons.Default.Close,
-                                contentDescription = "Cancelar",
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(16.dp))
-                        FloatingActionButton(
-                            onClick = {
-                                projectViewModel.onRemoveProjectsChanged(
-                                    projectsSelectedToRemove.value,
-                                    true
-                                )
-                            },
-                            containerColor = myOrangehigh
-                        ) {
-                            Icon(
-                                Icons.Default.Delete,
-                                contentDescription = "Remover proyectos"
-                            )
-                        }
-                    }
-                } else {
-                    FiltersDropdowMenuProjects(projectViewModel) { isAddProjectDialogOpen.value = true }
-                }
-            }
-        }
+        floatingActionButton = { ActionsButtons(ProjectsScreen_VieVmodel, isAddProjectDialogOpen) }
     ) {
         Box(
             modifier = Modifier
@@ -180,50 +132,22 @@ fun ProjectView(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.offset(y = 15.dp)
             ) {
-                Spacer(modifier = Modifier.height(5.dp))
-                Text(
-                    text = "Proyectos",
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 32.sp
-                    )
-                )
-                Spacer(modifier = Modifier.height(15.dp))
-                when (filteredProjects.size) {
-                    0 -> {
-                        Text(
-                            text = "No tienes proyectos creados.",
-                            modifier = Modifier.padding(bottom = 10.dp)
-                        )
-                    }
-
-                    1 -> {
-                        Text(
-                            text = "Tienes 1 proyecto creado.",
-                            modifier = Modifier.padding(bottom = 10.dp)
-                        )
-                    }
-
-                    else -> {
-                        Text(
-                            text = "Tienes ${filteredProjects.size} proyectos creados.",
-                            modifier = Modifier.padding(bottom = 10.dp)
-                        )
-                    }
-                }
+                TitleSection(filteredProjects)
                 LazyColumn(modifier = Modifier.weight(1f)) {
                     items(filteredProjects.size) { index ->
                         val project = filteredProjects[index]
+
                         ProjectCard(
-                            project = project,
-                            navController = navController,
+                            project,
+                            navController,
                             userID,
                             authRepository,
                             filteredProjects,
-                            projectViewModel
+                            ProjectsScreen_VieVmodel,
+                            firebase
                         )
                         Spacer(Modifier.height(15.dp))
-                        if(filteredProjects.size - 1 == index) {
+                        if (filteredProjects.size - 1 == index) {
                             Spacer(modifier = Modifier.padding(vertical = 50.dp))
                         }
                     }
@@ -232,7 +156,10 @@ fun ProjectView(
         }
     }
 
-    if (showRemoveProyectsDialog.value === true) RemoveProjectsSelected(userID, projectViewModel)
+    if (showRemoveProyectsDialog === true) RemoveProjectsSelected(
+        userID,
+        ProjectsScreen_VieVmodel
+    )
     HamburgueerMenu(navController = navController, authRepository = authRepository)
     if (isAddProjectDialogOpen.value) {
         Dialog(onDismissRequest = { isAddProjectDialogOpen.value = false }) {
@@ -241,18 +168,109 @@ fun ProjectView(
                 loggedInUserName,
                 loggedInUserUID,
                 filteredProjects,
-                projectViewModel
+                ProjectsScreen_VieVmodel
             )
         }
     }
 }
 
 @Composable
-fun FiltersDropdowMenuProjects(projectViewModel: ProjectsScreen_ViewModel, openAddProjects: () -> Unit) {
+fun TitleSection(filteredProjects: List<ProjectModel>) {
+    Spacer(modifier = Modifier.height(5.dp))
+    Text(
+        text = "Proyectos",
+        style = MaterialTheme.typography.titleLarge.copy(
+            fontWeight = FontWeight.Bold,
+            fontSize = 32.sp
+        )
+    )
+    Spacer(modifier = Modifier.height(15.dp))
+    when (filteredProjects.size) {
+        0 -> {
+            Text(
+                text = "No tienes proyectos creados.",
+                modifier = Modifier.padding(bottom = 10.dp)
+            )
+        }
+
+        1 -> {
+            Text(
+                text = "Tienes 1 proyecto creado.",
+                modifier = Modifier.padding(bottom = 10.dp)
+            )
+        }
+
+        else -> {
+            Text(
+                text = "Tienes ${filteredProjects.size} proyectos creados.",
+                modifier = Modifier.padding(bottom = 10.dp)
+            )
+        }
+    }
+}
+
+@Composable
+fun ActionsButtons(
+    ProjectsScreen_VieVmodel: ProjectsScreen_ViewModel,
+    isAddProjectDialogOpen: MutableState<Boolean>
+) {
+    val projectsSelectedToRemove by ProjectsScreen_VieVmodel
+        .projectsSelectedToRemove.observeAsState(emptyList())
+
+    CompositionLocalProvider(
+        LocalContentColor provides colorResource(id = R.color.white)
+    ) {
+        if (projectsSelectedToRemove.size > 0) {
+            Row {
+                FloatingActionButton(
+                    onClick = {
+                        ProjectsScreen_VieVmodel.onRemoveProjectsChanged(
+                            emptyList(),
+                            false
+                        )
+                    },
+                    containerColor = backgroundButtonColor,
+                    contentColor = contentButtonColor
+                ) {
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = "Cancelar",
+                    )
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                FloatingActionButton(
+                    onClick = {
+                        ProjectsScreen_VieVmodel.onRemoveProjectsChanged(
+                            projectsSelectedToRemove,
+                            true
+                        )
+                    },
+                    containerColor = backgroundButtonColor,
+                    contentColor = contentButtonColor
+                ) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "Remover proyectos"
+                    )
+                }
+            }
+        } else {
+            FiltersDropdowMenuProjects(ProjectsScreen_VieVmodel) {
+                isAddProjectDialogOpen.value = true
+            }
+        }
+    }
+}
+
+@Composable
+fun FiltersDropdowMenuProjects(
+    projectViewModel: ProjectsScreen_ViewModel,
+    openAddProjects: () -> Unit
+) {
     val isFilterMenuOpen = projectViewModel.isFilterMenuOpen.observeAsState(false)
     val isSearchExpanded = projectViewModel.isSearchExpanded.observeAsState(false)
     val isFilterAscending = projectViewModel.isFilterAscending.observeAsState(false)
-    val filterSelected = projectViewModel.filterSelected.observeAsState("Fecha de inicio")
+    val filterSelected = projectViewModel.filterSelected.observeAsState("Fecha de creación")
 
     Row {
         FloatingActionButton(
@@ -264,7 +282,8 @@ fun FiltersDropdowMenuProjects(projectViewModel: ProjectsScreen_ViewModel, openA
                     isFilterAscending.value
                 )
             },
-            containerColor = myOrangehigh
+            containerColor = backgroundButtonColor,
+            contentColor = contentButtonColor
         ) {
             Icon(
                 Icons.Default.FilterAlt,
@@ -336,11 +355,30 @@ fun FiltersDropdowMenuProjects(projectViewModel: ProjectsScreen_ViewModel, openA
                     )
                 }
             }
+            DropdownMenuItem(onClick = {
+                projectViewModel.onFilterSelectionChanged(
+                    false,
+                    isSearchExpanded.value,
+                    "Fecha de creación",
+                    isFilterAscending.value
+                )
+            }) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Fecha de creación")
+                    Spacer(Modifier.width(10.dp))
+                    Icon(
+                        if (filterSelected.value == "Fecha de creación" && isFilterAscending.value) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
         }
         Spacer(modifier = Modifier.width(16.dp))
         FloatingActionButton(
             onClick = { openAddProjects() },
-            containerColor = myOrangehigh
+            containerColor = backgroundButtonColor,
+            contentColor = contentButtonColor
         ) {
             Icon(
                 Icons.Default.Add,
@@ -352,10 +390,10 @@ fun FiltersDropdowMenuProjects(projectViewModel: ProjectsScreen_ViewModel, openA
 
 @Composable
 fun FilterProjects(
-    projectsList: MutableState<List<Project>>,
+    projectsList: MutableState<List<ProjectModel>>,
     projectViewModel: ProjectsScreen_ViewModel
-): List<Project> {
-    val filterSelected = projectViewModel.filterSelected.observeAsState("Fecha de inicio")
+): List<ProjectModel> {
+    val filterSelected = projectViewModel.filterSelected.observeAsState("Fecha de creación")
     val isFilterAscending = projectViewModel.isFilterAscending.observeAsState(false)
     val searchQuery = projectViewModel.searchQuery.observeAsState("")
 
@@ -363,7 +401,7 @@ fun FilterProjects(
         remember(projectsList, filterSelected, isFilterAscending, searchQuery) {
             derivedStateOf {
                 var filteredList = projectsList.value.filter { project ->
-                    project.projectName.contains(
+                    project.name.toString().contains(
                         searchQuery.value,
                         ignoreCase = true
                     )
@@ -372,9 +410,9 @@ fun FilterProjects(
                 when (filterSelected.value) {
                     "Nombre" -> {
                         filteredList = if (isFilterAscending.value) {
-                            filteredList.sortedBy { it.projectName }
+                            filteredList.sortedBy { it.name }
                         } else {
-                            filteredList.sortedByDescending { it.projectName }
+                            filteredList.sortedByDescending { it.name }
                         }
                     }
 
@@ -393,6 +431,14 @@ fun FilterProjects(
                             filteredList.sortedByDescending { it.endDate }
                         }
                     }
+
+                    "Fecha de creación" -> {
+                        filteredList = if (isFilterAscending.value) {
+                            filteredList.sortedBy { it.createdAt }
+                        } else {
+                            filteredList.sortedByDescending { it.createdAt }
+                        }
+                    }
                 }
                 filteredList
             }
@@ -402,14 +448,15 @@ fun FilterProjects(
 
 @Composable
 fun RemoveProjectsSelected(userID: String, projectViewModel: ProjectsScreen_ViewModel) {
-    val projectsSelectedToRemove = projectViewModel.projectsSelectedToRemove.observeAsState(emptyList())
+    val projectsSelectedToRemove by
+        projectViewModel.projectsSelectedToRemove.observeAsState(emptyList())
     val context = LocalContext.current
 
-    if (projectsSelectedToRemove.value.size > 0) {
+    if (projectsSelectedToRemove.size > 0) {
         AlertDialog(
             onDismissRequest = {
                 projectViewModel.onRemoveProjectsChanged(
-                    projectsSelectedToRemove.value,
+                    projectsSelectedToRemove,
                     false
                 )
             },
@@ -421,10 +468,10 @@ fun RemoveProjectsSelected(userID: String, projectViewModel: ProjectsScreen_View
                     horizontalArrangement = Arrangement.End
                 ) {
                     Button(
-                        onClick = {},
+                        onClick = { projectViewModel.onRemoveProjectsChanged(projectsSelectedToRemove, false) },
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = myOrangehigh,
-                            contentColor = Color.White
+                            containerColor = backgroundButtonColor,
+                            contentColor = contentButtonColor
                         )
                     ) {
                         Text(
@@ -441,7 +488,7 @@ fun RemoveProjectsSelected(userID: String, projectViewModel: ProjectsScreen_View
                                     .document(userID)
                                     .collection("Projects")
 
-                            for (proyect in projectsSelectedToRemove.value) {
+                            for (proyect in projectsSelectedToRemove) {
                                 collection.document(proyect.id.toString()).delete()
                             }
                             projectViewModel.onRemoveProjectsChanged(emptyList(), false)
@@ -452,8 +499,8 @@ fun RemoveProjectsSelected(userID: String, projectViewModel: ProjectsScreen_View
                             ).show()
                         },
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = myOrangehigh,
-                            contentColor = Color.White
+                            containerColor = backgroundButtonColor,
+                            contentColor = contentButtonColor
                         )
                     ) {
                         Text(
@@ -497,14 +544,16 @@ fun RemoveProjectsSelected(userID: String, projectViewModel: ProjectsScreen_View
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ProjectCard(
-    project: Project,
+    project: ProjectModel,
     navController: NavController,
     userID: String,
     authRepository: AuthRepository,
-    projectsList: List<Project>,
-    projectViewModel: ProjectsScreen_ViewModel
+    projectsList: List<ProjectModel>,
+    projectViewModel: ProjectsScreen_ViewModel,
+    firebase: FirebaseFirestore
 ) {
-    val projectsSelectedToRemove = projectViewModel.projectsSelectedToRemove.observeAsState(emptyList())
+    val projectsSelectedToRemove =
+        projectViewModel.projectsSelectedToRemove.observeAsState(emptyList())
     val showDeleteProjectsDialog = projectViewModel.showDeleteProyectsDialog.observeAsState(false)
     val showDatePicker = remember { mutableStateOf(false) }
 
@@ -567,7 +616,7 @@ fun ProjectCard(
                 ) {
                     Box(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = project.projectName,
+                            text = project.name.toString(),
                             style = MaterialTheme.typography.titleSmall,
                             modifier = Modifier.align(Alignment.Center)
                         )
@@ -577,7 +626,7 @@ fun ProjectCard(
                             Icon(
                                 Icons.Default.CheckBox,
                                 contentDescription = null,
-                                tint = myBlue,
+                                tint = backgroundButtonColor,
                                 modifier = Modifier.align(Alignment.Center)
                             )
                         }
@@ -590,7 +639,7 @@ fun ProjectCard(
                             Icon(
                                 Icons.Default.CheckBoxOutlineBlank,
                                 contentDescription = null,
-                                tint = myBlue,
+                                tint = backgroundButtonColor,
                                 modifier = Modifier.align(Alignment.Center)
                             )
                         }
@@ -617,121 +666,148 @@ fun ProjectCard(
                     }
                     Spacer(modifier = Modifier.width(5.dp))
                     Text(
-                        text = project.creatorName,
+                        text = project.creatorName.toString(),
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
                 Spacer(modifier = Modifier.height(5.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(24.dp)
-                            .background(Color.Transparent, shape = CircleShape)
-                            .border(1.dp, Color.LightGray, CircleShape)
-                            .padding(2.dp),
-                        contentAlignment = Alignment.Center
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceAround,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.People,
-                            contentDescription = "Número de participantes",
-                            modifier = Modifier.size(12.dp),
-                            tint = Color.DarkGray
+                        Box(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .background(Color.Transparent, shape = CircleShape)
+                                .border(1.dp, Color.LightGray, CircleShape)
+                                .padding(2.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.People,
+                                contentDescription = "Número de participantes",
+                                modifier = Modifier.size(12.dp),
+                                tint = Color.DarkGray
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(5.dp))
+                        Text(
+                            text = "${project.counters?.members}",
+                            style = MaterialTheme.typography.bodySmall
                         )
                     }
-                    Spacer(modifier = Modifier.width(5.dp))
-                    Text(
-                        text = "null",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-
-                    Spacer(modifier = Modifier.width(5.dp))
-
-                    Box(
-                        modifier = Modifier
-                            .size(24.dp)
-                            .background(Color.Transparent, shape = CircleShape)
-                            .border(1.dp, Color.LightGray, CircleShape)
-                            .padding(2.dp),
-                        contentAlignment = Alignment.Center
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Checklist,
-                            contentDescription = "Número de tareas",
-                            modifier = Modifier.size(12.dp),
-                            tint = Color.DarkGray
+                        Box(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .background(Color.Transparent, shape = CircleShape)
+                                .border(1.dp, Color.LightGray, CircleShape)
+                                .padding(2.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Checklist,
+                                contentDescription = "Número de tareas",
+                                modifier = Modifier.size(12.dp),
+                                tint = Color.DarkGray
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(5.dp))
+                        Text(
+                            text = "${project.counters?.tasks}",
+                            style = MaterialTheme.typography.bodySmall
                         )
                     }
-                    Spacer(modifier = Modifier.width(5.dp))
-                    Text(
-                        text = "null",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    Spacer(modifier = Modifier.width(5.dp))
-
-                    Box(
-                        modifier = Modifier
-                            .size(24.dp)
-                            .background(Color.Transparent, shape = CircleShape)
-                            .border(1.dp, Color.LightGray, CircleShape)
-                            .padding(2.dp),
-                        contentAlignment = Alignment.Center
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.DocumentScanner,
-                            contentDescription = "Número de documentos",
-                            modifier = Modifier.size(12.dp),
-                            tint = Color.DarkGray
+                        Box(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .background(Color.Transparent, shape = CircleShape)
+                                .border(1.dp, Color.LightGray, CircleShape)
+                                .padding(2.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.DocumentScanner,
+                                contentDescription = "Número de documentos",
+                                modifier = Modifier.size(12.dp),
+                                tint = Color.DarkGray
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(5.dp))
+                        Text(
+                            text = "${project.counters?.documents}",
+                            style = MaterialTheme.typography.bodySmall
                         )
                     }
-                    Spacer(modifier = Modifier.width(5.dp))
-                    Text(
-                        text = "null",
-                        style = MaterialTheme.typography.bodySmall
-                    )
                 }
                 Spacer(modifier = Modifier.height(3.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(24.dp)
-                            .background(Color.Transparent, shape = CircleShape)
-                            .border(1.dp, Color.LightGray, CircleShape)
-                            .padding(2.dp),
-                        contentAlignment = Alignment.Center
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.DateRange,
-                            contentDescription = "Fecha de creación",
-                            modifier = Modifier.size(12.dp),
-                            tint = Color.DarkGray
+                        Box(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .background(Color.Transparent, shape = CircleShape)
+                                .border(1.dp, Color.LightGray, CircleShape)
+                                .padding(2.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.DateRange,
+                                contentDescription = "Fecha de creación",
+                                modifier = Modifier.size(12.dp),
+                                tint = Color.DarkGray
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(5.dp))
+                        Text(
+                            text = if (project?.startDate == null) "-" else TimestampToDate(project?.startDate),
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.clickable { showDatePicker.value = true }
                         )
                     }
-                    Spacer(modifier = Modifier.width(5.dp))
-                    Text(
-                        text = project.startDate,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.clickable { showDatePicker.value = true }
-                    )
-                    Box(
-                        modifier = Modifier
-                            .size(24.dp)
-                            .background(Color.Transparent, shape = CircleShape)
-                            .border(1.dp, Color.LightGray, CircleShape)
-                            .padding(2.dp),
-                        contentAlignment = Alignment.Center
+                    Spacer(modifier = Modifier.padding(horizontal = 8.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.DateRange,
-                            contentDescription = "Fecha de Terminacion",
-                            modifier = Modifier.size(12.dp),
-                            tint = Color.DarkGray
+                        Box(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .background(Color.Transparent, shape = CircleShape)
+                                .border(1.dp, Color.LightGray, CircleShape)
+                                .padding(2.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.DateRange,
+                                contentDescription = "Fecha de Terminacion",
+                                modifier = Modifier.size(12.dp),
+                                tint = Color.DarkGray
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(5.dp))
+                        Text(
+                            text = if (project?.endDate == null) "-" else TimestampToDate(project?.endDate),
+                            style = MaterialTheme.typography.bodySmall
                         )
                     }
-                    Spacer(modifier = Modifier.width(5.dp))
-                    Text(
-                        text = project.endDate,
-                        style = MaterialTheme.typography.bodySmall
-                    )
                 }
             }
         }
@@ -743,13 +819,11 @@ fun ProjectCard(
 fun RegisterCard(
     isAddProjectDialogOpen: MutableState<Boolean>, loggedInUserName: String,
     loggedInUserUID: String,
-    projects: List<Project>,
-    projectViewModel: ProjectsScreen_ViewModel
+    projects: List<ProjectModel>,
+    ProjectsScreen_ViewModel: ProjectsScreen_ViewModel
 ) {
-    val startDateText = projectViewModel.startDateTextField.observeAsState("")
-    val endDateText = projectViewModel.endDateTextField.observeAsState("")
-    val name = projectViewModel.projectName.observeAsState("")
-    val description = projectViewModel.projectDescription.observeAsState("")
+    val name = ProjectsScreen_ViewModel.projectName.observeAsState("")
+    val description = ProjectsScreen_ViewModel.projectDescription.observeAsState("")
     val currentContext = LocalContext.current
     val nameRepliqued = remember { mutableStateOf(false) }
 
@@ -775,9 +849,10 @@ fun RegisterCard(
             OutlinedTextField(
                 value = name.value,
                 onValueChange = {
-                    projectViewModel.onFieldsUpdated(it, description.value)
+                    ProjectsScreen_ViewModel.onFieldsUpdated(it, description.value)
                     nameRepliqued.value = projects.find {
-                        it.projectName.trim().equals(name.value.trim(), ignoreCase = true)
+                        it.name.toString().trim()
+                            .equals(name.value.trim(), ignoreCase = true)
                     } != null
                 },
                 label = { Text(text = "Nombre del proyecto") },
@@ -829,7 +904,7 @@ fun RegisterCard(
             Spacer(modifier = Modifier.height(10.dp))
             OutlinedTextField(
                 value = description.value,
-                onValueChange = { projectViewModel.onFieldsUpdated(name.value, it) },
+                onValueChange = { ProjectsScreen_ViewModel.onFieldsUpdated(name.value, it) },
                 label = { Text(text = "Descripción del proyecto") },
                 colors = TextFieldDefaults.outlinedTextFieldColors(
                     textColor = Color.Black,
@@ -852,8 +927,6 @@ fun RegisterCard(
                     .offset(x = -20.dp)
                     .align(Alignment.End)
             )
-            Spacer(modifier = Modifier.height(15.dp))
-            CalendarSample3(projectViewModel, startDateText.value, endDateText.value)
             Spacer(modifier = Modifier.height(8.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -864,7 +937,7 @@ fun RegisterCard(
                     enabled = name.value.length >= 6 && name.value.length <= 25 && nameRepliqued.value === false && description.value.length <= 200,
                     onClick = {
                         scope.launch {
-                            val newDoc = Project(
+                            val newDoc = ProjectModel(
                                 null,
                                 name.value.lowercase(Locale.getDefault())
                                     .replaceFirstChar {
@@ -875,8 +948,7 @@ fun RegisterCard(
                                 loggedInUserName,
                                 loggedInUserUID,
                                 description.value,
-                                startDateText.value,
-                                endDateText.value
+                                createdAt = (Calendar.getInstance()).timeInMillis.toString()
                             )
 
                             val db = FirebaseFirestore.getInstance()
@@ -892,8 +964,7 @@ fun RegisterCard(
                                         .document(documentReference.id)
                                         .set(docUpdated)
                                         .addOnSuccessListener {
-                                            projectViewModel.onFieldsUpdated("", "")
-                                            projectViewModel.onCalendarUpdated("", "")
+                                            ProjectsScreen_ViewModel.onFieldsUpdated("", "")
                                             isAddProjectDialogOpen.value = false
 
                                             Toast.makeText(
@@ -905,7 +976,10 @@ fun RegisterCard(
                                 }
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(myBlue, contentColor = Color.White),
+                    colors = ButtonDefaults.buttonColors(
+                        backgroundButtonColor,
+                        contentColor = contentButtonColor
+                    ),
                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
                     shape = RoundedCornerShape(12.dp)
                 ) {
@@ -916,7 +990,10 @@ fun RegisterCard(
                     onClick = {
                         isAddProjectDialogOpen.value = false
                     },
-                    colors = ButtonDefaults.buttonColors(myBlue, contentColor = Color.White),
+                    colors = ButtonDefaults.buttonColors(
+                        backgroundButtonColor,
+                        contentColor = contentButtonColor
+                    ),
                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
                     shape = RoundedCornerShape(12.dp)
                 ) {
@@ -924,88 +1001,6 @@ fun RegisterCard(
                 }
             }
             Spacer(modifier = Modifier.height(5.dp))
-        }
-    }
-}
-
-
-@RequiresApi(Build.VERSION_CODES.O)
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun CalendarSample3(
-    projectViewModel: ProjectsScreen_ViewModel,
-    startDateText: String,
-    endDateText: String
-) {
-    val timeBoundary = LocalDate.now().let { now -> now.minusYears(10)..now.plusYears(99) }
-    val selectedRange = remember {
-        val default = LocalDate.now().let { time -> time..time.plusDays(8) }
-        mutableStateOf(default.toRange())
-    }
-
-    // Estado para mostrar u ocultar el diálogo.
-    val showDialog = remember { mutableStateOf(false) }
-
-    Column {
-        Button(
-            onClick = { showDialog.value = true },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = myOrangehigh
-            )
-        ) {
-            Icon(Icons.Default.CalendarMonth, contentDescription = null, tint = Color.White)
-            Spacer(modifier = Modifier.width(10.dp))
-            Text(text = "Seleccionar Fecha")
-        }
-
-        // Muestra el diálogo cuando se hace clic en el botón.
-        if (showDialog.value) {
-            Dialog(
-                onDismissRequest = { showDialog.value = false },
-            ) {
-                CalendarDialog(
-                    state = rememberUseCaseState(visible = showDialog.value),
-                    config = CalendarConfig(
-                        yearSelection = true,
-                        monthSelection = true,
-                        boundary = timeBoundary,
-                        style = CalendarStyle.MONTH,
-                    ),
-                    selection = CalendarSelection.Period(
-                        selectedRange = selectedRange.value
-                    ) { startDate, endDate ->
-                        selectedRange.value = Range(startDate, endDate)
-                        projectViewModel.onCalendarUpdated(
-                            startDate.toString(),
-                            endDate.toString()
-                        )
-                        showDialog.value = false
-                    }
-                )
-            }
-        }
-
-        // Muestra las fechas seleccionadas.
-        if (startDateText.isNotEmpty() && endDateText.isNotEmpty()) {
-            Row(
-                modifier = Modifier.fillMaxWidth(0.8f),
-                horizontalArrangement = Arrangement.SpaceAround
-            ) {
-                Text(
-                    text = "Inicio: ${startDateText}",
-                    style = MaterialTheme.typography.labelMedium.copy(
-                        fontWeight = FontWeight.Light,
-                        fontSize = 8.sp
-                    ),
-                )
-                Text(
-                    text = "Fin: ${endDateText}",
-                    style = MaterialTheme.typography.labelMedium.copy(
-                        fontWeight = FontWeight.Light,
-                        fontSize = 8.sp,
-                    ),
-                )
-            }
         }
     }
 }
