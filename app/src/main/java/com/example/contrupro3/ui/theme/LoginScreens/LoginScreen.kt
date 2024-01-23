@@ -14,13 +14,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -29,16 +28,23 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -58,6 +64,7 @@ import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.delay
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun LoginPage(
     navController: NavController,
@@ -66,9 +73,11 @@ fun LoginPage(
 ) {
     val email = LoginViewModel.email.observeAsState("")
     val password = LoginViewModel.password.observeAsState("")
-    val enabledLoginButton = LoginViewModel.enabledLoginButton.observeAsState(false)
     val isMailValid = LoginViewModel.isMailValid.observeAsState(false)
     val focusManager = LocalFocusManager.current
+    val isKeyboardVisible = remember { mutableStateOf(false) }
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val isLoginLoading = remember { mutableStateOf(false) }
 
     var isPasswordVisible by remember { mutableStateOf(false) }
     val snackbarVisibleState = remember { mutableStateOf(false) }
@@ -76,7 +85,8 @@ fun LoginPage(
 
     Box(
         modifier = Modifier
-            .fillMaxSize(),
+            .fillMaxSize()
+            .offset(y = if (isKeyboardVisible.value) -50.dp else 0.dp),
         contentAlignment = Alignment.Center
     ) {
         Box(
@@ -126,8 +136,12 @@ fun LoginPage(
                 singleLine = true,
                 maxLines = 1,
                 modifier = Modifier
-                    .fillMaxWidth(0.8f),
+                    .fillMaxWidth(0.8f)
+                    .onFocusChanged { focusState ->
+                        isKeyboardVisible.value = focusState.isFocused
+                    },
                 keyboardOptions = KeyboardOptions.Default.copy(
+                    keyboardType = KeyboardType.Email,
                     imeAction = ImeAction.Next
                 ),
                 keyboardActions = KeyboardActions(
@@ -165,10 +179,28 @@ fun LoginPage(
                 singleLine = true,
                 maxLines = 1,
                 modifier = Modifier
-                    .fillMaxWidth(0.8f),
+                    .fillMaxWidth(0.8f)
+                    .onFocusChanged { focusState ->
+                        isKeyboardVisible.value = focusState.isFocused
+                    },
                 keyboardOptions = KeyboardOptions.Default.copy(
                     keyboardType = KeyboardType.Password,
                     imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        OnDoneFields(
+                            snackbarMessageState,
+                            snackbarVisibleState,
+                            email,
+                            isMailValid,
+                            password,
+                            authRepository,
+                            navController,
+                            keyboardController,
+                            isLoginLoading
+                        )
+                    }
                 ),
                 visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
@@ -193,63 +225,17 @@ fun LoginPage(
 
             Button(
                 onClick = {
-                    if (email.value.isEmpty()) {
-                        snackbarMessageState.value = "Ingresa un correo electronico."
-                        snackbarVisibleState.value = true
-                    } else if (!isMailValid.value) {
-                        snackbarMessageState.value = "El correo electronico no es valido."
-                        snackbarVisibleState.value = true
-                    } else if (password.value.isEmpty()) {
-                        snackbarMessageState.value = "Ingresa tu contraseña."
-                        snackbarVisibleState.value = true
-                    } else if (password.value.length < 6) {
-                        snackbarMessageState.value =
-                            "La contraseña debe contener 6 o mas más caracteres."
-                        snackbarVisibleState.value = true
-                    }
-
-                    if (email.value.isNotEmpty() && isMailValid.value && password.value.isNotEmpty() && password.value.length >= 6) {
-                        SignInUser(
-                            email.value,
-                            password.value,
-                            {
-                                val userID = authRepository.getCurrentUser()?.uid
-                                if (userID != null) {
-                                    navController.navigate("projects_screen/$userID") {
-                                        popUpTo("login_screen") { inclusive = true }
-                                    }
-                                }
-                            },
-                            { errorMessage ->
-                                when (errorMessage) {
-                                    "USER_NOT_FOUND" -> {
-                                        snackbarMessageState.value =
-                                            "No se pudo encontrar el email ingresado."
-                                        snackbarVisibleState.value = true
-                                    }
-
-                                    "PASSWORD_INVALID" -> {
-                                        snackbarMessageState.value =
-                                            "La contraseña no coincide con nuestros registros."
-                                        snackbarVisibleState.value = true
-                                    }
-
-                                    "UNKNOWN_ERROR" -> {
-                                        snackbarMessageState.value =
-                                            "Ha ocurrido un problema. Porfavor, intentelo de nuevo."
-                                        snackbarVisibleState.value = true
-                                    }
-
-                                    "FAILED_TO_GET_USER_DOCUMENT" -> {
-                                        snackbarMessageState.value =
-                                            "No fue posible obtener los datos del usuario. Porfavor, intentelo de nuevo mas tarde."
-                                        snackbarVisibleState.value = true
-                                    }
-                                }
-                            }
-                        )
-                    }
-
+                    OnDoneFields(
+                        snackbarMessageState,
+                        snackbarVisibleState,
+                        email,
+                        isMailValid,
+                        password,
+                        authRepository,
+                        navController,
+                        keyboardController,
+                        isLoginLoading
+                    )
                 },
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 5.dp),
                 colors = ButtonDefaults.buttonColors(myBlue, contentColor = Color.White),
@@ -257,9 +243,16 @@ fun LoginPage(
                     .offset(y = 30.dp)
                     .fillMaxWidth(0.6f)
                     .padding(8.dp),
-                enabled = true
+                enabled = !isLoginLoading.value
             ) {
-                Text("Ingresar")
+                if(isLoginLoading.value) {
+                    CircularProgressIndicator(
+                        color = myBlue,
+                        strokeWidth = 3.dp,
+                        modifier = Modifier.size(25.dp),
+                        strokeCap = StrokeCap.Square
+                    )
+                } else Text("Ingresar")
             }
 
             Button(
@@ -295,6 +288,79 @@ fun LoginPage(
                 action = {}
             ) { Text(snackbarMessageState.value) }
         }
+    }
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+fun OnDoneFields(
+    snackbarMessageState: MutableState<String>,
+    snackbarVisibleState: MutableState<Boolean>,
+    email: State<String>,
+    isMailValid: State<Boolean>,
+    password: State<String>,
+    authRepository: AuthRepository,
+    navController: NavController,
+    keyboardController: SoftwareKeyboardController?,
+    isLoginLoading: MutableState<Boolean>
+) {
+    if (email.value.isEmpty()) {
+        snackbarMessageState.value = "Ingresa un correo electronico."
+        snackbarVisibleState.value = true
+    } else if (!isMailValid.value) {
+        snackbarMessageState.value = "El correo electronico no es valido."
+        snackbarVisibleState.value = true
+    } else if (password.value.isEmpty()) {
+        snackbarMessageState.value = "Ingresa tu contraseña."
+        snackbarVisibleState.value = true
+    } else if (password.value.length < 6) {
+        snackbarMessageState.value =
+            "La contraseña debe contener 6 o mas más caracteres."
+        snackbarVisibleState.value = true
+    }
+
+    if (email.value.isNotEmpty() && isMailValid.value && password.value.isNotEmpty() && password.value.length >= 6) {
+        isLoginLoading.value = true
+        keyboardController?.hide()
+        SignInUser(
+            email.value,
+            password.value,
+            {
+                val userID = authRepository.getCurrentUser()?.uid
+                if (userID != null) {
+                    navController.navigate("projects_screen/$userID") {
+                        popUpTo("login_screen") { inclusive = true }
+                    }
+                }
+            },
+            { errorMessage ->
+                isLoginLoading.value = false
+                when (errorMessage) {
+                    "USER_NOT_FOUND" -> {
+                        snackbarMessageState.value =
+                            "No se pudo encontrar el email ingresado."
+                        snackbarVisibleState.value = true
+                    }
+
+                    "PASSWORD_INVALID" -> {
+                        snackbarMessageState.value =
+                            "La contraseña no coincide con nuestros registros."
+                        snackbarVisibleState.value = true
+                    }
+
+                    "UNKNOWN_ERROR" -> {
+                        snackbarMessageState.value =
+                            "Ha ocurrido un problema. Porfavor, intentelo de nuevo."
+                        snackbarVisibleState.value = true
+                    }
+
+                    "FAILED_TO_GET_USER_DOCUMENT" -> {
+                        snackbarMessageState.value =
+                            "No fue posible obtener los datos del usuario. Porfavor, intentelo de nuevo mas tarde."
+                        snackbarVisibleState.value = true
+                    }
+                }
+            }
+        )
     }
 }
 

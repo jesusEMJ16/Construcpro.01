@@ -15,4 +15,12 @@ class TeamCard_ViewModel: ViewModel() {
         _teamName.value = name
         _teamDescription.value = description
     }
+
+    /* ===== [ TeamCard - MemberSelectedToRemove ] ===== */
+    private val _membersSelectedToRemove = MutableLiveData<List<TeamMember>>()
+    val membersSelectedToRemove: LiveData<List<TeamMember>> = _membersSelectedToRemove
+
+    fun onSelectionToRemoveUpdated(membersSelectedToRemove: List<TeamMember>) {
+        _membersSelectedToRemove.value = membersSelectedToRemove
+    }
 }

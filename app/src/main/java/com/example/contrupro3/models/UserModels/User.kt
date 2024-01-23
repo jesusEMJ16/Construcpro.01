@@ -5,6 +5,7 @@ import android.os.Parcelable
 import com.example.contrupro3.models.TeamsModels.Teams
 
 data class UserModel(
+    val id: String? = null,
     val name: String? = null,
     val lastName: String? = null,
     val email: String? = null,
@@ -19,10 +20,12 @@ data class UserModel(
         parcel.readString(),
         parcel.readString(),
         parcel.readString(),
+        parcel.readString(),
         parcel.readString()
     )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
+        parcel.writeString(id)
         parcel.writeString(name)
         parcel.writeString(lastName)
         parcel.writeString(email)

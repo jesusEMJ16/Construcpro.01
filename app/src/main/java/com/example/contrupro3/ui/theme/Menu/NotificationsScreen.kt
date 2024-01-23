@@ -26,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.GroupAdd
 import androidx.compose.material.icons.filled.GroupRemove
 import androidx.compose.material.icons.filled.NotificationsNone
+import androidx.compose.material.icons.filled.PriorityHigh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -43,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.zIndex
+import com.example.contrupro3.UpdateProjectCounter
 import com.example.contrupro3.models.AuthRepository
 import com.example.contrupro3.models.TeamsModels.TeamMember
 import com.example.contrupro3.models.UserModels.ActionButton
@@ -54,7 +56,6 @@ import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
-import kotlin.math.log
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -193,6 +194,7 @@ fun Notification(
                 style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.sp),
                 modifier = Modifier.padding(start = 8.dp)
             )
+            if(notify.actionButton == null) Spacer(modifier = Modifier.padding(vertical = 4.dp))
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -280,7 +282,8 @@ fun AcceptActions(
                                             email = memberData.email,
                                             role = null,
                                             phoneNumber = userData?.phoneNumber,
-                                            inviteStatus = "Accepted"
+                                            inviteStatus = "Accepted",
+                                            userUID = loggedInUserUID.value
                                         )
 
                                         collection
@@ -298,6 +301,12 @@ fun AcceptActions(
                     }
             }
         }
+        UpdateProjectCounter(
+            projectId = projectId.toString(),
+            ownerId = ownerId.toString(),
+            propertiesToUpdate = "members",
+            toAdd = true
+        )
         UpdateClickedNotification(notify, firebase, loggedInUserUID)
     } else {
         Toast.makeText(
@@ -362,11 +371,13 @@ fun getTimeAgo(timestamp: Long, currentTime: Long): String {
 fun CustomIcon(icon: String, color: String) {
     val iconMappings = mapOf(
         "GroupAdd" to Icons.Default.GroupAdd,
-        "GroupRemove" to Icons.Default.GroupRemove
+        "GroupRemove" to Icons.Default.GroupRemove,
+        "Priority High" to Icons.Default.PriorityHigh
     )
     val iconColor = mapOf(
         "Green" to Color.Green,
-        "Red" to Color.Red
+        "Red" to Color.Red,
+        "Yellow" to Color(0xFFFFC73B)
     )
     val imageVector = iconMappings[icon] ?: Icons.Default.NotificationsNone
     val colorFormat = iconColor[color] ?: myBlue
@@ -375,6 +386,6 @@ fun CustomIcon(icon: String, color: String) {
         contentDescription = null,
         tint = colorFormat,
         modifier = Modifier
-            .size(30.dp)
+            .size(if(imageVector.name == "PriorityHigh") 50.dp else 30.dp)
     )
 }

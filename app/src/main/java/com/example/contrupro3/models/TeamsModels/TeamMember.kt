@@ -11,10 +11,13 @@ data class TeamMember(
     val email: String? = null,
     val role: String? = null,
     val phoneNumber: String? = null,
-    val inviteStatus: String? = null
-
+    val inviteStatus: String? = null,
+    val userUID: String? = null,
+    val photoPreview: String? = null
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
+        parcel.readString(),
+        parcel.readString(),
         parcel.readString(),
         parcel.readString(),
         parcel.readString(),
@@ -34,6 +37,8 @@ data class TeamMember(
         parcel.writeString(role)
         parcel.writeString(phoneNumber)
         parcel.writeString(inviteStatus)
+        parcel.writeString(userUID)
+        parcel.writeString(photoPreview)
     }
 
     override fun describeContents(): Int {

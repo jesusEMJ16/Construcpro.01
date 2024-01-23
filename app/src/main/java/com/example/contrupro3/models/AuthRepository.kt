@@ -2,26 +2,30 @@ package com.example.contrupro3.models
 
 import android.util.Log
 import androidx.compose.runtime.MutableState
-import com.google.firebase.firestore.DocumentReference
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import com.example.contrupro3.models.BudgetModels.PurchasesModel
+import com.example.contrupro3.models.BudgetModels.Purchases.PurchasesModel
 import com.example.contrupro3.models.DocumentsModels.DocumentModel
-import com.example.contrupro3.models.ProjectsModels.Project
+import com.example.contrupro3.models.ProjectsModels.ProjectModel
+import com.example.contrupro3.models.TasksModels.TaskModel
 import com.example.contrupro3.models.TeamsModels.TeamMember
 import com.example.contrupro3.models.TeamsModels.Teams
 import com.example.contrupro3.models.UserModels.NotificationModel
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.firestore.DocumentReference
+import com.google.firebase.firestore.FirebaseFirestore
 
 class AuthRepository(private val auth: FirebaseAuth) {
 
     private val _userName = MutableLiveData<String>()
     val userName: LiveData<String> = _userName
 
-    fun loadProjectsFromFirebase(projectsList: MutableState<List<Project>>, onStatusChanged: ((String) -> Unit)?= null) {
+    fun loadProjectsFromFirebase(
+        projectsList: MutableState<List<ProjectModel>>,
+        onStatusChanged: ((String) -> Unit)? = null
+    ) {
         val firestore = FirebaseFirestore.getInstance()
         val user = getCurrentUser()
         if (user != null) {
@@ -33,18 +37,23 @@ class AuthRepository(private val auth: FirebaseAuth) {
             projectsCollection.get()
                 .addOnSuccessListener { documents ->
                     val loadedProjects = documents.map { document ->
-                        val project = document.toObject(Project::class.java)
+                        val project = document.toObject(ProjectModel::class.java)
                         project.copy(id = document.id)
                     }
-                    onStatusChanged?.invoke("Loaded")
                     projectsList.value = loadedProjects
+                    onStatusChanged?.invoke("Loaded")
                 }
                 .addOnFailureListener {
                     onStatusChanged?.invoke("Failed")
                 }
         }
     }
-    fun loadProject(projectId: String, project: MutableState<Project?>) {
+
+    fun loadProject(
+        projectId: String,
+        project: MutableState<ProjectModel?>,
+        onStatusChanged: ((String) -> Unit)? = null
+    ) {
         val firestore = FirebaseFirestore.getInstance()
         val user = getCurrentUser()
 
@@ -57,9 +66,17 @@ class AuthRepository(private val auth: FirebaseAuth) {
             docProject.get()
                 .addOnSuccessListener { document ->
                     if (document.exists()) {
-                        val loadedDocument = document.toObject(Project::class.java)
-                        if (loadedDocument != null) project.value = loadedDocument
+                        val loadedDocument = document.toObject(ProjectModel::class.java)
+                        if (loadedDocument != null) {
+                            project.value = loadedDocument
+                            onStatusChanged?.invoke("Loaded")
+                        }
+                    } else {
+                        project.value = null
+                        onStatusChanged?.invoke("Loaded")
                     }
+                }.addOnFailureListener {
+                    onStatusChanged?.invoke("Failed")
                 }
         }
     }
@@ -86,7 +103,70 @@ class AuthRepository(private val auth: FirebaseAuth) {
         }
     }
 
-    fun loadEquipo(teamId: String, team: MutableState<Teams?>, projectId: String, onStatusChanged: ((String) -> Unit)?= null) {
+    fun loadTasksFromFirebase(tasksList: MutableState<List<TaskModel>>, projectId: String) {
+        val firestore = FirebaseFirestore.getInstance()
+        val user = getCurrentUser()
+        if (user != null) {
+            val tasksCollection = firestore
+                .collection("Users")
+                .document(user.uid)
+                .collection("Projects")
+                .document(projectId)
+                .collection("Tasks")
+
+            tasksCollection.get()
+                .addOnSuccessListener { documents ->
+                    val loadedTasks = documents.map { document ->
+                        val task = document.toObject(TaskModel::class.java)
+                        task.copy(id = document.id)
+                    }
+                    tasksList.value = loadedTasks
+                }
+        }
+    }
+
+    fun loadTask(
+        userId: String,
+        projectId: String,
+        taskId: String,
+        task: MutableState<TaskModel?>,
+        onStatusChanged: ((String) -> Unit)? = null
+    ) {
+        val firestore = FirebaseFirestore.getInstance()
+        val user = getCurrentUser()
+
+        if (user != null) {
+            val docProject = firestore.collection("Users")
+                .document(user.uid)
+                .collection("Projects")
+                .document(projectId)
+                .collection("Tasks")
+                .document(taskId)
+
+            docProject.get()
+                .addOnSuccessListener { document ->
+                    if (document.exists()) {
+                        val loadedDocument = document.toObject(TaskModel::class.java)
+                        if (loadedDocument != null) {
+                            task.value = loadedDocument
+                            onStatusChanged?.invoke("Loaded")
+                        }
+                    } else {
+                        task.value = null
+                        onStatusChanged?.invoke("Loaded")
+                    }
+                }.addOnFailureListener {
+                    onStatusChanged?.invoke("Failed")
+                }
+        }
+    }
+
+    fun loadEquipo(
+        teamId: String,
+        team: MutableState<Teams?>,
+        projectId: String,
+        onStatusChanged: ((String) -> Unit)? = null
+    ) {
         val firestore = FirebaseFirestore.getInstance()
         val user = getCurrentUser()
 
@@ -122,7 +202,8 @@ class AuthRepository(private val auth: FirebaseAuth) {
         userId: String,
         projectId: String,
         teamId: String,
-        onStatusChanged: ((String) -> Unit)?= null) {
+        onStatusChanged: ((String) -> Unit)? = null
+    ) {
         val firestore = FirebaseFirestore.getInstance()
         val user = getCurrentUser()
         if (user != null) {
@@ -150,9 +231,40 @@ class AuthRepository(private val auth: FirebaseAuth) {
         }
     }
 
+    fun loadTeamsOfProject(
+        teamsList: MutableState<List<Teams>>,
+        userId: String,
+        projectId: String,
+        onStatusChanged: ((String) -> Unit)? = null
+    ) {
+        val firestore = FirebaseFirestore.getInstance()
+        val user = getCurrentUser()
+        if (user != null) {
+            val collection = firestore
+                .collection("Users")
+                .document(userId)
+                .collection("Projects")
+                .document("$projectId")
+                .collection("Teams")
+
+            collection.get()
+                .addOnSuccessListener { documents ->
+                    val loadedTeams = documents.map { document ->
+                        val team = document.toObject(Teams::class.java)
+                        team.copy(id = document.id)
+                    }
+                    onStatusChanged?.invoke("Loaded")
+                    teamsList.value = loadedTeams
+                }
+                .addOnFailureListener {
+                    onStatusChanged?.invoke("Failed")
+                }
+        }
+    }
+
     fun loadNotifications(
         notificationsList: MutableState<List<NotificationModel>>,
-        onStatusChanged: ((String) -> Unit)?= null
+        onStatusChanged: ((String) -> Unit)? = null
     ) {
         val firestore = FirebaseFirestore.getInstance()
         val user = getCurrentUser()
@@ -169,7 +281,7 @@ class AuthRepository(private val auth: FirebaseAuth) {
                             val notify = document.toObject(NotificationModel::class.java)
                             notify?.copy(id = document.id)
                         } catch (e: Exception) {
-                             Log.e("ERROR", "Error al convertir el documento", e)
+                            Log.e("ERROR", "Error al convertir el documento", e)
                             onStatusChanged?.invoke("Failed")
                             null
                         }
@@ -183,7 +295,10 @@ class AuthRepository(private val auth: FirebaseAuth) {
         }
     }
 
-    fun loadDocumentsFromFirebase(projectId: String, documentsList: MutableState<List<DocumentModel>>) {
+    fun loadDocumentsFromFirebase(
+        projectId: String,
+        documentsList: MutableState<List<DocumentModel>>
+    ) {
         val firestore = FirebaseFirestore.getInstance()
         val user = getCurrentUser()
         if (user != null) {
@@ -207,6 +322,7 @@ class AuthRepository(private val auth: FirebaseAuth) {
                 }
         }
     }
+
     fun loadDocument(documentoId: String, documento: MutableState<DocumentModel?>) {
         val firestore = FirebaseFirestore.getInstance()
         val user = getCurrentUser()
@@ -232,6 +348,7 @@ class AuthRepository(private val auth: FirebaseAuth) {
                 }
         }
     }
+
     fun firebaseAuthWithGoogle(idToken: String, onSuccess: () -> Unit, onFail: (String) -> Unit) {
         val credential = GoogleAuthProvider.getCredential(idToken, null)
         auth.signInWithCredential(credential)
@@ -244,7 +361,10 @@ class AuthRepository(private val auth: FirebaseAuth) {
             }
     }
 
-    fun loadPurchasesFromFirebase(projectId: String, purchasesList: MutableState<List<PurchasesModel>>) {
+    fun loadPurchasesFromFirebase(
+        projectId: String,
+        purchasesList: MutableState<List<PurchasesModel>>
+    ) {
         val firestore = FirebaseFirestore.getInstance()
         val user = getCurrentUser()
 
@@ -270,10 +390,12 @@ class AuthRepository(private val auth: FirebaseAuth) {
     fun getCurrentUser(): FirebaseUser? {
         return auth.currentUser
     }
+
     fun getLoggedInUserUID(): LiveData<String> {
         val user = FirebaseAuth.getInstance().currentUser
         return MutableLiveData(user?.uid ?: "")
     }
+
     fun getLoggedInUserName(): LiveData<String> {
         val userNameLiveData = MutableLiveData<String>()
         val user = auth.currentUser
