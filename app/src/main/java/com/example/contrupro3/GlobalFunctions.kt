@@ -225,12 +225,16 @@ fun ProjectSelection(
 }
 
 fun TimestampToDate(timestamp: String?): String {
-    if (timestamp == null) return ""
-    val date = Date(timestamp.toString().toLong())
-    val format = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-    return format.format(date)
-}
+    if (timestamp.isNullOrEmpty()) return "Fecha no disponible" // O cualquier otro valor predeterminado que prefieras.
 
+    return try {
+        val date = Date(timestamp.toLong())
+        val format = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+        format.format(date)
+    } catch (e: NumberFormatException) {
+        "Formato inválido" // O manejar el error como consideres adecuado.
+    }
+}
 fun GetTimeAgoFromTimestamp(timestamp: String?): String? {
     if (timestamp == null) return ""
     val currentTime = System.currentTimeMillis()

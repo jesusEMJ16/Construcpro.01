@@ -18,6 +18,7 @@ import com.example.contrupro3.models.TasksModels.TasksScreen_ViewModel
 import com.example.contrupro3.models.TeamsModels.TeamCard_ViewModel
 import com.example.contrupro3.models.TeamsModels.TeamScreen_ViewModel
 import com.example.contrupro3.ui.theme.Budgets_purchasesScreens.Presupuesto_y_Compras
+import com.example.contrupro3.ui.theme.Calendar.Calendar
 import com.example.contrupro3.ui.theme.DocumentsScreens.CardViewDocumentsScreen
 import com.example.contrupro3.ui.theme.DocumentsScreens.DocumentsScreen
 import com.example.contrupro3.ui.theme.LoginScreens.LoginPage
@@ -53,6 +54,15 @@ fun AppNavigator(
         composable("user_screen") {
             UserProfileView(navController = navController, authRepository)
         }
+        //calendario
+        composable("calendar_screen/{userId}") { backStackEntry ->
+            val arguments = backStackEntry.arguments
+            val userID = arguments?.getString("userId")
+            if (userID != null) {
+                Calendar(navController, authRepository, userID)
+            }
+        }
+
         // Projects Screen
         composable("projects_screen/{userID}") { backStackEntry ->
             val arguments = backStackEntry.arguments
@@ -130,6 +140,8 @@ fun AppNavigator(
                 )
             }
         }
+
+        //presupuesto y compras
         composable("presucom_screen/{userId}") { backStackEntry ->
             val arguments = backStackEntry.arguments
             val userID = arguments?.getString("userId")

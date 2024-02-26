@@ -90,11 +90,7 @@ fun UserProfileView(navController: NavController, authRepository: AuthRepository
         SectionDown()
     }
     HamburgueerMenu(navController = navController, authRepository = authRepository)
-
 }
-
-
-
 
 @Composable
 fun RowWithDivider() {
@@ -180,7 +176,7 @@ fun ProjectIcon() {
 @Composable
 fun ProfitIcon() {
     Icon(
-        painter = painterResource(id = R.drawable.profit),
+        painter = painterResource(id = R.drawable.coston_icon),
         contentDescription = "Icono de proyectos",
         Modifier.size(35.dp)
     )

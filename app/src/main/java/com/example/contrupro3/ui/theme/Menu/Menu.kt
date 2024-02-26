@@ -258,7 +258,7 @@ fun MenuOpciones(navController: NavController, authRepository: AuthRepository) {
         navController.navigate("tasks_screen/$userID")
     }
     CreateOptionButton("Calendario", painterResource(R.drawable.calender_icon)) {
-
+        navController.navigate("calendar_screen/$userID")
     }
     CreateOptionButton("Comunicación", painterResource(R.drawable.comunication_icon)) {
 
